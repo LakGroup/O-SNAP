@@ -114,7 +114,7 @@ end
 
 %% plot percentiles
 if plotPercentile
-    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     if ~exist('percentileData','var')
         if exist(fullfile(workDir,'percentileData.mat'),'file')
             disp("Loading percentile data...")
