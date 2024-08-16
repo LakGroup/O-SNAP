@@ -1,9 +1,9 @@
-function K = RipleysK(locs,dist,box,method)
-% RipleysK: Calculate K statistic
+function K = ripleys_k(locs,dist,box,method)
+% Ripleys_k: Calculate K statistic
 % 
-% K = RipleysK(locs,dist, box,method) calculates G, the K statistic at each 
+% K = Ripleys_k(locs,dist, box,method) calculates G, the K statistic at each 
 % distance for the data with x-y coordinates given by locs, and the
-% bounding rectangle given by box=[minX maxX minY maxY].
+% bounding rectangle given by box=[min_x max_x min_y max_y].
 % If method=0, no edge correction is applied.
 % If method=1, points are only used if they are at least h units away from
 % the edge.

@@ -1,8 +1,8 @@
 % This code works as a standard code for the params extraction of 
-% STORM images (@ShenoyLab) Version 4.0 (last update April 5, 2024)
+% STORM images (@Shenoy_lab) Version 4.0 (last update April 5, 2024)
 
 % Notes: This file is used to extract key params of nucleus as follows:
-% 1. Inner Heterochromatin Size 2. LADs thickness 3. Nuclear Area
+% 1. Inner Heterochromatin Size 2. LADs thickness 3. Nuclear a
 % All variables are saved into a cell 'data', which is written to the
 % system
 
@@ -20,12 +20,12 @@
 %density_threshold = 0.014431999613957;
 % OWflag = false;          % if true overwrites the density threshold for each nuclei <NOT RECOMMENDED>
 
-function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold, eps, min_num, ellipse_inc, peripheryThresh)
+function data = analyze_heterochromatin(filepath, density_threshold, eps, min_num, ellipse_inc, periphery_thresh)
 
-    data = loadVars(filepath, {'x','y'});
+    data = load_variables(filepath, {'x','y'});
     locs = [data.x data.y];
 
-    if ~hasVars(filepath,{'boundary'})
+    if ~has_variables(filepath,{'boundary'})
         % find nuclear boundary
         bd_old = locs(boundary(locs, 0.5),:);
         bd = smoothdata(bd_old(1:length(bd_old)-1,:),'gaussian',10); clear bd_old
@@ -39,53 +39,53 @@ function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold,
     end
 
     % number of localizations
-    if ~hasVars(filepath,{'locs_number'})
+    if ~has_variables(filepath,{'locs_number'})
         data.locs_number = length(locs(:,1));
     end
 
     % approximate size of nucleus
-    if ~hasVars(filepath,{'nucleus_radius'})
+    if ~has_variables(filepath,{'nucleus_radius'})
         nucleus_radius = sqrt(polyarea(bd(:,1),bd(:,2))/pi);
         data.nucleus_radius = nucleus_radius;
     end
 
-    if ~hasVars(filepath,{'locs_density'})
-        if ~exist('nucleus_radius','var') && hasVars(filepath,'nucleus_radius')
+    if ~has_variables(filepath,{'locs_density'})
+        if ~exist('nucleus_radius','var') && has_variables(filepath,'nucleus_radius')
             load(filepath,'nucleus_radius');
         end
         data.locs_density = length(locs(:,1))/(pi*nucleus_radius^2);
     end
 
     % dbscan
-    if ~hasVars(filepath,{'Hetero_flt_with_label'})
-        if hasVars(filepath,{'voronoi_areas_all'})
+    if ~has_variables(filepath,{'hetero_flt_with_label'})
+        if has_variables(filepath,{'voronoi_areas_all'})
             load(filepath,'voronoi_areas_all');
         end
-        Hetero = locs((1./voronoi_areas_all)>=density_threshold,:);
-        labels = dbscan(Hetero,eps,min_num);
-        Hetero_flt = removerows(Hetero,'ind',find(labels == -1)); % filter background noise
+        hetero = locs((1./voronoi_areas_all)>=density_threshold,:);
+        labels = dbscan(hetero,eps,min_num);
+        hetero_flt = removerows(hetero,'ind',find(labels == -1)); % filter background noise
         labels_flt = removerows(labels,'ind',find(labels == -1)); 
-        Hetero_flt_with_label = [Hetero_flt,labels_flt];
-        data.Hetero_flt_with_label = Hetero_flt_with_label;
+        hetero_flt_with_label = [hetero_flt,labels_flt];
+        data.hetero_flt_with_label = hetero_flt_with_label;
     else
-        load(filepath,'Hetero_flt_with_label');
-        Hetero_flt = Hetero_flt_with_label(:,1:2);
-        labels_flt = Hetero_flt_with_label(:,3);
+        load(filepath,'hetero_flt_with_label');
+        hetero_flt = hetero_flt_with_label(:,1:2);
+        labels_flt = hetero_flt_with_label(:,3);
     end
-    clearvars density Hetero labels Hetero_flt_with_label
+    clearvars density hetero labels hetero_flt_with_label
     
     % define LADs and non-LADs domain
-    if ~hasVars(filepath,{'lads','non_lads'})
-        labels_flt_shuffle = shufflelabel(labels_flt); % shuffle label
-        numGroups = length(unique(labels_flt_shuffle));
+    if ~has_variables(filepath,{'lads','non_lads'})
+        labels_flt_shuffle = shuffleLabel(labels_flt); % shuffle label
+        num_groups = length(unique(labels_flt_shuffle));
         lads_is = [];
         lads_index = [];
         non_lads_is = [];
         non_lads_index = [];
         cnt = 1;
         nl_cnt = 1;
-        for i=1:numGroups
-            grp = Hetero_flt(labels_flt == i,:);
+        for i=1:num_groups
+            grp = hetero_flt(labels_flt == i,:);
             % sampling from grp
             mid_point = [mean(grp(:,1)), mean(grp(:,2))];
             rid = randi([1 length(grp(:,1))],1,ceil(length(grp)/15));
@@ -108,12 +108,12 @@ function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold,
                 clear temp_r temp_area temp_bd
             end
         end
-        non_lads = Hetero_flt(non_lads_is,:);
-        lads = Hetero_flt(lads_is,:);
+        non_lads = hetero_flt(non_lads_is,:);
+        lads = hetero_flt(lads_is,:);
         data.lads = [lads,lads_index];
         data.non_lads = [non_lads,non_lads_index];
         data.lads2total = length(lads)/(length(lads)+length(non_lads));
-        clearvars Hetero_flt_with_label Hetero_flt labels_flt labels_flt_shuffle
+        clearvars hetero_flt_with_label hetero_flt labels_flt labels_flt_shuffle
     else
         load(filepath,'lads');
         load(filepath,'non_lads');
@@ -123,70 +123,70 @@ function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold,
         non_lads = non_lads(:,1:2);
     end
 
-    if ~hasVars(filepath,{'lads_nLocs','lads_center','lads_density'})
-        if hasVars(filepath,{'lads_area'})
+    if ~has_variables(filepath,{'lads_n_locs','lads_center','lads_density'})
+        if has_variables(filepath,{'lads_area'})
             load(filepath,'lads_area');
             num_of_lads = length(unique(lads_index));
-            data.lads_nLocs = arrayfun(@(x) length(lads(lads_index==x,:)), 1:num_of_lads,'uni',1)';
-            data.lads_density = data.lads_nLocs./lads_area;
+            data.lads_n_locs = arrayfun(@(x) length(lads(lads_index==x,:)), 1:num_of_lads,'uni',1)';
+            data.lads_density = data.lads_n_locs./lads_area;
         else
-            if ~exist('lads','var') && hasVars(filepath,'lads')
+            if ~exist('lads','var') && has_variables(filepath,'lads')
                 load(filepath,'lads');
                 lads_index = lads(:,3);
                 lads = lads(:,1:2);
             end
             % analysis of inner ladschromatin domain size
             num_of_lads = length(unique(lads_index));
-            lads_nLocs = zeros(num_of_lads,1);
+            lads_n_locs = zeros(num_of_lads,1);
             lads_center = zeros(num_of_lads,2);
             lads_area = zeros(num_of_lads,1);
             lads_density = zeros(num_of_lads,1);
             for i=1:num_of_lads
                 grp = lads(lads_index==i,:);
-                lads_nLocs(i) = length(grp);
+                lads_n_locs(i) = length(grp);
                 lads_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
                 [k,lads_area_i]=boundary(grp,0.3);
                 lads_area(i) = lads_area_i;
-                lads_density(i) = lads_nLocs(i)./lads_area_i;
-                data.DomainBoundary{i,1}=grp(k,:);
+                lads_density(i) = lads_n_locs(i)./lads_area_i;
+                data.domain_boundary{i,1}=grp(k,:);
                 clear grp 
             end
-            data.lads_nLocs = lads_nLocs;
+            data.lads_n_locs = lads_n_locs;
             data.lads_center = lads_center;
             data.lads_area = lads_area;
             data.lads_density = lads_density;
         end
     end
     
-    if ~hasVars(filepath,{'hetero_nLocs','hetero_center','hetero_density'})
-        if hasVars(filepath,{'hetero_radius'})
+    if ~has_variables(filepath,{'hetero_n_locs','hetero_center','hetero_density'})
+        if has_variables(filepath,{'hetero_radius'})
             load(filepath,'hetero_radius');
             num_of_hetero = length(unique(non_lads_index));
-            data.hetero_nLocs = arrayfun(@(x) length(non_lads(non_lads_index==x,:)), 1:num_of_hetero,'uni',1)';
-            data.hetero_density = data.hetero_nLocs./(pi*hetero_radius.^2);
+            data.hetero_n_locs = arrayfun(@(x) length(non_lads(non_lads_index==x,:)), 1:num_of_hetero,'uni',1)';
+            data.hetero_density = data.hetero_n_locs./(pi*hetero_radius.^2);
         else
-            if ~exist('non_lads','var') && hasVars(filepath,'non_lads')
+            if ~exist('non_lads','var') && has_variables(filepath,'non_lads')
                 load(filepath,'non_lads');
                 non_lads_index = non_lads(:,3);
                 non_lads = non_lads(:,1:2);
             end
-            % analysis of inner heterochromatin domain size
+            % analysis of inner Heterochromatin domain size
             num_of_hetero = length(unique(non_lads_index));
-            hetero_nLocs = zeros(num_of_hetero,1);
+            hetero_n_locs = zeros(num_of_hetero,1);
             hetero_center = zeros(num_of_hetero,2);
             hetero_radius = zeros(num_of_hetero,1);
             hetero_density = zeros(num_of_hetero,1);
             for i=1:num_of_hetero
                 grp = non_lads(non_lads_index==i,:);
-                hetero_nLocs(i) = length(grp);
+                hetero_n_locs(i) = length(grp);
                 hetero_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
                 [k,hetero_area]=boundary(grp,0.3);
                 hetero_radius(i) = sqrt(hetero_area/pi);
-                hetero_density(i) = hetero_nLocs(i)./hetero_area;
-                data.DomainBoundary{i,1}=grp(k,:);
+                hetero_density(i) = hetero_n_locs(i)./hetero_area;
+                data.domain_boundary{i,1}=grp(k,:);
                 clear grp 
             end
-            data.hetero_nLocs = hetero_nLocs;
+            data.hetero_n_locs = hetero_n_locs;
             data.hetero_center = hetero_center;
             data.hetero_radius = hetero_radius;
             data.hetero_density = hetero_density;
@@ -196,7 +196,7 @@ function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold,
     end
 
     % find spacing
-    if ~hasVars(filepath,{'spacing'})
+    if ~has_variables(filepath,{'spacing'})
         N_neighbour = 5;
         dist_mat = mink(pdist2(hetero_center,hetero_center),N_neighbour+1,2);
         spacing = sum(dist_mat,2)/N_neighbour;
@@ -205,7 +205,7 @@ function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold,
     end
     
     %% compute lads thickness
-    if ~hasVars(filepath,{'seg_normals','seg_locs','lads_seg_thickness'})
+    if ~has_variables(filepath,{'seg_normals','lad_thickness','seg_locs','lads_seg_thickness'})
         % create accumulate center location
         bd_acc = zeros(length(bd(:,1)),1);
         for i=2:length(bd(:,1))
@@ -271,24 +271,24 @@ function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold,
     end
 
     %% Perform a Principal Component Analysis to rotate the data (maximizing the length)
-    if ~all(isfield(data,{'locs_norm','x_length','y_length','Eigenvalues','components'}))
-        [components,RotatedBoundary,Eigenvalues] = pca([bd(:,1) bd(:,2)]); % Uses the built-in Matlab pca routine.
-        locs_norm = normalizePoints(locs,components,bd,RotatedBoundary);        
+    if ~all(isfield(data,{'locs_norm','x_length','y_length','eigenvalues','components'}))
+        [components,rotated_boundary,eigenvalues] = pca([bd(:,1) bd(:,2)]); % Uses the built-in Matlab pca routine.
+        locs_norm = normalize_points(locs,components,bd,rotated_boundary);        
         x_length = max(locs_norm(:,1))-min(locs_norm(:,1)); % Determine the length of the cloud in x.
         y_length = max(locs_norm(:,2))-min(locs_norm(:,2)); % Determine the length of the cloud in y.
         data.locs_norm = locs_norm;
-        data.Eigenvalues = Eigenvalues;
+        data.eigenvalues = eigenvalues;
         data.x_length = x_length;
         data.y_length = y_length;
         data.components = components;
     else
-        [~,RotatedBoundary,~] = pca([bd(:,1) bd(:,2)]);
+        [~,rotated_boundary,~] = pca([bd(:,1) bd(:,2)]);
         load(filepath,'x_length','y_length','locs_norm','components');
     end
 
     %% Generate polygon representation of data
-    if ~hasVars(filepath,{'polygon'})
-        polygon = polyshape(RotatedBoundary(1:end-1,1),RotatedBoundary(1:end-1,2),'Simplify',false); % Create a polygon of the boundary points (which will be completely filled).
+    if ~has_variables(filepath,{'polygon'})
+        polygon = polyshape(rotated_boundary(1:end-1,1),rotated_boundary(1:end-1,2),'Simplify',false); % Create a polygon of the boundary points (which will be completely filled).
         [Cx, Cy] = centroid(polygon);
         polygon = translate(polygon, -[Cx Cy]);
         data.polygon = polygon;
@@ -297,65 +297,65 @@ function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold,
     end
 
     %% Calculate the boundary descriptors.
-    if ~hasVars(filepath,{'ElasticEnergy','BendingEnergy','BorderCurvature'})
-        [data.ElasticEnergy, data.BendingEnergy] = Energy(RotatedBoundary); % Calculate the elastic energy and bending energy for each border.
-        data.BorderCurvature = Curvature(RotatedBoundary); % Only calculate the curvature for the outer boundary of the point cloud. 
+    if ~has_variables(filepath,{'elastic_energy','bending_energy','border_curvature'})
+        [data.elastic_energy, data.bending_energy] = Energy(rotated_boundary); % Calculate the elastic energy and bending energy for each border.
+        data.border_curvature = Curvature(rotated_boundary); % Only calculate the curvature for the outer boundary of the point cloud. 
     end
 
     %% calculate radius density
-    if ~hasVars(filepath,{'radialDensity'})
-        radialDensity = calcRadialDensity(locs_norm, [x_length y_length], ellipse_inc);
-        data.radialDensity = radialDensity;
+    if ~has_variables(filepath,{'radial_density'})
+        radial_density = calculate_radial_density(locs_norm, [x_length y_length], ellipse_inc);
+        data.radial_density = radial_density;
     else
-        load(filepath,'radialDensity')
-        if size(radialDensity,1) < floor(1/ellipse_inc)
-            radialDensity = calcRadialDensity(locs_norm, [x_length y_length], ellipse_inc);
-            data.radialDensity = radialDensity;
+        load(filepath,'radial_density')
+        if size(radial_density,1) < floor(1/ellipse_inc)
+            radial_density = calculate_radial_density(locs_norm, [x_length y_length], ellipse_inc);
+            data.radial_density = radial_density;
         end
     end
 
-    %% repeat radialDensity for radialHeteroDensity
-    if ~hasVars(filepath,{'radialHeteroDensity'})
-        radialHeteroDensity = calcRadialDensity(normalizePoints(hetero_center,components,bd,RotatedBoundary),...
+    %% repeat radial_density for radial_hetero_density
+    if ~has_variables(filepath,{'radial_hetero_density'})
+        radial_hetero_density = calculate_radial_density(normalize_points(hetero_center,components,bd,rotated_boundary),...
             [x_length y_length], ellipse_inc);
-        data.radialHeteroDensity = radialHeteroDensity;
+        data.radial_hetero_density = radial_hetero_density;
     else
-        load(filepath,'radialHeteroDensity')
-        if size(radialHeteroDensity,1) ~= floor(1/ellipse_inc)
-            radialHeteroDensity = calcRadialDensity(normalizePoints(hetero_center,components,bd,RotatedBoundary),... 
+        load(filepath,'radial_hetero_density')
+        if size(radial_hetero_density,1) ~= floor(1/ellipse_inc)
+            radial_hetero_density = calculate_radial_density(normalize_points(hetero_center,components,bd,rotated_boundary),... 
             [x_length y_length], ellipse_inc);
-            data.radialHeteroDensity = radialHeteroDensity;
+            data.radial_hetero_density = radial_hetero_density;
         end
     end
 
     %% calculate periphery/interior density
-    if ~hasVars(filepath,{'interiorDensity','peripheryDensity'})
-        [interiorDensity, peripheryDensity]  = calcPeripheryDensity(locs_norm,polygon,...
-            peripheryThresh);
-        data.interiorDensity = interiorDensity;
-        data.peripheryDensity = peripheryDensity;
+    if ~has_variables(filepath,{'interior_density','periphery_density'})
+        [interior_density, periphery_density]  = calculate_periphery_density(locs_norm,polygon,...
+            periphery_thresh);
+        data.interior_density = interior_density;
+        data.periphery_density = periphery_density;
     end
 
-    %% calculate periphery/interior density of heterochromatin clusters
-    if ~hasVars(filepath,{'interiorHeteroDensity','peripheryHeteroDensity'})
-        [interiorHeteroDensity, peripheryHeteroDensity]  = calcPeripheryDensity(normalizePoints(hetero_center,components,bd,RotatedBoundary),...
-            polygon, peripheryThresh);
-        data.interiorHeteroDensity = interiorHeteroDensity;
-        data.peripheryHeteroDensity = peripheryHeteroDensity;
+    %% calculate periphery/interior density of Heterochromatin clusters
+    if ~has_variables(filepath,{'interior_hetero_density','periphery_hetero_density'})
+        [interior_hetero_density, periphery_hetero_density]  = calculate_periphery_density(normalize_points(hetero_center,components,bd,rotated_boundary),...
+            polygon, periphery_thresh);
+        data.interior_hetero_density = interior_hetero_density;
+        data.periphery_hetero_density = periphery_hetero_density;
     end
 
-    [dirName,name,~] = fileparts(filepath);
-    plotFile = fullfile(replace(dirName,"VoronoiAreaData","ReducedVoronoiDensityMaps"),name+"_nucleusAnalysis.png");
-    % if ~exist(plotFile,'file')
+    [dir_name,name,~] = fileparts(filepath);
+    plot_file = fullfile(replace(dir_name,"voronoi_data","nuclei_images"),name+"_nucleus_analysis.png");
+    % if ~exist(plot_file,'file')
         f = figure('visible','off');
         polygon_outer = translate(polygon,-(max(polygon.Vertices) - range(polygon.Vertices)/2));
         plot(polygon_outer); hold on
-        polygon_inner = scale(polygon_outer,(1-peripheryThresh));
+        polygon_inner = scale(polygon_outer,(1-periphery_thresh));
         plot(polygon_inner); hold on
         % plot(bd(:,1),bd(:,2),'r-','LineWidth',2); hold on
-        lads = normalizePoints(lads,components,bd,RotatedBoundary);
-        non_lads = normalizePoints(non_lads,components,bd,RotatedBoundary);
-        seg_locs = normalizePoints(seg_locs,components,bd,RotatedBoundary);
+        lads = normalize_points(lads,components,bd,rotated_boundary);
+        non_lads = normalize_points(non_lads,components,bd,rotated_boundary);
+        seg_locs = normalize_points(seg_locs,components,bd,rotated_boundary);
         seg_normals = seg_normals*components;
         scatter(lads(:,1),lads(:,2),0.5,'g'); hold on
         scatter(non_lads(:,1),non_lads(:,2),0.5,'k'); hold on
@@ -371,13 +371,13 @@ function data = Nucleus_STORM_Analysis_MATLAB_v4_HK(filepath, density_threshold,
             axis equal
         end
         drawnow()
-        saveas(f,plotFile);
+        saveas(f,plot_file);
         close(f);
     % end
     clearvars -except filepath data
-    saveVoronoiAnalysisData(filepath, data);
+    save_voronoi_data(filepath, data);
 end
 
-function points_norm = normalizePoints(points,Components,Boundary,RotatedBoundary)
-    points_norm = points*Components - min(Boundary*Components) - range(RotatedBoundary)/2;
+function points_norm = normalize_points(points,components,boundary,rotated_boundary)
+    points_norm = points*components - min(boundary*components) - range(rotated_boundary)/2;
 end
