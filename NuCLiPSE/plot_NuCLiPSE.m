@@ -4,9 +4,9 @@ arguments
     groups cell
     save_dir string
     options.plot_PCA logical = true
-    options.plot_histograms logical = false
+    options.plot_histograms logical = true
     options.cluster_observations logical = true
-    options.cluster_features logical = false
+    options.cluster_features logical = true
 end
 % var_sel_methods = ["fscc hi2","fscmrmr","relieff"];
 var_sel_methods = ["fscmrmr"];
@@ -53,7 +53,7 @@ for m=1:length(var_sel_methods)
                 max_bin = max(T{:, var_selected{k}});
                 histogram(T{group_idx==g, var_selected{k}},...
                     'BinEdges', min_bin:(max_bin-min_bin)/15:max_bin,...
-                    'DisplayStyle','stairs','Normalization','probability');
+                    'DisplayStyle','bar','Normalization','probability');
                 hold on
             end
             xlabel(replace(var_selected{k},"_"," "))
@@ -80,7 +80,7 @@ if options.cluster_features
         %% unsupervised hierarchical clustering (features)
         cluster_features_hierarchical(T, var_selected);
         savefig(fullfile(save_dir, "clustering_feat_"+join(groups,'_')+".fig"));
-        saveas(gcf,fullfile(save_dir, "clustering_obs_"+join(groups,'_')+".png"));
+        saveas(gcf,fullfile(save_dir, "clustering_feat_"+join(groups,'_')+".png"));
     catch ME
         disp(getReport(ME))
     end

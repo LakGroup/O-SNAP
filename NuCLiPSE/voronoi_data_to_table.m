@@ -6,7 +6,7 @@ function T = voronoi_data_to_table(data_info_table)
     vars_morphological = ["area","major_axis","minor_axis","convex_area",...
         "gyration_radius","eigenvalues_ratio","eigenentropy",...
         "perimeter","convex_perimeter",...
-        "density","aspect_ratio","form_ratio","rectangularity","circularity","convex_circularity",...
+        "aspect_ratio","form_ratio","rectangularity","circularity","convex_circularity",...
         "convexity","solidity","equivalent_diameter","fiber_length","fiber_width","curl",...
         "major_axis_norm_area","minor_axis_norm_area","bending_energy_norm_area"];
     vars_value = [...
@@ -81,7 +81,6 @@ function T = voronoi_data_to_table(data_info_table)
             T{s,"perimeter"} = perimeter(voronoi_data.polygon);
             T{s,"convex_perimeter"} = perimeter(polygon_conv_hull_cluster);
             % Store the dependent shape descriptors (coordinate-based).
-            T{s,"density"} = T{s,"locs_number"} / T{s,"area"};
             T{s,"aspect_ratio"} = T{s,"major_axis"} / T{s,"minor_axis"};
             T{s,"form_ratio"} = T{s,"area"} / (T{s,"major_axis"}^2);
             T{s,"rectangularity"} = T{s,"area"} / (T{s,"major_axis"}*T{s,"minor_axis"});
@@ -93,8 +92,8 @@ function T = voronoi_data_to_table(data_info_table)
             T{s,"fiber_length"} = (T{s,"perimeter"} + realsqrt(abs((T{s,"perimeter"})^2 - 16 * T{s,"area"}))) / 4;
             T{s,"fiber_width"} = T{s,"area"} / T{s,"fiber_length"};
             T{s,"curl"} = T{s,"major_axis"} / T{s,"fiber_length"};
-            T{s,"major_axis_norm_area"} = T{s,"major_axis"} / T{s,"area"};
-            T{s,"minor_axis_norm_area"} = T{s,"minor_axis"} / T{s,"area"};
+            T{s,"major_axis_norm_area"} = T{s,"major_axis"} ./ T{s,"area"};
+            T{s,"minor_axis_norm_area"} = T{s,"minor_axis"} ./ T{s,"area"};
             T{s,"bending_energy_norm_area"} = T{s,"bending_energy"} / T{s,"area"};
             %% value variables
             for j=1:length(vars_value)

@@ -5,10 +5,11 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
         groups cell
         reps cell
         options.load logical = true
-        options.plot_PCA logical = false
-        options.plot_features logical = true
+        options.plot_PCA logical = true
+        options.plot_features logical = false
         options.plot_radial logical = false
         options.plot_ripley_k logical = false
+        options.run_GSEA logical = false
     end
     disp('- - - - - - - - - - - - - - - - - - - - - - - - - - - - ')
     disp("Running analysis for: " + analysis_name)
@@ -53,10 +54,10 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
         end
     end
     if options.plot_features
-        % disp("Creating feature graph...")
-        % interpret_features_graph(T, work_dir);
-        % disp("Creating feature venn diagram...")
-        % interpret_features_venn(T, work_dir);
+        disp("Creating feature graph...")
+        interpret_features_graph(T, work_dir);
+        disp("Creating feature venn diagram...")
+        interpret_features_venn(T, work_dir);
         disp("Performing feature ontology analysis...")
         interpret_features_ontology(T,work_dir);
     end
@@ -65,6 +66,9 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
     end
     if options.plot_ripley_k
         ripley_k(work_dir,groups,reps);
+    end
+    if options.run_GSEA
+        run_NuCLiPSE_MrGSEA(root_dir, analysis_name, T, ["feature_universe_1","feature_universe_2","feature_universe_3"]);
     end
     warning('on','all');
     close all

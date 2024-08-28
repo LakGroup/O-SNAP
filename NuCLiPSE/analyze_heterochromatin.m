@@ -77,14 +77,13 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     % define LADs and non-LADs domain
     if ~has_variables(filepath,{'lads','non_lads'})
         labels_flt_shuffle = shuffleLabel(labels_flt); % shuffle label
-        num_groups = length(unique(labels_flt_shuffle));
         lads_is = [];
         lads_index = [];
         non_lads_is = [];
         non_lads_index = [];
         cnt = 1;
         nl_cnt = 1;
-        for i=1:num_groups
+        for i=1:max(labels_flt_shuffle)
             grp = hetero_flt(labels_flt == i,:);
             % sampling from grp
             mid_point = [mean(grp(:,1)), mean(grp(:,2))];
@@ -126,8 +125,11 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     if ~has_variables(filepath,{'lads_n_locs','lads_center','lads_density'})
         if has_variables(filepath,{'lads_area'})
             load(filepath,'lads_area');
-            num_of_lads = length(unique(lads_index));
-            data.lads_n_locs = arrayfun(@(x) length(lads(lads_index==x,:)), 1:num_of_lads,'uni',1)';
+            n_lads = max(lads(:,3));
+            data.lads_n_locs = zeros(n_lads,1);
+            for i=1:n_lads
+                data.lads_n_locs(i) = sum(lads_index==i);
+            end
             data.lads_density = data.lads_n_locs./lads_area;
         else
             if ~exist('lads','var') && has_variables(filepath,'lads')
@@ -136,12 +138,12 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
                 lads = lads(:,1:2);
             end
             % analysis of inner ladschromatin domain size
-            num_of_lads = length(unique(lads_index));
-            lads_n_locs = zeros(num_of_lads,1);
-            lads_center = zeros(num_of_lads,2);
-            lads_area = zeros(num_of_lads,1);
-            lads_density = zeros(num_of_lads,1);
-            for i=1:num_of_lads
+            n_lads = max(lads(:,3));
+            lads_n_locs = zeros(n_lads,1);
+            lads_center = zeros(n_lads,2);
+            lads_area = zeros(n_lads,1);
+            lads_density = zeros(n_lads,1);
+            for i=1:n_lads
                 grp = lads(lads_index==i,:);
                 lads_n_locs(i) = length(grp);
                 lads_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
@@ -161,8 +163,11 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     if ~has_variables(filepath,{'hetero_n_locs','hetero_center','hetero_density'})
         if has_variables(filepath,{'hetero_radius'})
             load(filepath,'hetero_radius');
-            num_of_hetero = length(unique(non_lads_index));
-            data.hetero_n_locs = arrayfun(@(x) length(non_lads(non_lads_index==x,:)), 1:num_of_hetero,'uni',1)';
+            n_hetero = max(non_lads(:,3));
+            data.hetero_n_locs = zeros(n_hetero,1);
+            for i=1:n_hetero
+                data.hetero_n_locs(i) = sum(non_lads_index==i);
+            end
             data.hetero_density = data.hetero_n_locs./(pi*hetero_radius.^2);
         else
             if ~exist('non_lads','var') && has_variables(filepath,'non_lads')
@@ -171,12 +176,12 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
                 non_lads = non_lads(:,1:2);
             end
             % analysis of inner Heterochromatin domain size
-            num_of_hetero = length(unique(non_lads_index));
-            hetero_n_locs = zeros(num_of_hetero,1);
-            hetero_center = zeros(num_of_hetero,2);
-            hetero_radius = zeros(num_of_hetero,1);
-            hetero_density = zeros(num_of_hetero,1);
-            for i=1:num_of_hetero
+            n_hetero = max(non_lads(:,3));
+            hetero_n_locs = zeros(n_hetero,1);
+            hetero_center = zeros(n_hetero,2);
+            hetero_radius = zeros(n_hetero,1);
+            hetero_density = zeros(n_hetero,1);
+            for i=1:n_hetero
                 grp = non_lads(non_lads_index==i,:);
                 hetero_n_locs(i) = length(grp);
                 hetero_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];

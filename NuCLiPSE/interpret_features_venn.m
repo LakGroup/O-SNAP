@@ -99,13 +99,13 @@ if options.plot
     venn_labels_upregulated = cellfun(@(x) x.n_upregulated_features,venn_data,'uni',1);
     venn(n_groups,'sets',group_pairs_string,'labels',venn_labels_upregulated,'alpha',0.7,'colors',autumn(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
     title("UP-REGULATED",'Position', [1.5 -0.3, 0])
-    savefig(fullfile(save_dir, "features_venn_upregulated_"+join(group_pairs(i,:),'_')+".fig"));
-    saveas(gcf,fullfile(save_dir, "features_venn_upregulated_"+join(group_pairs(i,:),'_')+".png"));
+    savefig(fullfile(save_dir, "features_venn_upregulated.fig"));
+    saveas(gcf,fullfile(save_dir, "features_venn_upregulated.png"));
     venn_labels_downregulated = cellfun(@(x) x.n_downregulated_features,venn_data,'uni',1);
     venn(n_groups,'sets',group_pairs_string,'labels',venn_labels_downregulated,'alpha',0.7,'colors',winter(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
     title("DOWN-REGULATED",'Position', [1.5 -0.3, 0])
-    savefig(fullfile(save_dir, "features_venn_downregulated_"+join(group_pairs(i,:),'_')+".fig"));
-    saveas(gcf,fullfile(save_dir, "features_venn_downregulated_"+join(group_pairs(i,:),'_')+".png"));
+    savefig(fullfile(save_dir, "features_venn_downregulated.fig"));
+    saveas(gcf,fullfile(save_dir, "features_venn_downregulated.png"));
 end
 end
 

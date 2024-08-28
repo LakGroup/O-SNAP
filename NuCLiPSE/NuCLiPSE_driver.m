@@ -106,7 +106,7 @@ root_dir = 'F:\';
 % reps = {'0','1','2','3'};
 % groups = {'CtrlhFb','CtrlmESC','HK06h','HK12h','HK24h','HK36h','HK48h'};
 % run_NuCLiPSE(root_dir,analysis_name,groups,reps);
-% %%
+%%
 analysis_name = 'ANALYSIS_AM_Heterokaryon_H2B_CtrlhFb_CtrlmESC_HK48h';
 reps = {'0','1','2','3'};
 groups = {'CtrlhFb','CtrlmESC','HK48h'};
@@ -116,7 +116,7 @@ run_NuCLiPSE(root_dir,analysis_name,groups,reps);
 % reps = {'0'};
 % groups = {'ntc2','HNRNPK2'};
 % run_NuCLiPSE(root_dir,analysis_name,groups,reps);
-% %%
+% %
 % analysis_name = 'ANALYSIS_HK_BJ_H2B';
 % % reps = {'0-0','0-1','1','2'};
 % reps = {'0-1','1','2'};
