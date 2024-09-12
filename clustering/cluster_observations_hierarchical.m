@@ -37,3 +37,4 @@ function cluster_observations_hierarchical(T, var_selected)
     cluster_group_division(c_idx_PCA,cColor_PCA,T,TL,[1,3],13)
     cluster_group_division(c_idx_tSNE,cColor_tSNE,T,TL,[1,3],16)
 end
+

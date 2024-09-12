@@ -20,3 +20,4 @@ function [c_idx, cColor] = extract_clusters_from_tree(ax,h,tt)
         c_idx(tt_idx) = cColor_idx(i);
     end
 end
+

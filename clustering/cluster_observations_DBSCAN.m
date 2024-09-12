@@ -23,3 +23,4 @@ plot_clusters(score_tSNE,c_idx_tSNE);
 %% show cluster composition
 cluster_composition(c_idx_PCA,T,TL,[1,1],3)
 cluster_composition(c_idx_tSNE,T,TL,[1,1],4)
+
