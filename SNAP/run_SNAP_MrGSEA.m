@@ -1,5 +1,5 @@
 % setup for MrGSEA analysis
-function run_NuCLiPSE_MrGSEA(root_dir, analysis_name, T, feature_universe_names, options)
+function run_SNAP_MrGSEA(root_dir, analysis_name, T, feature_universe_names, options)
 arguments
     root_dir string
     analysis_name string
@@ -37,10 +37,10 @@ for g=1:size(group_pairs,1)
         X = table2array(T_norm(:,4:end))';
         % get gene set data collection for appropriate feature universes and feature IDs (GS)
         feature_universe = get_feature_universes(feature_universe_names{i});
-        GS_name = ['NuCLiPSE_' char(feature_universe_name) '_GS'];
+        GS_name = ['SNAP_' char(feature_universe_name) '_GS'];
         file_path_GS = [GS_name '.xlsx'];
         if ~exist(file_path_GS,"file")
-            generate_NuCLiPSE_GS(feature_IDs',feature_universe{1},"filepath",file_path_GS)
+            generate_SNAP_GS(feature_IDs',feature_universe{1},"filepath",file_path_GS)
         end
         %% set options
         opts = default_GSEA_opts();
@@ -100,3 +100,4 @@ end
         disp("- - - - - - - - - - - - - - - - -")
     end
 end
+

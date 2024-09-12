@@ -24,3 +24,4 @@ function [score,loss] = plot_tSNE(T)
     ylabel("Y")
     zlabel("Z")
 end
+

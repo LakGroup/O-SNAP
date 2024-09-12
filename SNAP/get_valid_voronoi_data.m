@@ -31,14 +31,15 @@ function data_info_table = get_valid_voronoi_data(work_dir,groups,reps,vars_to_l
         data_info_table.Properties.VariableNames={'dir','name','rep','group','filepath'};
         data_info_table = data_info_table(idx_contains_variable(data_info_table,vars_to_load),:);
         if ~size(data_info_table,1)
-            ME = MException('NuCLiPSE:no_valid_files_found', ...
+            ME = MException('SNAP:no_valid_files_found', ...
                 'No files were found matching analysis parameters');
             throw(ME)
         end
     else
         disp("No valid directory: " + work_dir)
-        ME = MException('NuCLiPSE:no_valid_directory_found', ...
+        ME = MException('SNAP:no_valid_directory_found', ...
                         sprintf('Directory not found: %s',work_dir));
         throw(ME)
     end
 end
+

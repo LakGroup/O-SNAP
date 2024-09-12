@@ -6,3 +6,4 @@ function copy_labels_limits(ax1, ax2)
     ax1.YLim = ax2.YLim;
     ax1.ZLim = ax2.ZLim;
 end
+

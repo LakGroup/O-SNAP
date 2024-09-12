@@ -1,8 +1,8 @@
-function generate_NuCLiPSE_GS(feature_IDs,feature_universe,options)
+function generate_SNAP_GS(feature_IDs,feature_universe,options)
 arguments
     feature_IDs cell
     feature_universe struct
-    options.filepath char = ['NuCLiPSE_' char(feature_universe.name) '_GS.xlsx']
+    options.filepath char = ['SNAP_' char(feature_universe.name) '_GS.xlsx']
 end
     filepath = char(options.filepath);
     feature_set_names = fieldnames(feature_universe.universe);

@@ -15,3 +15,4 @@ function valid_idx = idx_contains_variable(data_info_table,vars_to_load)
     end
     valid_idx = find(valid_idx);
 end
+

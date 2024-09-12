@@ -13,13 +13,13 @@ function data = load_variables(file_path, vars_to_load, options)
                     vars_value = load(file_path,vars_to_load{i});
                     data.(vars_to_load{i}) = vars_value.(vars_to_load{i});
                 catch
-                    ME = MException('NuCLiPSE:failed_to_load_existing_variable', ...
+                    ME = MException('SNAP:failed_to_load_existing_variable', ...
                         'Failed to load ''%s'' from %s',vars_to_load{i},file_path);
                     throw(ME)
                 end
             end
         else
-            ME = MException('NuCLiPSE:variable_not_in_file', ...
+            ME = MException('SNAP:variable_not_in_file', ...
                         'File is missing ''%s''',string(join(vars_missing,''',''')));
             throw(ME)
         end

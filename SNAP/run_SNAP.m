@@ -1,4 +1,4 @@
-function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
+function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
     arguments
         root_dir char
         analysis_name char
@@ -34,10 +34,10 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
             % coallate features
             T = voronoi_data_to_table_batch(work_dir,groups,reps);
         catch ME
-            if (strcmp(ME.identifier,'NuCLiPSE:no_valid_files_found'))
+            if (strcmp(ME.identifier,'SNAP:no_valid_files_found'))
                 disp("Generating features from scratch...")
                 % calculate features
-                generate_NuCLiPSE_features(work_dir,groups,reps);
+                generate_SNAP_features(work_dir,groups,reps);
                 disp("Creating table from generated features...")
                 % coallate features
                 T = voronoi_data_to_table_batch(work_dir,groups,reps);
@@ -48,7 +48,7 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
     else
         disp("Generating features from scratch...")
         % calculate features
-        generate_NuCLiPSE_features(work_dir,groups,reps);
+        generate_SNAP_features(work_dir,groups,reps);
         disp("Creating table from generated features...")
         % coallate features
         T = voronoi_data_to_table_batch(work_dir,groups,reps);
@@ -62,7 +62,7 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
     if options.plot_PCA
         disp('Plotting variable selection and PCA...')
         if length(unique(T.group)) >= 2
-            plot_NuCLiPSE(T, groups, work_dir);
+            plot_SNAP(T, groups, work_dir);
         else
             disp('Not enough groups in table')
         end
@@ -86,7 +86,7 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
         close all
     end
     if options.run_GSEA
-        run_NuCLiPSE_MrGSEA(root_dir, analysis_name, T, ["feature_universe_1","feature_universe_2","feature_universe_3"]);
+        run_SNAP_MrGSEA(root_dir, analysis_name, T, ["feature_universe_1","feature_universe_2","feature_universe_3"]);
         close all
     end
     warning('on','all');

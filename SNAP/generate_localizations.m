@@ -16,3 +16,4 @@ function data = generate_localizations(data,pixel_size)
     data.x = x;
     data.y = y;
 end
+

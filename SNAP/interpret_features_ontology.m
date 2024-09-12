@@ -169,9 +169,10 @@ function S = sort_features(S,feature_universe,feature_universe_name)
         end
     end
     if ismissing(S(:,feature_universe_name))
-        ME = MException('NuCLiPSE:feature_universe_is_missing_features', ...
+        ME = MException('SNAP:feature_universe_is_missing_features', ...
         'Universe %s does not fully describe features in data',feature_universe_name);
         throw(ME)
     end
 end
+
 

@@ -16,3 +16,4 @@ function [result, vars_missing] = has_variables(file_path, vars_to_check, option
         result = 1;
     end
 end
+

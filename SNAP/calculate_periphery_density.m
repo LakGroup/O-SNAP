@@ -6,3 +6,4 @@ function [interior_density, periphery_density]  = calculate_periphery_density(po
     periphery =  addboundary(polygon,interior.Vertices(:,1),interior.Vertices(:,2));
     periphery_density = (size(points,1) - interior_n)/area(periphery);
 end
+

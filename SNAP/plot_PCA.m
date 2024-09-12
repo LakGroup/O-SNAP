@@ -36,3 +36,4 @@ function [coeff,score,latent,tsquared,explained] = plot_PCA(T)
     ylabel("PC2 (" +  sprintf("%4.2f",explained(2)) + "%)")
     zlabel("PC3 (" +  sprintf("%4.2f",explained(3)) + "%)")
 end
+

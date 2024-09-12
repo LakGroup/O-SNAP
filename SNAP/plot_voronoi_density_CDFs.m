@@ -64,3 +64,4 @@ if strcmp(suffix,'')
 else
     saveas(gcf,fullfile(work_dir, ['voronoi_density_CDF_' suffix '.png']));
 end
+

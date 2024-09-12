@@ -27,3 +27,4 @@ function [split_data, n_processes] = split_files_for_parallel(data_info_table, n
         idx = idx + n_samp_per_process(i);
     end
 end
+

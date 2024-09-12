@@ -24,3 +24,4 @@ function points_norm = normalize_points(points,components,boundary)
     rotated_boundary = boundary*components;
     points_norm = points*components - min(rotated_boundary) - range(rotated_boundary)/2;
 end
+

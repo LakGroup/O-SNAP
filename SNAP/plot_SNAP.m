@@ -1,4 +1,4 @@
-function plot_NuCLiPSE(T, groups, save_dir, options)
+function plot_SNAP(T, groups, save_dir, options)
 arguments
     T table
     groups cell
@@ -86,4 +86,5 @@ if options.cluster_features
     end
 end
 end
+
 

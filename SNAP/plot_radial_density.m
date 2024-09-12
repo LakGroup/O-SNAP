@@ -32,3 +32,4 @@ function plot_radial_density(radial_density, points, voronoi_areas, x_length, y_
     saveas(f,save_name);
     close(f);
 end
+

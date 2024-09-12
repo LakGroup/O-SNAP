@@ -23,3 +23,4 @@ ylim([0 1])
 set(gca,'XTick',1:12, 'XTickLabel',replace(vars(var_sel_idx(1:12)),"_"," "))
 title('Variable Score')
 end
+

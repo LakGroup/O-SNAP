@@ -1,4 +1,4 @@
-function generate_NuCLiPSE_features(work_dir, groups, reps, options)
+function generate_SNAP_features(work_dir, groups, reps, options)
 arguments
     work_dir string
     groups cell
@@ -186,3 +186,4 @@ toc
 disp(['  RUN END: ' char(datetime)])
 disp('- - - - - - - - - - - - - - - - - - - - - - - - - - - - ')
 end
+

@@ -27,3 +27,4 @@ end
 function idx = is_in_ellipse(points, axes_lengths)
     idx = ((points(:,1)/(axes_lengths(1)/2)).^2) + ((points(:,2)/(axes_lengths(2)/2)).^2) - 1 < 0;
 end
+
