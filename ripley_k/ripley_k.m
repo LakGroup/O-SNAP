@@ -102,3 +102,4 @@ function K = ripley_KExp(filepath,dist,n_batch)
         K(i,:) = ripley_K_calc(points_batch,dist);
     end
 end
+

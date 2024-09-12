@@ -23,3 +23,4 @@ function cluster_features_hierarchical(T, var_selected)
     ax.XTickLabel(var_sel_idx) = cellfun(@(x) ['\bf{' upper(x) '}'], ax.XTickLabel(var_sel_idx), 'uni',0);
     title({'Hierarchical clustering of features','|R|'})
 end
+

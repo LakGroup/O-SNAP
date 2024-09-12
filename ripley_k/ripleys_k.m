@@ -40,3 +40,4 @@ elseif method==0
 end
 lambda = N/((box(2)-box(1))*(box(4)-box(3)));
 K = K/lambda;
+
