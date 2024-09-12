@@ -13,7 +13,9 @@ group_pairs = nchoosek(unique(T.group),2);
 for g=1:size(group_pairs,1)
     group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
     %% calculate adjusted p-values, fold changes
-    [S,v_fig] = compare_groups(T,group_pairs(g,1),group_pairs(g,2),"alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,"plot",options.plot);
+    [S,v_fig] = compare_groups(T,group_pairs(g,1),group_pairs(g,2),...
+        "alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,...
+        "plot",options.plot,"save_path",fullfile(save_dir, "features_diff_"+join(group_pairs(g,:),'_')+".csv"));
     if options.plot && ~isempty(v_fig)
         savefig(v_fig,fullfile(save_dir, "features_volcano_"+join(group_pairs(g,:),'_')+".fig"));
         saveas(v_fig,fullfile(save_dir, "features_volcano_"+join(group_pairs(g,:),'_')+".png"));

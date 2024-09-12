@@ -7,6 +7,11 @@
 
 root_dir = 'F:\';
 % %%
+% analysis_name = 'ANALYSIS_test';
+% reps = {'0'};
+% groups = {'H3K4me3','H3K9me3'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
 % analysis_name = 'ANALYSIS_AD_BJ_EdC';
 % reps = {'0'};
 % groups = {'Ctrl','TSA'};
@@ -20,6 +25,47 @@ root_dir = 'F:\';
 % analysis_name = 'ANALYSIS_PC_BJ_H2B';
 % reps = {'0'};
 % groups = {'Ctrl','TSA'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H2B';
+% reps = {'0','1','2','3'};
+% groups = {'CtrlhFb','CtrlmESC','HK06h','HK12h','HK24h','HK36h','HK48h'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H2B_CtrlhFb_CtrlmESC_HK48h';
+% reps = {'0','1','2','3'};
+% groups = {'CtrlhFb','CtrlmESC','HK48h'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K4me3';
+% reps = {'20201118','20201203','20201209','20210824'};
+% groups = {'CtrlhFb','CtrlmESC','HK06h','HK24h','HK48h'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K9ac';
+% reps = {'20201118','20201203','20201209'};
+% groups = {'CtrlhFb','CtrlmESC','HK06h','HK24h','HK48h'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K9me3';
+% reps = {'20201118','20201203','20201209','20210520'};
+% groups = {'CtrlhFb','CtrlmESC','HK06h','HK24h','HK48h'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K27me3';
+% reps = {'20201118','20201203','20201209','20210824'};
+% groups = {'CtrlhFb','CtrlmESC','HK06h','HK24h','HK48h'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_HK_BJ_H2B';
+% reps = {'0-0','0-1','1','2'};
+% % reps = {'0-1','1','2'};
+% groups = {'Ctrl','LMNAKD'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_YZ_hChon_H2B';
+% reps = {'A46yoM','B55yoM'};
+% groups = {'P0','P3','P6'};
 % run_NuCLiPSE(root_dir,analysis_name,groups,reps);
 % %%
 % analysis_name = 'ANALYSIS_AM_H3Variant_H2B_Control';
@@ -71,7 +117,7 @@ root_dir = 'F:\';
 % reps = {'0'};
 % groups = {'Control','D_Ala'};
 % run_NuCLiPSE(root_dir,analysis_name,groups,reps);
-% %
+% %%
 % analysis_name = 'ANALYSIS_AM_H3Variant_H3-1_Control';
 % reps = {'0'};
 % groups = {'H2B','H3'};
@@ -102,27 +148,6 @@ root_dir = 'F:\';
 % groups = {'H2B','H3'};
 % run_NuCLiPSE(root_dir,analysis_name,groups,reps);
 % %%
-% analysis_name = 'ANALYSIS_AM_Heterokaryon_H2B';
-% reps = {'0','1','2','3'};
-% groups = {'CtrlhFb','CtrlmESC','HK06h','HK12h','HK24h','HK36h','HK48h'};
-% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
-%%
-analysis_name = 'ANALYSIS_AM_Heterokaryon_H2B_CtrlhFb_CtrlmESC_HK48h';
-reps = {'0','1','2','3'};
-groups = {'CtrlhFb','CtrlmESC','HK48h'};
-run_NuCLiPSE(root_dir,analysis_name,groups,reps);
-% %%
-% analysis_name = 'ANALYSIS_EK_HCT116_H2B';
-% reps = {'0'};
-% groups = {'ntc2','HNRNPK2'};
-% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
-% %
-% analysis_name = 'ANALYSIS_HK_BJ_H2B';
-% % reps = {'0-0','0-1','1','2'};
-% reps = {'0-1','1','2'};
-% groups = {'Ctrl','LMNAKD'};
-% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
-% %%
 % analysis_name = 'ANALYSIS_SH_hTC_H2B';
 % reps = {'0'};
 % groups = {'Healthy','Tendinosis'};
@@ -146,6 +171,11 @@ run_NuCLiPSE(root_dir,analysis_name,groups,reps);
 % analysis_name = 'ANALYSIS_SH_hTC_H2B_stiffeninggel';
 % reps = {'0'};
 % groups = {'Healthy-04h','Healthy-24h','Old-04h','Old-24h','Tendinosis-04h','Tendinosis-24h'};
+% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_EK_HCT116_H2B';
+% reps = {'0'};
+% groups = {'ntc2','HNRNPK2'};
 % run_NuCLiPSE(root_dir,analysis_name,groups,reps);
 % %%
 % analysis_name = 'ANALYSIS_KS_CM_H3K9me2';
@@ -180,13 +210,9 @@ run_NuCLiPSE(root_dir,analysis_name,groups,reps);
 % run_NuCLiPSE(root_dir,analysis_name,groups,reps);
 % %%
 % analysis_name = 'ANALYSIS_HK_ATDC5_H3_CMPos_YAPTAZ';
-% reps = {'0','1'};
+% % reps = {'0','1'};
+% reps = {'0'};
 % groups = {''};
-% run_NuCLiPSE(root_dir,analysis_name,groups,reps);
-% %%
-% analysis_name = 'ANALYSIS_YZ_hChon_H2B';
-% reps = {'A46yoM','B55yoM'};
-% groups = {'P0','P3','P6'};
 % run_NuCLiPSE(root_dir,analysis_name,groups,reps);
 %% wrap up
 % delete(p_pool)

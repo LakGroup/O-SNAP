@@ -8,10 +8,6 @@ else
     if ~exist(save_dir, 'dir')
         mkdir(save_dir)
     end
-    map_dir = fullfile(work_dir,'nuclei_images');
-    if ~exist(map_dir, 'dir')
-        mkdir(map_dir)
-    end
 end
 
 % parameters for voronoi density plots

@@ -7,6 +7,7 @@ function [S,v_fig] = compare_groups(T,group_1,group_2,options)
         options.fold_change_threshold double = 2;
         options.plot logical = true;
         options.plot_labels logical = false;
+        options.save_path string = "";
     end
     % manorm scales by each COLUMN
     T_norm = manorm(T{:,4:end}); 
@@ -16,8 +17,8 @@ function [S,v_fig] = compare_groups(T,group_1,group_2,options)
     p = mattest(T1,T2); 
     p_adj = pval_adjust(p, 'BH'); % IMPORTANT: adjust for multiple hypothesis testing
     %% Filter samples with no differential expression
-    mean_1 = mean(T1,2,'omitmissing');
-    mean_2 = mean(T2,2,'omitmissing');
+    mean_1 = mean(T{strcmpi(T.group,group_1),4:end},1,'omitmissing');
+    mean_2 = mean(T{strcmpi(T.group,group_2),4:end},1,'omitmissing');
     % note: features where directionality is represented in the sign of the
     %       value (ex: skewness) will not be preserved for the volcano plot
     %       analysis
@@ -25,10 +26,10 @@ function [S,v_fig] = compare_groups(T,group_1,group_2,options)
     fold_change = ratios;
     fold_change(mean_2<mean_1) = -1./ratios(mean_2<mean_1);
     S = table(string(T(:,4:end).Properties.VariableNames'),...
-        mean(T{strcmpi(T.group,group_1),4:end})',...
-        mean(T{strcmpi(T.group,group_2),4:end})',...
-        fold_change,...
-        log2(ratios),...
+        mean_1',...
+        mean_2',...
+        fold_change',...
+        log2(ratios)',...
         p,...
         p_adj,...
         'VariableNames',...
@@ -44,6 +45,9 @@ function [S,v_fig] = compare_groups(T,group_1,group_2,options)
         v_fig = volcano_plot(S,group_1,group_2,"alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,"plot_labels",options.plot_labels);
     else
         v_fig = [];
+    end
+    if ~strcmp(options.save_path, "")
+        writetable(sortrows(S,"adj_p_value"),options.save_path);
     end
 end
 

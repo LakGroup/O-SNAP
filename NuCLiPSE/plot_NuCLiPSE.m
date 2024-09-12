@@ -25,9 +25,9 @@ for m=1:length(var_sel_methods)
     nexttile
     plot_PCA(T(:,[{'group'} var_selected]));
     % SHUFFLED LABELS
-    groups_shuffled = T.group(randperm(length(T.group)));
     T_shuffled = T(:,2:end);
-    T_shuffled.group = groups_shuffled;
+    T_shuffled.group = T.group(randperm(length(T.group)));
+    T_shuffled = T_shuffled(:,[end 1:end-1]);
     var_selected_shuffled = select_features(T_shuffled, n_vars_sel,var_sel_method);
     title("Variable Score - shuffled labels")
     nexttile

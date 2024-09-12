@@ -62,6 +62,14 @@ function T = voronoi_data_to_table(data_info_table)
         T{s,"name"} = a{1};
         try
             voronoi_data = load_variables(data_info_table{s,"filepath"},vars_to_load);
+            %% value variables
+            for j=1:length(vars_value)
+                if ~isempty(voronoi_data.(vars_value(j)))
+                    T{s,vars_value(j)} = voronoi_data.(vars_value(j));
+                else
+                    T{s,vars_value(j)} = NaN;
+                end
+            end
             %% morphological variables
             locs_norm = voronoi_data.locs_norm;
             % Generate convex hull
@@ -94,15 +102,7 @@ function T = voronoi_data_to_table(data_info_table)
             T{s,"curl"} = T{s,"major_axis"} / T{s,"fiber_length"};
             T{s,"major_axis_norm_area"} = T{s,"major_axis"} ./ T{s,"area"};
             T{s,"minor_axis_norm_area"} = T{s,"minor_axis"} ./ T{s,"area"};
-            T{s,"bending_energy_norm_area"} = T{s,"bending_energy"} / T{s,"area"};
-            %% value variables
-            for j=1:length(vars_value)
-                if ~isempty(voronoi_data.(vars_value(j)))
-                    T{s,vars_value(j)} = voronoi_data.(vars_value(j));
-                else
-                    T{s,vars_value(j)} = NaN;
-                end
-            end
+            T{s,"bending_energy_norm_area"} = T{s,"bending_energy"}./ T{s,"area"};            
             %% chromatin variables
             v_density = 1./(voronoi_data.voronoi_areas);
             for j=1:length(vars_chromatin)

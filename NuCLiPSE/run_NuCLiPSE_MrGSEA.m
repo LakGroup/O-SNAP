@@ -15,8 +15,8 @@ for g=1:size(group_pairs,1)
     group_case = group_pairs(g,2);
     %% directory management
     work_dir = fullfile(root_dir,analysis_name);
-    current_dir = cd(work_dir);
-    for i=3:length(feature_universe_names)
+    for i=1:length(feature_universe_names)
+        current_dir = cd(work_dir);
         %% file management
         feature_universe_name = feature_universe_names(i);
         save_name = char(fullfile(work_dir,analysis_name + "_GSEA_" + feature_universe_name + "_" + group_ctrl + "_" + group_case));
@@ -28,7 +28,7 @@ for g=1:size(group_pairs,1)
         end
         %% prepare data
         % create data array (pt 1)
-        T_norm = prepare_voronoi_table_data(T,cellstr([group_ctrl group_case]),cellstr(unique(T.biological_replicate)),"normalize",true,"keep_group_rep_info",true);
+        T_norm = prepare_voronoi_table_data(T,"groups",cellstr([group_ctrl group_case]),"replicates",cellstr(unique(T.biological_replicate)),"normalize",true);
         % get feature names (feature_IDs)
         feature_IDs = T_norm.Properties.VariableNames(4:end);
         % define groups
@@ -40,7 +40,7 @@ for g=1:size(group_pairs,1)
         GS_name = ['NuCLiPSE_' char(feature_universe_name) '_GS'];
         file_path_GS = [GS_name '.xlsx'];
         if ~exist(file_path_GS,"file")
-            generate_NuCLiPSE_GS(feature_IDs',feature_universe{1},file_path_GS)
+            generate_NuCLiPSE_GS(feature_IDs',feature_universe{1},"filepath",file_path_GS)
         end
         %% set options
         opts = default_GSEA_opts();
@@ -78,8 +78,8 @@ for g=1:size(group_pairs,1)
         movefile("GSEA_plots",plot_dir);
         %% wrap up
         close all
+        cd(current_dir)
     end
-    cd(current_dir)
 end
 end
 
@@ -91,7 +91,7 @@ arguments
 end
     families_significant = T_GSEA.("NES_q-val") < options.alpha;
     if any(families_significant)
-        disp(upper(group_pair(1)) + " VS " + upper(group_pair(2)))
+        disp(group_pair(1) + " VS " + group_pair(2))
         disp("- - - - - - - - - - - - - - - - -")
         T_GSEA_filt = sortrows(T_GSEA(families_significant,:),"NES_q-val");
         for j=1:sum(families_significant)

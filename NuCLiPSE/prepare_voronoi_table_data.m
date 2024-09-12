@@ -25,9 +25,9 @@ end
 idx = all([in_groups_idx in_reps_idx],2);
 T_norm = T(idx,:);
 
-% normalize
+% normalize T; note that all information stored in signs is erased
 if options.normalize
-    T_norm(:,4:end) = normalize(T_norm(:,4:end));
+    T_norm(:,vartype('numeric')) = normalize(abs(T_norm(:,vartype('numeric'))));
 end
 
 % remove NaNs

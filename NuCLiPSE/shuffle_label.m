@@ -1,4 +1,4 @@
-function L = shuffleLabel(L,r)
+function L = shuffle_label(L,r)
 
 % shufflelabel randomly relabels a label matrix
 %
@@ -88,13 +88,13 @@ end
 
 % shuffle labels
 if r
-    unique_lS = randperm(numel(unique_l));
+    unique_LS = randperm(numel(unique_l));
 else
-    unique_lS = unique_l(randperm(numel(unique_l)));
+    unique_LS = unique_l(randperm(numel(unique_l)));
 end
 
 % and map labels back into L
-L(I) = unique_lS(ix);
+L(I) = unique_LS(ix);
 
 % finally reshape back to original size
 L = reshape(L,siz);

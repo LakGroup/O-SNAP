@@ -4,8 +4,8 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
         analysis_name char
         groups cell
         reps cell
-        options.load logical = true
-        options.plot_PCA logical = true
+        options.load logical = false
+        options.plot_PCA logical = false
         options.plot_features logical = false
         options.plot_radial logical = false
         options.plot_ripley_k logical = false
@@ -17,6 +17,7 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
     disp("   GROUPS: " + string(join(groups(:),', ')))
     disp("   REPS: " + string(join(reps(:),', ')))
     warning('off','all');
+    close all
 
     %% file management
     work_dir = fullfile(root_dir,analysis_name);
@@ -28,9 +29,22 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
         load(table_file_path,"T");
     elseif options.load && ~exist("table_file_path","file")
         disp("Analysis file not found...")
-        disp("Creating table from generated features...")
-        % coallate features
-        T = voronoi_data_to_table_batch(work_dir,groups,reps);
+        try
+            disp("Creating table from generated features...")
+            % coallate features
+            T = voronoi_data_to_table_batch(work_dir,groups,reps);
+        catch ME
+            if (strcmp(ME.identifier,'NuCLiPSE:no_valid_files_found'))
+                disp("Generating features from scratch...")
+                % calculate features
+                generate_NuCLiPSE_features(work_dir,groups,reps);
+                disp("Creating table from generated features...")
+                % coallate features
+                T = voronoi_data_to_table_batch(work_dir,groups,reps);
+            else
+                rethrow(ME)
+            end
+        end
     else
         disp("Generating features from scratch...")
         % calculate features
@@ -52,23 +66,28 @@ function T = run_NuCLiPSE(root_dir,analysis_name,groups,reps,options)
         else
             disp('Not enough groups in table')
         end
+        close all
     end
     if options.plot_features
-        disp("Creating feature graph...")
-        interpret_features_graph(T, work_dir);
-        disp("Creating feature venn diagram...")
-        interpret_features_venn(T, work_dir);
+        % disp("Creating feature graph...")
+        % interpret_features_graph(T, work_dir);
+        % disp("Creating feature venn diagram...")
+        % interpret_features_venn(T, work_dir);
         disp("Performing feature ontology analysis...")
         interpret_features_ontology(T,work_dir);
+        close all
     end
     if options.plot_radial
         plot_radial_densities(data_info_table, T);
+        close all
     end
     if options.plot_ripley_k
         ripley_k(work_dir,groups,reps);
+        close all
     end
     if options.run_GSEA
         run_NuCLiPSE_MrGSEA(root_dir, analysis_name, T, ["feature_universe_1","feature_universe_2","feature_universe_3"]);
+        close all
     end
     warning('on','all');
     close all
