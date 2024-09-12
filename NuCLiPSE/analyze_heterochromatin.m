@@ -20,7 +20,16 @@
 %density_threshold = 0.014431999613957;
 % OWflag = false;          % if true overwrites the density threshold for each nuclei <NOT RECOMMENDED>
 
-function data = analyze_heterochromatin(filepath, density_threshold, eps, min_num, ellipse_inc, periphery_thresh)
+function data = analyze_heterochromatin(filepath, density_threshold, options)
+arguments
+    filepath string
+    density_threshold double
+    options.eps double = 20;
+    options.min_num double = 3;
+    options.ellipse_inc double = 0.1;
+    options.periphery_thresh double = 0.15;
+    options.plot logical = true;
+end
 
     data = load_variables(filepath, {'x','y'});
     locs = [data.x data.y];
@@ -28,10 +37,10 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     if ~has_variables(filepath,{'boundary'})
         % find nuclear boundary
         bd_old = locs(boundary(locs, 0.5),:);
-        bd = smoothdata(bd_old(1:length(bd_old)-1,:),'gaussian',10); clear bd_old
+        bd = smoothdata(bd_old(1:length(bd_old)-1,:),'gaussian',10);
+        clearvars bd_old
         bd(end+1,:) = bd(1,:);
         data.boundary = bd;
-        clearvars bd_old
     else
         tmp = load(filepath,'boundary');
         bd = tmp.boundary;
@@ -62,7 +71,7 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
             load(filepath,'voronoi_areas_all');
         end
         hetero = locs((1./voronoi_areas_all)>=density_threshold,:);
-        labels = dbscan(hetero,eps,min_num);
+        labels = dbscan(hetero,options.eps,options.min_num);
         hetero_flt = removerows(hetero,'ind',find(labels == -1)); % filter background noise
         labels_flt = removerows(labels,'ind',find(labels == -1)); 
         hetero_flt_with_label = [hetero_flt,labels_flt];
@@ -76,15 +85,14 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     
     % define LADs and non-LADs domain
     if ~has_variables(filepath,{'lads','non_lads'})
-        labels_flt_shuffle = shuffleLabel(labels_flt); % shuffle label
-        num_groups = length(unique(labels_flt_shuffle));
+        labels_flt_shuffle = shuffle_label(labels_flt); % shuffle label
         lads_is = [];
         lads_index = [];
         non_lads_is = [];
         non_lads_index = [];
         cnt = 1;
         nl_cnt = 1;
-        for i=1:num_groups
+        for i=1:max(labels_flt_shuffle)
             grp = hetero_flt(labels_flt == i,:);
             % sampling from grp
             mid_point = [mean(grp(:,1)), mean(grp(:,2))];
@@ -126,8 +134,11 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     if ~has_variables(filepath,{'lads_n_locs','lads_center','lads_density'})
         if has_variables(filepath,{'lads_area'})
             load(filepath,'lads_area');
-            num_of_lads = length(unique(lads_index));
-            data.lads_n_locs = arrayfun(@(x) length(lads(lads_index==x,:)), 1:num_of_lads,'uni',1)';
+            n_lads = max(lads(:,3));
+            data.lads_n_locs = zeros(n_lads,1);
+            for i=1:n_lads
+                data.lads_n_locs(i) = sum(lads_index==i);
+            end
             data.lads_density = data.lads_n_locs./lads_area;
         else
             if ~exist('lads','var') && has_variables(filepath,'lads')
@@ -136,12 +147,12 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
                 lads = lads(:,1:2);
             end
             % analysis of inner ladschromatin domain size
-            num_of_lads = length(unique(lads_index));
-            lads_n_locs = zeros(num_of_lads,1);
-            lads_center = zeros(num_of_lads,2);
-            lads_area = zeros(num_of_lads,1);
-            lads_density = zeros(num_of_lads,1);
-            for i=1:num_of_lads
+            n_lads = max(lads_index);
+            lads_n_locs = zeros(n_lads,1);
+            lads_center = zeros(n_lads,2);
+            lads_area = zeros(n_lads,1);
+            lads_density = zeros(n_lads,1);
+            for i=1:n_lads
                 grp = lads(lads_index==i,:);
                 lads_n_locs(i) = length(grp);
                 lads_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
@@ -161,8 +172,11 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     if ~has_variables(filepath,{'hetero_n_locs','hetero_center','hetero_density'})
         if has_variables(filepath,{'hetero_radius'})
             load(filepath,'hetero_radius');
-            num_of_hetero = length(unique(non_lads_index));
-            data.hetero_n_locs = arrayfun(@(x) length(non_lads(non_lads_index==x,:)), 1:num_of_hetero,'uni',1)';
+            n_hetero = max(non_lads(:,3));
+            data.hetero_n_locs = zeros(n_hetero,1);
+            for i=1:n_hetero
+                data.hetero_n_locs(i) = sum(non_lads_index==i);
+            end
             data.hetero_density = data.hetero_n_locs./(pi*hetero_radius.^2);
         else
             if ~exist('non_lads','var') && has_variables(filepath,'non_lads')
@@ -171,12 +185,12 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
                 non_lads = non_lads(:,1:2);
             end
             % analysis of inner Heterochromatin domain size
-            num_of_hetero = length(unique(non_lads_index));
-            hetero_n_locs = zeros(num_of_hetero,1);
-            hetero_center = zeros(num_of_hetero,2);
-            hetero_radius = zeros(num_of_hetero,1);
-            hetero_density = zeros(num_of_hetero,1);
-            for i=1:num_of_hetero
+            n_hetero = max(non_lads_index);
+            hetero_n_locs = zeros(n_hetero,1);
+            hetero_center = zeros(n_hetero,2);
+            hetero_radius = zeros(n_hetero,1);
+            hetero_density = zeros(n_hetero,1);
+            for i=1:n_hetero
                 grp = non_lads(non_lads_index==i,:);
                 hetero_n_locs(i) = length(grp);
                 hetero_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
@@ -304,12 +318,12 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
 
     %% calculate radius density
     if ~has_variables(filepath,{'radial_density'})
-        radial_density = calculate_radial_density(locs_norm, [x_length y_length], ellipse_inc);
+        radial_density = calculate_radial_density(locs_norm, [x_length y_length], options.ellipse_inc);
         data.radial_density = radial_density;
     else
         load(filepath,'radial_density')
-        if size(radial_density,1) < floor(1/ellipse_inc)
-            radial_density = calculate_radial_density(locs_norm, [x_length y_length], ellipse_inc);
+        if size(radial_density,1) < floor(1/options.ellipse_inc)
+            radial_density = calculate_radial_density(locs_norm, [x_length y_length], options.ellipse_inc);
             data.radial_density = radial_density;
         end
     end
@@ -317,13 +331,13 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     %% repeat radial_density for radial_hetero_density
     if ~has_variables(filepath,{'radial_hetero_density'})
         radial_hetero_density = calculate_radial_density(normalize_points(hetero_center,components,bd,rotated_boundary),...
-            [x_length y_length], ellipse_inc);
+            [x_length y_length], options.ellipse_inc);
         data.radial_hetero_density = radial_hetero_density;
     else
         load(filepath,'radial_hetero_density')
-        if size(radial_hetero_density,1) ~= floor(1/ellipse_inc)
+        if size(radial_hetero_density,1) ~= floor(1/options.ellipse_inc)
             radial_hetero_density = calculate_radial_density(normalize_points(hetero_center,components,bd,rotated_boundary),... 
-            [x_length y_length], ellipse_inc);
+            [x_length y_length], options.ellipse_inc);
             data.radial_hetero_density = radial_hetero_density;
         end
     end
@@ -331,7 +345,7 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     %% calculate periphery/interior density
     if ~has_variables(filepath,{'interior_density','periphery_density'})
         [interior_density, periphery_density]  = calculate_periphery_density(locs_norm,polygon,...
-            periphery_thresh);
+            options.periphery_thresh);
         data.interior_density = interior_density;
         data.periphery_density = periphery_density;
     end
@@ -339,18 +353,22 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
     %% calculate periphery/interior density of Heterochromatin clusters
     if ~has_variables(filepath,{'interior_hetero_density','periphery_hetero_density'})
         [interior_hetero_density, periphery_hetero_density]  = calculate_periphery_density(normalize_points(hetero_center,components,bd,rotated_boundary),...
-            polygon, periphery_thresh);
+            polygon, options.periphery_thresh);
         data.interior_hetero_density = interior_hetero_density;
         data.periphery_hetero_density = periphery_hetero_density;
     end
 
-    [dir_name,name,~] = fileparts(filepath);
-    plot_file = fullfile(replace(dir_name,"voronoi_data","nuclei_images"),name+"_nucleus_analysis.png");
-    % if ~exist(plot_file,'file')
+    if options.plot
+        [dir_name,name,~] = fileparts(filepath);
+        map_dir = replace(dir_name,"voronoi_data","nuclei_images");
+        if ~exist(map_dir, 'dir')
+            mkdir(map_dir)
+        end
+        plot_file = fullfile(map_dir,name+"_nucleus_analysis.png");
         f = figure('visible','off');
         polygon_outer = translate(polygon,-(max(polygon.Vertices) - range(polygon.Vertices)/2));
         plot(polygon_outer); hold on
-        polygon_inner = scale(polygon_outer,(1-periphery_thresh));
+        polygon_inner = scale(polygon_outer,(1-options.periphery_thresh));
         plot(polygon_inner); hold on
         % plot(bd(:,1),bd(:,2),'r-','LineWidth',2); hold on
         lads = normalize_points(lads,components,bd,rotated_boundary);
@@ -373,7 +391,7 @@ function data = analyze_heterochromatin(filepath, density_threshold, eps, min_nu
         drawnow()
         saveas(f,plot_file);
         close(f);
-    % end
+    end
     clearvars -except filepath data
     save_voronoi_data(filepath, data);
 end

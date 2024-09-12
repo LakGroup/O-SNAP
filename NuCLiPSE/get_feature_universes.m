@@ -1,14 +1,13 @@
 function feature_universes = get_feature_universes(feature_universe_names)
 arguments
-    feature_universe_names string = ["feature_universe_1"];%,"feature_universe_2","feature_universe_3"];
+    feature_universe_names string = ["feature_universe_1","feature_universe_2","feature_universe_3"];
 end
-    feature_universes = cell(1,length(feature_universe_names));
-    for i=1:length(feature_universe_names)
-        feature_universes{i}.name = feature_universe_names(i);
-        feature_universes{i}.universe = feval("get_" + lower(feature_universe_names(i)));
-    end
+feature_universes = cell(1,length(feature_universe_names));
+for i=1:length(feature_universe_names)
+    feature_universes{i}.name = feature_universe_names(i);
+    feature_universes{i}.universe = feval("get_" + lower(feature_universe_names(i)));
 end
-
+end
 %% feature family definition 1
 function feature_universe = get_feature_universe_1()
     % Nucleus morphology
@@ -258,7 +257,7 @@ function feature_universe = get_feature_universe_2()
         "radial_density_ring_gradient_minor_axis",...
         ];
     % Heterochromatin radial analysis
-    feature_universe.heterochromatin_interior = [ ...
+    feature_universe.radial_heterochromatin_interior = [ ...
         "interior_hetero_density",...
         "radial_heterochromatin_density_ring_01",...
         "radial_heterochromatin_density_ring_02",...

@@ -1,66 +1,58 @@
-function generate_voronoi_clusters(filepath,area_threshold_arr,min_number_of_localizations_arr)
+function generate_voronoi_clusters(filepath,options)
+arguments
+    filepath string
+    options.area_threshold_arr double;
+    options.min_number_of_localizations_arr double;
+end
     if ~has_variables(filepath,{'area_thresholds','min_number_of_localizations','clusters'})
         vars_to_load = {'voronoi_areas_all','voronoi_neighbors'};
         data = load_variables(filepath,vars_to_load);
-        n_area_threshold = length(area_threshold_arr);
-        n_min_number_of_localizations = length(min_number_of_localizations_arr);
-        data.area_thresholds = area_threshold_arr;
-        data.min_number_of_localizations = min_number_of_localizations_arr;
+        n_area_threshold = length(options.area_threshold_arr);
+        n_min_number_of_localizations = length(options.min_number_of_localizations_arr);
+        data.area_thresholds = options.area_threshold_arr;
+        data.min_number_of_localizations = options.min_number_of_localizations_arr;
         data.clusters = zeros(length(data.voronoi_areas_all),n_area_threshold*n_min_number_of_localizations);
         threshold_idx = 1;
         for k=1:n_area_threshold
             for j=1:n_min_number_of_localizations
                 %% calculate cluster for given threshold
-                keep_points = data.voronoi_areas_all <= area_threshold_arr(k);
-                counter = 0;
-                number_of_points = size(data.voronoi_areas_all,1);
-                used_points = zeros(number_of_points,1);
-                idx_clustered = [];
-                for i = 1:number_of_points
-                    if keep_points(i) && ~used_points(i)
+                keep_points = data.voronoi_areas_all <= options.area_threshold_arr(k);
+                used_points = zeros(1,numel(keep_points));
+                idx = find(keep_points);
+                idx_clustered = cell(1,floor(numel(idx)/options.min_number_of_localizations_arr(j)));
+                for i = 1:numel(idx)
+                    if ~used_points(idx(i))
+                        neighbors_idx = data.voronoi_neighbors(:,idx(i));
+                        neighbors_idx = neighbors_idx(~isnan(neighbors_idx));
                         % get the neighbors with area below the area threshold surrounding the seed-point
-                        seed_neighbors = data.voronoi_neighbors{i}(keep_points(data.voronoi_neighbors{i}));
-                        if ~isempty(seed_neighbors)
+                        current_seed = neighbors_idx(keep_points(neighbors_idx));
+                        current_seed = current_seed(keep_points(current_seed));
+                        if ~isempty(current_seed)
                             size_one = 0;
-                            size_two = length(seed_neighbors);
-                            % find all connected neighbors above min_loc threshold
+                            size_two = length(current_seed);
+                            % find all connected neighbors above threshold
                             while size_two ~= size_one
-                                size_one = length(seed_neighbors);
-                                idx_all = unique(cell2mat(data.voronoi_neighbors(seed_neighbors)));
-                                if ~any(intersect(idx_all,seed_neighbors))
-                                    seed_neighbors = sort([idx_all;seed_neighbors]);
-                                else
-                                    seed_neighbors = idx_all;
-                                end
-                                seed_neighbors = seed_neighbors(keep_points(seed_neighbors));
-                                size_two = length(seed_neighbors);
+                                neighbors_current_seed = data.voronoi_neighbors(:,current_seed);
+                                neighbors_current_seed = neighbors_current_seed(~isnan(neighbors_current_seed));
+                                size_one = size_two;
+                                current_seed = unique(vertcat(neighbors_current_seed,current_seed));
+                                current_seed = current_seed(keep_points(current_seed));
+                                size_two = length(current_seed);
                             end
-                        else
-                            seed_neighbors = i;
+                            if length(current_seed) >= options.min_number_of_localizations_arr(j)
+                                idx_clustered{i} = current_seed;
+                            end
+                            used_points(current_seed) = 1;
                         end
-                        used_points(seed_neighbors) = 1;
-                        if length(seed_neighbors) >= min_number_of_localizations_arr(j)
-                            counter = counter+1;
-                            idx_clustered{counter} = seed_neighbors;
-                        end
-                        clearvars seed_neighbors idx_all
-                    end    
+                    end   
                 end
-                if ~isempty(idx_clustered)
-                    idx_not_clustered = vertcat(idx_clustered{:});
-                    idx_not_clustered = setxor(1:length(data.voronoi_neighbors),idx_not_clustered);
-                    idx = 1:length(data.voronoi_neighbors);
-                    idx(idx_not_clustered) = -1;
-                    for i = 1:length(idx_clustered)
-                        idx(idx_clustered{i}) = i;
-                    end
-                    [~,~,data.clusters(:,threshold_idx)] = unique(idx);
-                    data.clusters(:,threshold_idx) = data.clusters(:,threshold_idx)-1;
-                else
-                    data.clusters(:,threshold_idx) = zeros(number_of_points,1);
+                % Constructing the segmented clusters
+                idx_clustered = idx_clustered(~cellfun('isempty',idx_clustered));
+                for i=1:numel(idx_clustered)
+                    data.clusters(idx_clustered{i},threshold_idx) = i;
                 end
                 %%
-                clearvars keep_points counter used_points idx_clustered idx
+                clearvars keep_points used_points idx_clustered idx
                 threshold_idx = threshold_idx+1;
             end
         end

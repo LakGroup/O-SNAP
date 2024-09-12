@@ -5,14 +5,17 @@ arguments
     options.plot = true;
     options.alpha double = 0.05;
     options.fold_change_threshold double = 2;
+    options.feature_universe_names = ["feature_universe_1","feature_universe_2","feature_universe_3"];
 end
 %% define feature_universes
-feature_universes = get_feature_universes();
+feature_universes = get_feature_universes(options.feature_universe_names);
 group_pairs = nchoosek(unique(T.group),2);
 for g=1:size(group_pairs,1)
     group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
     %% calculate adjusted p-values, fold changes
-    [S,v_fig] = compare_groups(T,group_pairs(g,1),group_pairs(g,2),"alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,"plot",options.plot);
+    [S,v_fig] = compare_groups(T,group_pairs(g,1),group_pairs(g,2),...
+        "alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,...
+        "plot",options.plot,"save_path",fullfile(save_dir, "features_diff_"+join(group_pairs(g,:),'_')+".csv"));
     if options.plot && ~isempty(v_fig)
         savefig(v_fig,fullfile(save_dir, "features_volcano_"+join(group_pairs(g,:),'_')+".fig"));
         saveas(v_fig,fullfile(save_dir, "features_volcano_"+join(group_pairs(g,:),'_')+".png"));
@@ -147,8 +150,7 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
             ylabel("Coverage of family (%)")
             title({"Features increased for " + group_pair(2),"Coverage"},"Interpreter","none")
         end
-        %% plot aggregated S.adj_p_value per family
-        %% plot aggregated fold enriched per family
+        sgtitle({replace(feature_universe_name,"_"," "),join(group_pair(:),' vs ')});
         savefig(fullfile(save_dir, "features_ontology_"+join(group_pair(:),'_')+"_"+ feature_universe_name + ".fig"));
         saveas(gcf,fullfile(save_dir, "features_ontology_"+join(group_pair(:),'_')+"_"+ feature_universe_name +".png"));
     end

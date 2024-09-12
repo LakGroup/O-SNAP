@@ -15,7 +15,7 @@ function [score,loss] = plot_tSNE(T)
         s.MarkerFaceColor = sFaceColors(g,:);
         hold on
     end
-    legend(groups,'Location','southoutside',"NumColumns",2)
+    legend(groups,'Location','southoutside','Interpreter','none')
     title('t-SNE')
     set(gca, "XTickLabel",[]);
     set(gca, "YTickLabel",[]);

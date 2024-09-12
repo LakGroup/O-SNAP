@@ -1,13 +1,9 @@
 function var_selected = select_features(T,n_var_sel,method)
 %% set up
 groups = T.group;
-T_num = T(:,vartype('numeric')); % get only numeric columns
+T_num =  prepare_voronoi_table_data(T,"numeric_only",true); % get only numeric columns
 vars = T_num.Properties.VariableNames;
-X = normalize(table2array(T_num)); % normalize T
-% remove nans from normalization (ex. if all values are the same)
-valid_col = all(~isnan(X));
-X = X(:,valid_col);
-vars = vars(valid_col);
+X = table2array(T_num);
 
 %% variable selection
 if strcmpi(method,"relieff")
