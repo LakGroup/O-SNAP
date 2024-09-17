@@ -5,11 +5,11 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
         groups cell
         reps cell
         options.load logical = false
-        options.plot_PCA logical = false
-        options.plot_features logical = false
+        options.plot_PCA logical = true
+        options.plot_features logical = true
         options.plot_radial logical = false
         options.plot_ripley_k logical = false
-        options.run_GSEA logical = false
+        options.run_GSEA logical = true
     end
     disp('- - - - - - - - - - - - - - - - - - - - - - - - - - - - ')
     disp("Running analysis for: " + analysis_name)

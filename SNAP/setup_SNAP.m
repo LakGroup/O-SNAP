@@ -1,5 +1,5 @@
 try
-    old_folder = cd('C:\Users\Hannah_kim\Documents\STORM\Nuclipse\Inside_poly_folder');
+    old_folder = cd('C:\Users\HannahKim\Documents\STORM\SNAP\inside_poly_folder');
     insidepoly_install
     cd(old_folder)
 catch ME
