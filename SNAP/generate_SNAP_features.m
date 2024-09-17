@@ -16,6 +16,7 @@ arguments
     options.plot logical = true;
 end
 plot_flag = options.plot;
+warning('off','all')
 
 %% load data
 data_info_table = get_valid_voronoi_data(work_dir,groups,reps,{'x','y'});
@@ -147,7 +148,7 @@ toc
 disp(['Completed: ' char(datetime)])
 %% perform voronoi clustering analysis
 disp("Performing Voronoi Clustering Analysis...")
-cluster_data_vars1 = {'area_thresholds','options.min_number_of_localizations','clusters'};
+cluster_data_vars1 = {'area_thresholds','min_number_of_localizations','clusters'};
 cluster_data_vars2 = {'cluster_n_locs','cluster_area','cluster_density','cluster_gyration_R'};
 area_threshold_arr = options.area_threshold_arr;
 min_number_of_localizations_arr = options.min_number_of_localizations_arr;
@@ -185,5 +186,6 @@ toc
 %%
 disp(['  RUN END: ' char(datetime)])
 disp('- - - - - - - - - - - - - - - - - - - - - - - - - - - - ')
+warning('on','all')
 end
 
