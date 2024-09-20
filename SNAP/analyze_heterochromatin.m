@@ -113,14 +113,13 @@ end
                 non_lads_is = [non_lads_is; find(labels_flt == i)];
                 non_lads_index = [non_lads_index; nl_cnt*ones(length(grp(:,1)),1)];
                 nl_cnt = nl_cnt + 1;
-                clear temp_r temp_area temp_bd
+                clear temp_bd
             end
         end
         non_lads = hetero_flt(non_lads_is,:);
         lads = hetero_flt(lads_is,:);
         data.lads = [lads,lads_index];
         data.non_lads = [non_lads,non_lads_index];
-        data.lads2total = length(lads)/(length(lads)+length(non_lads));
         clearvars hetero_flt_with_label hetero_flt labels_flt labels_flt_shuffle
     else
         load(filepath,'lads');
@@ -221,21 +220,15 @@ end
     %% compute lads thickness
     if ~has_variables(filepath,{'seg_normals','lad_thickness','seg_locs','lads_seg_thickness'})
         % create accumulate center location
-        bd_acc = zeros(length(bd(:,1)),1);
-        for i=2:length(bd(:,1))
-            bd_acc(i) = bd_acc(i-1) + norm(bd(i,:)-bd(i-1,:));
-        end
+        % bd_acc = cumsum([0;vecnorm(diff(bd),2,2)]);
         % create unit vector
-        tangents=diff(bd);
+        tangents = diff(bd);
         u_tangents=tangents./sqrt(sum(tangents.^2,2));
-        normals = zeros(length(bd(:,1))-1,2);
-        for i=1:length(bd(:,1))-1
-            normals(i,:)=[0 -1;1 0]*u_tangents(i,:)';
-        end
+        normals = ([0 -1;1 0]*u_tangents(1:end,:)')';
         normals(end+1,:) = normals(1,:);
         % define LADs segments
         seg_num = 50;
-        seg_len = floor(length(bd(:,1))/seg_num);
+        seg_len = floor(size(bd,1)/seg_num);
         % calculate lads thickness within each segment
         bd_idx = 1;
         indent_len = 2000;
@@ -244,7 +237,7 @@ end
         lads_seg_thickness = [];
         seg_locs = [];
         seg_normals = [];
-        if mod(length(bd(:,1)),seg_num)==0
+        if mod(size(bd,1),seg_num)==0
             num_iters = seg_num;
         else
             num_iters = seg_num+1;
@@ -256,7 +249,7 @@ end
             if seg_idx<num_iters
                 bd_idx = bd_idx +seg_len;
             else
-                bd_idx = bd_idx + length(bd(:,1))-seg_num*seg_len-1;
+                bd_idx = bd_idx + size(bd,1)-seg_num*seg_len-1;
             end
             point2 = bd(bd_idx,:);
             point3 = point2 + indent_len*normals(bd_idx,:);

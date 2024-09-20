@@ -28,7 +28,7 @@ if ~has_variables(filepath,vor_data_vars,"verbose",0)
     idx = ~isnan(voronoi_areas_all);
     voronoi_areas = voronoi_areas_all(idx);
     % connections = connections(idx);
-    reduced_voronoi_areas = voronoi_areas / mean(voronoi_areas);
+    reduced_voronoi_areas = voronoi_areas ./ mean(voronoi_areas);
     reduced_log_voronoi_density = log10(1./reduced_voronoi_areas);
     % find neighbors
     connectivity_list = dt.ConnectivityList;

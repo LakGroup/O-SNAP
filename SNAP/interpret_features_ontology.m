@@ -58,7 +58,8 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
     end
     % BgRatio = (size of the feature set)/(total number of features)
     for i=1:size(S_universe,1)
-        S{strcmpi(S{:,feature_universe_name},S_universe{i,feature_universe_name}),"bg_ratio_"+feature_universe_name} = S_universe{i,"Percent"}/100;
+        idx = strcmpi(S{:,feature_universe_name},S_universe{i,feature_universe_name});
+        S{idx,"bg_ratio_"+feature_universe_name} = repmat(S_universe{i,"Percent"}/100,sum(idx),1);
     end
     % FeatureRatio = (number of hits in data for a specific feature set)/(number of hits in data across all features)
     for i=1:size(S_diff_grouped,1)

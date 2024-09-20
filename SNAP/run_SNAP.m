@@ -51,7 +51,7 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
         generate_SNAP_features(work_dir,groups,reps);
         disp("Creating table from generated features...")
         % coallate features
-        T = voronoi_data_to_table_batch(work_dir,groups,reps);
+        T = voronoi_data_to_table_batch(work_dir,groups,reps,"load",false);
     end
     %% filter T
     % select only desired groups and replicates for analysis

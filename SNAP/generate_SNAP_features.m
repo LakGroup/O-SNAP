@@ -61,26 +61,6 @@ parfor p=1:options.n_processes
 end
 toc
 disp(['Completed: ' char(datetime)])
-%% calculate density threshold
-density_data=cell(1,options.n_processes);
-if ~exist('density_threshold','var')
-    disp('Calculating density threshold...');
-    tic
-    parfor p=1:options.n_processes
-        data_info_table_p = split_data{p};
-        filepaths = data_info_table_p{:,'filepath'};
-        density_data{p} = cell(1,length(filepaths));
-        for s=1:length(filepaths)
-            sample = load(filepaths(s),'voronoi_areas');
-            density_data{p}{s} = 1./sample.voronoi_areas;
-        end
-        density_data{p} = vertcat(density_data{p}{:});
-    end
-    density_threshold = prctile(vertcat(density_data{:}),options.heterochromatin_thresh);
-    clearvars density_data
-    toc
-end
-disp(['Completed: ' char(datetime)])
 %% perform heterochromatin analysis
 disp("Performing Heterochromatin Analysis...")
 hetero_data_vars = {'nucleus_radius',...
@@ -90,7 +70,6 @@ hetero_data_vars = {'nucleus_radius',...
             'hetero_flt_with_label',...
             'lads',...
             'non_lads',...
-            'lads2total',...
             'domain_boundary',...
             'hetero_center',...
             'hetero_radius',...
@@ -119,6 +98,26 @@ hetero_data_vars = {'nucleus_radius',...
             'periphery_density',...
             'interior_hetero_density',...
             'periphery_hetero_density'};
+% calculate density threshold
+density_data=cell(1,options.n_processes);
+if ~all(arrayfun(@(x) has_variables(x,hetero_data_vars,"verbose",0),data_info_table{:,'filepath'},'uni',1))
+    disp('Calculating density threshold...');
+    tic
+    parfor p=1:options.n_processes
+        data_info_table_p = split_data{p};
+        filepaths = data_info_table_p{:,'filepath'};
+        density_data{p} = cell(1,length(filepaths));
+        for s=1:length(filepaths)
+            sample = load(filepaths(s),'voronoi_areas');
+            density_data{p}{s} = 1./sample.voronoi_areas;
+        end
+        density_data{p} = vertcat(density_data{p}{:});
+    end
+    density_threshold = prctile(vertcat(density_data{:}),options.heterochromatin_thresh);
+    clearvars density_data
+    toc
+end
+disp(['Completed: ' char(datetime)])
 eps = options.eps;
 min_num = options.min_num;
 ellipse_inc = options.ellipse_inc;
