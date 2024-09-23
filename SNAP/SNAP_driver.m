@@ -1,40 +1,40 @@
-% prepare compiler for faster run
+%% prepare compiler for faster run
 if ~exist('first_run','var')
     setup_SNAP
     first_run = true;
 end
-%%
+%% start parallel pool
+p_pool = gcp('nocreate');
+if isempty(p_pool)
+    parpool("Threads",maxNumCompThreads);
+end
 
+%%
 root_dir = 'F:\';
 % %%
 % analysis_name = 'ANALYSIS_test';
 % reps = {'0'};
 % groups = {'H3K4me3','H3K9me3'};
 % run_SNAP(root_dir,analysis_name,groups,reps);
-%%
-analysis_name = 'ANALYSIS_AD_BJ_EdC';
-reps = {'0'};
-groups = {'Ctrl','TSA'};
-run_SNAP(root_dir,analysis_name,groups,reps);
-%%
-analysis_name = 'ANALYSIS_AD_BJ_H2B';
-reps = {'0'};
-groups = {'Ctrl','TSA'};
-run_SNAP(root_dir,analysis_name,groups,reps);
-%%
-analysis_name = 'ANALYSIS_PC_BJ_H2B';
-reps = {'0'};
-groups = {'Ctrl','TSA'};
-run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AD_BJ_EdC';
+% reps = {'0'};
+% groups = {'Ctrl','TSA'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AD_BJ_H2B';
+% reps = {'0'};
+% groups = {'Ctrl','TSA'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_PC_BJ_H2B';
+% reps = {'0'};
+% groups = {'Ctrl','TSA'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
 %%
 analysis_name = 'ANALYSIS_AM_Heterokaryon_H2B';
 reps = {'0','1','2','3'};
 groups = {'CtrlhFb','CtrlmESC','HK06h','HK12h','HK24h','HK36h','HK48h'};
-run_SNAP(root_dir,analysis_name,groups,reps);
-%%
-analysis_name = 'ANALYSIS_AM_Heterokaryon_H2B_CtrlhFb_CtrlmESC_HK48h';
-reps = {'0','1','2','3'};
-groups = {'CtrlhFb','CtrlmESC','HK48h'};
 run_SNAP(root_dir,analysis_name,groups,reps);
 %%
 analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K4me3';
@@ -56,42 +56,21 @@ analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K27me3';
 reps = {'20201118','20201203','20201209','20210824'};
 groups = {'CtrlhFb','CtrlmESC','HK06h','HK24h','HK48h'};
 run_SNAP(root_dir,analysis_name,groups,reps);
-% %%
-% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K4me3_CtrlhFb_CtrlmESC_HK48h';
-% reps = {'20201118','20201203','20201209','20210824'};
-% groups = {'CtrlhFb','CtrlmESC','HK48h'};
-% run_SNAP(root_dir,analysis_name,groups,reps);
-% %%
-% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K9ac_CtrlhFb_CtrlmESC_HK48h';
-% reps = {'20201118','20201203','20201209','20210824'};
-% groups = {'CtrlhFb','CtrlmESC','HK48h'};
-% run_SNAP(root_dir,analysis_name,groups,reps);
-% %%
-% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K9me3_CtrlhFb_CtrlmESC_HK48h';
-% reps = {'20201118','20201203','20201209','20210824'};
-% groups = {'CtrlhFb','CtrlmESC','HK48h'};
-% run_SNAP(root_dir,analysis_name,groups,reps);
-% %%
-% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K27me3_CtrlhFb_CtrlmESC_HK48h';
-% reps = {'20201118','20201203','20201209','20210824'};
-% groups = {'CtrlhFb','CtrlmESC','HK48h'};
-% run_SNAP(root_dir,analysis_name,groups,reps);
-% %%
-% analysis_name = 'ANALYSIS_AM_Heterokaryon_Active';
-% reps = {'20201118','20201203','20201209','20210824'};
-% groups = {'CtrlhFb','HK06h','HK24h','HK48h'};
-% run_SNAP(root_dir,analysis_name,groups,reps);
-% %%
-% analysis_name = 'ANALYSIS_AM_Heterokaryon_Repressive';
-% reps = {'20201118','20201203','20201209','20210824'};
-% groups = {'CtrlhFb' ,'HK06h','HK24h','HK48h'};
-% run_SNAP(root_dir,analysis_name,groups,reps);
 %%
-analysis_name = 'ANALYSIS_HK_BJ_H2B';
+analysis_name = 'ANALYSIS_HK_BJ_LMNAKD_H2B';
 reps = {'0-0','0-1','1','2'};
 % reps = {'0-1','1','2'};
 groups = {'Ctrl','LMNAKD'};
 run_SNAP(root_dir,analysis_name,groups,reps);
+%%
+mpiprofile on
+
+analysis_name = 'ANALYSIS_HK_BJ_TSA_H2B';
+reps = {'20240920'};
+groups = {'Ctrl','TSA'};
+run_SNAP(root_dir,analysis_name,groups,reps);
+
+mpiprofile view
 %%
 analysis_name = 'ANALYSIS_YZ_hChon_H2B';
 reps = {'A46yoM','B55yoM'};
@@ -127,6 +106,41 @@ analysis_name = 'ANALYSIS_AM_H3Variant_H3-3_H3';
 reps = {'0'};
 groups = {'Control','D_Ala'};
 run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H2B_CtrlhFb_CtrlmESC_HK48h';
+% reps = {'0','1','2','3'};
+% groups = {'CtrlhFb','CtrlmESC','HK48h'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K4me3_CtrlhFb_CtrlmESC_HK48h';
+% reps = {'20201118','20201203','20201209','20210824'};
+% groups = {'CtrlhFb','CtrlmESC','HK48h'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K9ac_CtrlhFb_CtrlmESC_HK48h';
+% reps = {'20201118','20201203','20201209','20210824'};
+% groups = {'CtrlhFb','CtrlmESC','HK48h'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K9me3_CtrlhFb_CtrlmESC_HK48h';
+% reps = {'20201118','20201203','20201209','20210824'};
+% groups = {'CtrlhFb','CtrlmESC','HK48h'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_H3K27me3_CtrlhFb_CtrlmESC_HK48h';
+% reps = {'20201118','20201203','20201209','20210824'};
+% groups = {'CtrlhFb','CtrlmESC','HK48h'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_Active';
+% reps = {'20201118','20201203','20201209','20210824'};
+% groups = {'CtrlhFb','HK06h','HK24h','HK48h'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
+% %%
+% analysis_name = 'ANALYSIS_AM_Heterokaryon_Repressive';
+% reps = {'20201118','20201203','20201209','20210824'};
+% groups = {'CtrlhFb' ,'HK06h','HK24h','HK48h'};
+% run_SNAP(root_dir,analysis_name,groups,reps);
 % %%
 % analysis_name = 'ANALYSIS_AM_H3Variant_H2B_Control';
 % reps = {'0'};
@@ -245,6 +259,5 @@ run_SNAP(root_dir,analysis_name,groups,reps);
 % groups = {''};
 % run_SNAP(root_dir,analysis_name,groups,reps);
 %% wrap up
-% delete(p_pool)
+delete(p_pool)
 disp('Done!')
-

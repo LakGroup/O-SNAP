@@ -3,7 +3,7 @@ arguments
     work_dir string
     groups cell
     reps cell
-    options.n_processes double = 12;
+    options.n_workers double = maxNumCompThreads;
     options.min_log_vor_density double = 0;
     options.max_log_vor_density double = 3;
     options.heterochromatin_thresh double = 70;
@@ -22,16 +22,9 @@ warning('off','all')
 data_info_table = get_valid_voronoi_data(work_dir,groups,reps,{'x','y'});
 
 %% split full data for parallel processing
-[split_data, options.n_processes] = split_files_for_parallel(data_info_table, options.n_processes, true);
-
-%% start parallel pool
-p_pool = gcp('nocreate');
-if isempty(p_pool)
-    parpool("Processes",options.n_processes);
-end
+[split_data, options.n_workers] = split_files_for_parallel(data_info_table, options.n_workers, true);
 
 %% calculate voronoi density
-disp('Calculating Voronoi densities...');
 if plot_flag
     vor_data_vars = {'voronoi_areas_all','voronoi_neighbors','voronoi_areas','reduced_log_voronoi_density','faces','vertices'};
 else
@@ -39,13 +32,14 @@ else
 end
 min_log_vor_density = options.min_log_vor_density;
 max_log_vor_density = options.max_log_vor_density;
+disp("      Calculating Voronoi densities...");
 tic
-parfor p=1:options.n_processes
+parfor p=1:options.n_workers
     data_info_table_p = split_data{p};
     filepaths = data_info_table_p{:,'filepath'};
     for s=1:length(filepaths)
         filepath = filepaths(s);
-        if exist(filepath,'file') && ~has_variables(filepath,vor_data_vars,"verbose",0)
+        if exist(filepath,'file') && ~has_variables(filepath,vor_data_vars,"verbose",1)
             try
                 generate_voronoi_data(filepath, ...
                     "min_log_vor_density", min_log_vor_density, ...
@@ -53,16 +47,15 @@ parfor p=1:options.n_processes
                     "plot", plot_flag);
             catch ME
                 disp(getReport(ME));
-                disp("Error in " + filepath + ", removing from analysis")
+                disp("        Removing from analysis: " + filepath)
                 split_data{p}(s,:) = [];
             end
         end
     end
 end
 toc
-disp(['Completed: ' char(datetime)])
+disp(['      Completed: ' char(datetime)])
 %% perform heterochromatin analysis
-disp("Performing Heterochromatin Analysis...")
 hetero_data_vars = {'nucleus_radius',...
             'locs_number',...
             'locs_density',...
@@ -99,11 +92,15 @@ hetero_data_vars = {'nucleus_radius',...
             'interior_hetero_density',...
             'periphery_hetero_density'};
 % calculate density threshold
-density_data=cell(1,options.n_processes);
 if ~all(arrayfun(@(x) has_variables(x,hetero_data_vars,"verbose",0),data_info_table{:,'filepath'},'uni',1))
-    disp('Calculating density threshold...');
+    eps = options.eps;
+    min_num = options.min_num;
+    ellipse_inc = options.ellipse_inc;
+    periphery_thresh = options.periphery_thresh;
+    density_data=cell(1,options.n_workers);
+    disp("      Calculating density threshold...");
     tic
-    parfor p=1:options.n_processes
+    parfor p=1:options.n_workers
         data_info_table_p = split_data{p};
         filepaths = data_info_table_p{:,'filepath'};
         density_data{p} = cell(1,length(filepaths));
@@ -115,76 +112,72 @@ if ~all(arrayfun(@(x) has_variables(x,hetero_data_vars,"verbose",0),data_info_ta
     end
     density_threshold = prctile(vertcat(density_data{:}),options.heterochromatin_thresh);
     clearvars density_data
-    toc
-end
-disp(['Completed: ' char(datetime)])
-eps = options.eps;
-min_num = options.min_num;
-ellipse_inc = options.ellipse_inc;
-periphery_thresh = options.periphery_thresh;
-tic
-parfor p=1:options.n_processes
-    data_info_table_p = split_data{p};
-    filepaths = data_info_table_p{:,'filepath'};
-    for s=1:length(filepaths)
-        filepath = filepaths(s);
-        if exist(filepath,'file') && ~has_variables(filepath,hetero_data_vars,"verbose",0)
-            try
-                analyze_heterochromatin(filepath,density_threshold, ...
-                    "eps",eps,...
-                    "min_num",min_num, ...
-                    "ellipse_inc",ellipse_inc,...
-                    "periphery_thresh",periphery_thresh);
-            catch ME
-                disp(getReport(ME));
-                disp("Removing from analysis: " + filepath)
-                split_data{p}(s,:) = [];
+    disp("      Calculating heterochromatin features...")
+    parfor p=1:options.n_workers
+        data_info_table_p = split_data{p};
+        filepaths = data_info_table_p{:,'filepath'};
+        for s=1:length(filepaths)
+            filepath = filepaths(s);
+            if exist(filepath,'file') && ~has_variables(filepath,hetero_data_vars,"verbose",0)
+                try
+                    analyze_heterochromatin(filepath,density_threshold, ...
+                        "eps",eps,...
+                        "min_num",min_num, ...
+                        "ellipse_inc",ellipse_inc,...
+                        "periphery_thresh",periphery_thresh);
+                catch ME
+                    disp(getReport(ME));
+                    disp("        Removing from analysis: " + filepath)
+                    split_data{p}(s,:) = [];
+                end
             end
         end
     end
+    toc
+    disp(['      Completed: ' char(datetime)])
 end
-toc
-disp(['Completed: ' char(datetime)])
 %% perform voronoi clustering analysis
 disp("Performing Voronoi Clustering Analysis...")
 cluster_data_vars1 = {'area_thresholds','min_number_of_localizations','clusters'};
 cluster_data_vars2 = {'cluster_n_locs','cluster_area','cluster_density','cluster_gyration_R'};
-area_threshold_arr = options.area_threshold_arr;
-min_number_of_localizations_arr = options.min_number_of_localizations_arr;
-tic
-parfor p=1:options.n_processes
-    data_info_table_p = split_data{p};
-    filepaths = data_info_table_p{:,'filepath'};
-    for s=1:length(filepaths)
-        filepath = filepaths(s);
-        if exist(filepath,'file')
-            if ~has_variables(filepath,cluster_data_vars1,"verbose",0)
-                try
-                    generate_voronoi_clusters(filepath, ...
-                        "area_threshold_arr",area_threshold_arr,...
-                        "min_number_of_localizations_arr",min_number_of_localizations_arr);
-                catch ME
-                    disp(getReport(ME));
-                    disp("Removing from analysis: " + filepath)
-                    split_data{p}(s,:) = [];
+if ~all(arrayfun(@(x) has_variables(x,[cluster_data_vars1 cluster_data_vars2],"verbose",0),data_info_table{:,'filepath'},'uni',1))
+    area_threshold_arr = options.area_threshold_arr;
+    min_number_of_localizations_arr = options.min_number_of_localizations_arr;
+    tic
+    parfor p=1:options.n_workers
+        data_info_table_p = split_data{p};
+        filepaths = data_info_table_p{:,'filepath'};
+        for s=1:length(filepaths)
+            filepath = filepaths(s);
+            if exist(filepath,'file')
+                if ~has_variables(filepath,cluster_data_vars1,"verbose",0)
+                    try
+                        generate_voronoi_clusters(filepath, ...
+                            "area_threshold_arr",area_threshold_arr,...
+                            "min_number_of_localizations_arr",min_number_of_localizations_arr);
+                    catch ME
+                        disp(getReport(ME));
+                        disp("        Removing from analysis: " + filepath)
+                        split_data{p}(s,:) = [];
+                    end
                 end
-            end
-            if ~has_variables(filepath,cluster_data_vars2,"verbose",0) && has_variables(filepath,cluster_data_vars1,"verbose",0)
-                try
-                    extract_cluster_features(filepath);
-                catch ME
-                    disp(getReport(ME));
-                    disp("Removing from analysis: " + filepath)
-                    split_data{p}(s,:) = [];
+                if ~has_variables(filepath,cluster_data_vars2,"verbose",0) && has_variables(filepath,cluster_data_vars1,"verbose",0)
+                    try
+                        extract_cluster_features(filepath);
+                    catch ME
+                        disp(getReport(ME));
+                        disp("        Removing from analysis: " + filepath)
+                        split_data{p}(s,:) = [];
+                    end
                 end
-            end
-        end 
+            end 
+        end
     end
+    toc
 end
-toc
 %%
 disp(['  RUN END: ' char(datetime)])
-disp('- - - - - - - - - - - - - - - - - - - - - - - - - - - - ')
+disp("- - - - - - - - - - - - - - - - - - - - - - - - - - - - ")
 warning('on','all')
 end
 

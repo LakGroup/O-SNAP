@@ -66,10 +66,12 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
         S_diff{strcmpi(S_diff{:,feature_universe_name},S_diff_grouped{i,feature_universe_name}),"feature_ratio_"+feature_universe_name} = sprintf("%d/%d",S_diff_grouped{i,"GroupCount"},sum(S_diff_grouped.GroupCount));
     end
     for i=1:size(S_diff,1)
-        S{strcmpi(S{:,"feature"},S_diff{i,"feature"}),"feature_ratio_"+feature_universe_name} = S_diff{i,"feature_ratio_"+feature_universe_name};
+        idx = strcmpi(S{:,"feature"},S_diff{i,"feature"});
+        S{idx,"feature_ratio_"+feature_universe_name} = repmat(S_diff{i,"feature_ratio_"+feature_universe_name},sum(idx),1);
     end
-    if sum(strcmpi(S{:,"feature_ratio_"+feature_universe_name},"")) > 0
-        S{strcmpi(S(:,"feature_ratio_"+feature_universe_name),""),"feature_ratio_"+feature_universe_name} = NaN(sum(strcmpi(S{:,"feature_ratio_"+feature_universe_name},"")),1);
+    idx = strcmpi(S{:,"feature_ratio_"+feature_universe_name},"");
+    if sum(idx) > 0
+        S{idx,"feature_ratio_"+feature_universe_name} = NaN(sum(idx),1);
     end
     %% plot
     if options.plot

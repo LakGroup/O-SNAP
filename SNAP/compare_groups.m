@@ -10,7 +10,7 @@ function [S,v_fig] = compare_groups(T,group_1,group_2,options)
         options.save_path string = "";
     end
     % manorm scales by each COLUMN
-    T_norm = manorm(T{:,4:end}); 
+    T_norm = manorm(abs(T{:,4:end})); 
     T1 = T_norm(strcmpi(T.group,group_1),:)';
     T2 = T_norm(strcmpi(T.group,group_2),:)';
     % mattest has features in each ROW

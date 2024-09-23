@@ -5,11 +5,11 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
         groups cell
         reps cell
         options.load logical = false
-        options.plot_PCA logical = true
-        options.plot_features logical = true
+        options.plot_PCA logical = false
+        options.plot_features logical = false
         options.plot_radial logical = false
         options.plot_ripley_k logical = false
-        options.run_GSEA logical = true
+        options.run_GSEA logical = false
     end
     disp('- - - - - - - - - - - - - - - - - - - - - - - - - - - - ')
     disp("Running analysis for: " + analysis_name)
@@ -27,7 +27,7 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
     if options.load && exist(table_file_path,"file")
         disp("Loading from "+table_file_path + "...")
         load(table_file_path,"T");
-    elseif options.load && ~exist("table_file_path","file")
+    elseif options.load && ~exist(table_file_path,"file")
         disp("Analysis file not found...")
         try
             disp("Creating table from generated features...")
@@ -48,7 +48,7 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
     else
         disp("Generating features from scratch...")
         % calculate features
-        generate_SNAP_features(work_dir,groups,reps);
+        % generate_SNAP_features(work_dir,groups,reps);
         disp("Creating table from generated features...")
         % coallate features
         T = voronoi_data_to_table_batch(work_dir,groups,reps,"load",false);
