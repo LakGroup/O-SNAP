@@ -29,7 +29,7 @@ end
             T_cell{p} = voronoi_data_to_table(data_info_table_p);
         end
         T = sortrows(vertcat(T_cell{:}),vars_string);
-        disp("Saving to " + fullfile(work_dir, analysis_name+".mat") + "...")
+        disp("      Saving to " + fullfile(work_dir, analysis_name+".mat") + "...")
         save(fullfile(work_dir, analysis_name+".mat"),"T");
         toc
         disp(['      Completed: ' char(datetime)])

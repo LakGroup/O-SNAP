@@ -4,12 +4,12 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
         analysis_name char
         groups cell
         reps cell
-        options.load logical = false
-        options.plot_PCA logical = false
-        options.plot_features logical = false
+        options.load logical = true
+        options.plot_PCA logical = true
+        options.plot_features logical = true
         options.plot_radial logical = false
         options.plot_ripley_k logical = false
-        options.run_GSEA logical = false
+        options.run_GSEA logical = true
     end
     disp('- - - - - - - - - - - - - - - - - - - - - - - - - - - - ')
     disp("Running analysis for: " + analysis_name)
@@ -25,20 +25,20 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
 
     %% calculate T
     if options.load && exist(table_file_path,"file")
-        disp("Loading from "+table_file_path + "...")
+        disp("  Loading from "+table_file_path + "...")
         load(table_file_path,"T");
     elseif options.load && ~exist(table_file_path,"file")
-        disp("Analysis file not found...")
+        disp("  Analysis file not found...")
         try
-            disp("Creating table from generated features...")
+            disp("  Creating table from generated features...")
             % coallate features
             T = voronoi_data_to_table_batch(work_dir,groups,reps);
         catch ME
             if (strcmp(ME.identifier,'SNAP:no_valid_files_found'))
-                disp("Generating features from scratch...")
+                disp("  Generating features from scratch...")
                 % calculate features
                 generate_SNAP_features(work_dir,groups,reps);
-                disp("Creating table from generated features...")
+                disp("  Creating table from generated features...")
                 % coallate features
                 T = voronoi_data_to_table_batch(work_dir,groups,reps);
             else
@@ -46,10 +46,10 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
             end
         end
     else
-        disp("Generating features from scratch...")
+        disp("  Generating features from scratch...")
         % calculate features
-        % generate_SNAP_features(work_dir,groups,reps);
-        disp("Creating table from generated features...")
+        generate_SNAP_features(work_dir,groups,reps);
+        disp("  Creating table from generated features...")
         % coallate features
         T = voronoi_data_to_table_batch(work_dir,groups,reps,"load",false);
     end
@@ -60,11 +60,11 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
     T = T(~all(isnan(T{:,4:end}),2),:);
     %% generate plots
     if options.plot_PCA
-        disp('Plotting variable selection and PCA...')
+        disp('  Plotting variable selection and PCA...')
         if length(unique(T.group)) >= 2
             plot_SNAP(T, groups, work_dir);
         else
-            disp('Not enough groups in table')
+            disp('  Not enough groups in table')
         end
         close all
     end
@@ -73,7 +73,7 @@ function T = run_SNAP(root_dir,analysis_name,groups,reps,options)
         % interpret_features_graph(T, work_dir);
         % disp("Creating feature venn diagram...")
         % interpret_features_venn(T, work_dir);
-        disp("Performing feature ontology analysis...")
+        disp("  Performing feature ontology analysis...")
         interpret_features_ontology(T,work_dir);
         close all
     end

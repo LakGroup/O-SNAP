@@ -1,4 +1,4 @@
-function T_norm = prepare_voronoi_table_data(T,options)
+function [T_norm,group_values] = prepare_voronoi_table_data(T,options)
 arguments
     T table
     options.groups cell = {};
@@ -24,6 +24,7 @@ else
 end
 idx = all([in_groups_idx in_reps_idx],2);
 T_norm = T(idx,:);
+group_values = T_norm.group;
 
 % normalize T; note that all information stored in signs is erased
 if options.normalize
@@ -36,6 +37,7 @@ if options.remove_NaN
     T_norm = T_norm(:,~is_nan_col);
     is_nan_row = any(ismissing(T_norm),2);
     T_norm = T_norm(~is_nan_row,:);
+    group_values = group_values(~is_nan_row);
 end
 
 % remove unnecessary columns (group, bio replicate)

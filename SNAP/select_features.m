@@ -1,7 +1,6 @@
 function var_selected = select_features(T,n_var_sel,method)
 %% set up
-groups = T.group;
-T_num =  prepare_voronoi_table_data(T,"numeric_only",true); % get only numeric columns
+[T_num,groups] =  prepare_voronoi_table_data(T,"numeric_only",true); % get only numeric columns
 vars = T_num.Properties.VariableNames;
 X = table2array(T_num);
 

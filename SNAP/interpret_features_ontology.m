@@ -9,7 +9,14 @@ arguments
 end
 %% define feature_universes
 feature_universes = get_feature_universes(options.feature_universe_names);
-group_pairs = nchoosek(unique(T.group),2);
+groups = unique(T.group);
+for g=1:size(groups,1)
+    groups_is_alpha = isstrprop(groups(g),'alpha');
+    if ~groups_is_alpha(1)
+        groups(g) = "t" + groups(g);
+    end
+end
+group_pairs = nchoosek(groups,2);
 for g=1:size(group_pairs,1)
     group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
     %% calculate adjusted p-values, fold changes

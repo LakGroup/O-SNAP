@@ -39,7 +39,7 @@ parfor p=1:options.n_workers
     filepaths = data_info_table_p{:,'filepath'};
     for s=1:length(filepaths)
         filepath = filepaths(s);
-        if exist(filepath,'file') && ~has_variables(filepath,vor_data_vars,"verbose",1)
+        if exist(filepath,'file') && ~has_variables(filepath,vor_data_vars,"verbose",0)
             try
                 generate_voronoi_data(filepath, ...
                     "min_log_vor_density", min_log_vor_density, ...
@@ -137,7 +137,7 @@ if ~all(arrayfun(@(x) has_variables(x,hetero_data_vars,"verbose",0),data_info_ta
     disp(['      Completed: ' char(datetime)])
 end
 %% perform voronoi clustering analysis
-disp("Performing Voronoi Clustering Analysis...")
+disp("      Performing Voronoi Clustering Analysis...")
 cluster_data_vars1 = {'area_thresholds','min_number_of_localizations','clusters'};
 cluster_data_vars2 = {'cluster_n_locs','cluster_area','cluster_density','cluster_gyration_R'};
 if ~all(arrayfun(@(x) has_variables(x,[cluster_data_vars1 cluster_data_vars2],"verbose",0),data_info_table{:,'filepath'},'uni',1))
