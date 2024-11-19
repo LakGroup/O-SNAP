@@ -4,40 +4,42 @@ arguments
     groups cell
     save_dir string
     options.plot_PCA logical = true
+    options.plot_shuffled logical = true
     options.plot_histograms logical = true
     options.cluster_observations logical = true
     options.cluster_features logical = true
 end
-% var_sel_methods = ["fscc hi2","fscmrmr","relieff"];
+% var_sel_methods = ["fscchi2","fscmrmr","relieff"];
+vars = T(:,vartype('numeric')).Properties.VariableNames;
 var_sel_methods = ["fscmrmr"];
-idx = any(reshape(cell2mat(arrayfun(@(x) strcmpi(T.group,x), groups,'uni',0)),[],length(groups)),2);
-T = T(idx,:);
-[groups, ~, group_idx] = unique(T.group);
 n_vars_sel = length(groups)+1;
 for m=1:length(var_sel_methods)
     % set up
     var_sel_method = var_sel_methods(m);
-    figure('Position', [10 10 1210 910]); 
-    tiledlayout('flow')
-    sgtitle(var_sel_method);
     %% VARIABLE SELECTED PCA
-    var_selected = select_features(T,n_vars_sel,var_sel_method);
-    nexttile
-    plot_PCA(T(:,[{'group'} var_selected]));
-    % SHUFFLED LABELS
-    T_shuffled = T(:,2:end);
-    T_shuffled.group = T.group(randperm(length(T.group)));
-    T_shuffled = T_shuffled(:,[end 1:end-1]);
-    var_selected_shuffled = select_features(T_shuffled, n_vars_sel,var_sel_method);
-    title("Variable Score - shuffled labels")
-    nexttile
-    plot_PCA(T_shuffled(:,[{'group'} var_selected_shuffled]));
-    title("PCA - shuffled labels")
-    if ~options.plot_PCA
-        close()
-    else
+    [vars_ranked, importance_score] = select_features_SNAP(T,"method",var_sel_method);
+    vars_sel = vars_ranked(1:n_vars_sel);
+    if options.plot_PCA
+        figure('Position', [10 10 1210 910]); 
+        plot_var_selected(vars_ranked,importance_score,"n_select",n_vars_sel)
+        savefig(fullfile(save_dir, "features_importance_"+var_sel_method+"_"+join(groups,'_')+".fig"));
+        saveas(gcf,fullfile(save_dir, "features_importance_"+var_sel_method+"_"+join(groups,'_')+".png"))
+        figure('Position', [10 10 1210 910]);
+        plot_PCA(T(:,[{'group','biological_replicate'} vars_sel]));
         savefig(fullfile(save_dir, "PCA_"+var_sel_method+"_"+join(groups,'_')+".fig"));
         saveas(gcf,fullfile(save_dir, "PCA_"+var_sel_method+"_"+join(groups,'_')+".png"))
+    end
+    %% SHUFFLED LABELS
+    if options.plot_PCA && options.plot_shuffled
+        figure('Position', [10 10 1210 910]);
+        T_shuffled = T(:,2:end);
+        T_shuffled.group = T.group(randperm(length(T.group)));
+        T_shuffled = T_shuffled(:,[end 1:end-1]);
+        [vars_ranked_shuffled, importance_score] = select_features_SNAP(T_shuffled,"method",var_sel_method);
+        plot_PCA(T_shuffled(:,[{'group'} vars_ranked_shuffled(1:n_vars_sel)]));
+        title("PCA - shuffled labels - " + var_sel_method)
+        savefig(fullfile(save_dir, "PCA_"+var_sel_method+"_"+join(groups,'_')+"_shuffled.fig"));
+        saveas(gcf,fullfile(save_dir, "PCA_"+var_sel_method+"_"+join(groups,'_')+"_shuffled.png"))
     end
     % hist plot selected features
     if options.plot_histograms
@@ -49,26 +51,37 @@ for m=1:length(var_sel_methods)
         for k = 1:n_vars_sel
             subplot(n_var_fac(end), prod(n_var_fac(1:end-1)), k)
             for g=1:length(groups)
-                min_bin = min(T{:, var_selected{k}});
-                max_bin = max(T{:, var_selected{k}});
-                histogram(T{group_idx==g, var_selected{k}},...
+                min_bin = min(T{:, vars_sel{k}});
+                max_bin = max(T{:, vars_sel{k}});
+                histogram(T{T.group==groups(g), vars_sel{k}},...
                     'BinEdges', min_bin:(max_bin-min_bin)/15:max_bin,...
                     'DisplayStyle','bar','Normalization','probability');
                 hold on
             end
-            xlabel(replace(var_selected{k},"_"," "))
+            xlabel(replace(vars_sel{k},"_"," "))
             ylim([0 0.75])
+            if k==1
+                legentry=repelem({''},1,length(groups));
+                color_order = get(gca,'ColorOrder');
+                for g=1:length(groups)
+                   scatter(nan,nan,20,'square','filled','MarkerFaceColor',color_order(g,:));
+                   legentry{g} = groups{g};
+                end
+                leg = legend(legentry);
+                leg.FontSize = 16;
+                leg.IconColumnWidth = 20;
+            end
         end
         sgtitle(var_sel_method)
         savefig(fullfile(save_dir, "hist_"+var_sel_method+"_"+join(groups,'_')+".fig"));
         saveas(gcf,fullfile(save_dir, "hist_"+var_sel_method+"_"+join(groups,'_')+".png"));
-        save(fullfile(save_dir, "vars_selected_" +var_sel_method+ ".mat"),"var_selected")
+        save(fullfile(save_dir, "vars_selected_" +var_sel_method+ ".mat"),"vars_sel")
     end
 end
 if options.cluster_observations
     try
         %% unsupervised hierarchical clustering (observations)
-        cluster_observations_hierarchical(T, var_selected);
+        cluster_observations_hierarchical(T, vars_sel);
         savefig(fullfile(save_dir, "clustering_obs_"+join(groups,'_')+".fig"));
         saveas(gcf,fullfile(save_dir, "clustering_obs_"+join(groups,'_')+".png"));
     catch ME
@@ -78,7 +91,7 @@ end
 if options.cluster_features
     try
         %% unsupervised hierarchical clustering (features)
-        cluster_features_hierarchical(T, var_selected);
+        cluster_features_hierarchical(T, vars_sel);
         savefig(fullfile(save_dir, "clustering_feat_"+join(groups,'_')+".fig"));
         saveas(gcf,fullfile(save_dir, "clustering_feat_"+join(groups,'_')+".png"));
     catch ME
@@ -86,5 +99,4 @@ if options.cluster_features
     end
 end
 end
-
 

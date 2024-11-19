@@ -20,9 +20,9 @@
 %density_threshold = 0.014431999613957;
 % OWflag = false;          % if true overwrites the density threshold for each nuclei <NOT RECOMMENDED>
 
-function data = analyze_heterochromatin(filepath, density_threshold, options)
+function data = analyze_heterochromatin(file_path, density_threshold, options)
 arguments
-    filepath string
+    file_path string
     density_threshold double
     options.eps double = 20;
     options.min_num double = 3;
@@ -31,10 +31,10 @@ arguments
     options.plot logical = true;
 end
 
-    data = load_variables(filepath, {'x','y'});
+    data = load_variables(file_path, {'x','y'});
     locs = [data.x data.y];
 
-    if ~has_variables(filepath,{'boundary'})
+    if ~has_variables(file_path,{'boundary'})
         % find nuclear boundary
         bd_old = locs(boundary(locs, 0.5),:);
         bd = smoothdata(bd_old(1:length(bd_old)-1,:),'gaussian',10);
@@ -42,49 +42,49 @@ end
         bd(end+1,:) = bd(1,:);
         data.boundary = bd;
     else
-        tmp = load(filepath,'boundary');
+        tmp = load(file_path,'boundary');
         bd = tmp.boundary;
         clearvars tmp
     end
 
     % number of localizations
-    if ~has_variables(filepath,{'locs_number'})
+    if ~has_variables(file_path,{'locs_number'})
         data.locs_number = length(locs(:,1));
     end
 
     % approximate size of nucleus
-    if ~has_variables(filepath,{'nucleus_radius'})
+    if ~has_variables(file_path,{'nucleus_radius'})
         nucleus_radius = sqrt(polyarea(bd(:,1),bd(:,2))/pi);
         data.nucleus_radius = nucleus_radius;
     end
 
-    if ~has_variables(filepath,{'locs_density'})
-        if ~exist('nucleus_radius','var') && has_variables(filepath,'nucleus_radius')
-            load(filepath,'nucleus_radius');
+    if ~has_variables(file_path,{'locs_density'})
+        if ~exist('nucleus_radius','var') && has_variables(file_path,'nucleus_radius')
+            load(file_path,'nucleus_radius');
         end
         data.locs_density = length(locs(:,1))/(pi*nucleus_radius^2);
     end
 
     % dbscan
-    if ~has_variables(filepath,{'hetero_flt_with_label'})
-        if has_variables(filepath,{'voronoi_areas_all'})
-            load(filepath,'voronoi_areas_all');
+    if ~has_variables(file_path,{'hetero_flt_with_label'})
+        if has_variables(file_path,{'voronoi_areas_all'})
+            load(file_path,'voronoi_areas_all');
+            hetero = locs((1./voronoi_areas_all)>=density_threshold,:);
+            labels = dbscan(hetero,options.eps,options.min_num);
+            hetero_flt = removerows(hetero,'ind',find(labels == -1)); % filter background noise
+            labels_flt = removerows(labels,'ind',find(labels == -1)); 
+            hetero_flt_with_label = [hetero_flt,labels_flt];
+            data.hetero_flt_with_label = hetero_flt_with_label;
         end
-        hetero = locs((1./voronoi_areas_all)>=density_threshold,:);
-        labels = dbscan(hetero,options.eps,options.min_num);
-        hetero_flt = removerows(hetero,'ind',find(labels == -1)); % filter background noise
-        labels_flt = removerows(labels,'ind',find(labels == -1)); 
-        hetero_flt_with_label = [hetero_flt,labels_flt];
-        data.hetero_flt_with_label = hetero_flt_with_label;
     else
-        load(filepath,'hetero_flt_with_label');
+        load(file_path,'hetero_flt_with_label');
         hetero_flt = hetero_flt_with_label(:,1:2);
         labels_flt = hetero_flt_with_label(:,3);
     end
     clearvars density hetero labels hetero_flt_with_label
     
     % define LADs and non-LADs domain
-    if ~has_variables(filepath,{'lads','non_lads'})
+    if ~has_variables(file_path,{'lads','non_lads'})
         labels_flt_shuffle = shuffle_label(labels_flt); % shuffle label
         lads_is = [];
         lads_index = [];
@@ -122,17 +122,17 @@ end
         data.non_lads = [non_lads,non_lads_index];
         clearvars hetero_flt_with_label hetero_flt labels_flt labels_flt_shuffle
     else
-        load(filepath,'lads');
-        load(filepath,'non_lads');
+        load(file_path,'lads');
+        load(file_path,'non_lads');
         lads_index = lads(:,3);
         lads = lads(:,1:2);
         non_lads_index = non_lads(:,3);
         non_lads = non_lads(:,1:2);
     end
 
-    if ~has_variables(filepath,{'lads_n_locs','lads_center','lads_density'})
-        if has_variables(filepath,{'lads_area'})
-            load(filepath,'lads_area');
+    if ~has_variables(file_path,{'lads_n_locs','lads_center','lads_density'})
+        if has_variables(file_path,{'lads_area'})
+            load(file_path,'lads_area');
             n_lads = max(lads(:,3));
             data.lads_n_locs = zeros(n_lads,1);
             for i=1:n_lads
@@ -140,8 +140,8 @@ end
             end
             data.lads_density = data.lads_n_locs./lads_area;
         else
-            if ~exist('lads','var') && has_variables(filepath,'lads')
-                load(filepath,'lads');
+            if ~exist('lads','var') && has_variables(file_path,'lads')
+                load(file_path,'lads');
                 lads_index = lads(:,3);
                 lads = lads(:,1:2);
             end
@@ -168,9 +168,9 @@ end
         end
     end
     
-    if ~has_variables(filepath,{'hetero_n_locs','hetero_center','hetero_density'})
-        if has_variables(filepath,{'hetero_radius'})
-            load(filepath,'hetero_radius');
+    if ~has_variables(file_path,{'hetero_n_locs','hetero_center','hetero_density'})
+        if has_variables(file_path,{'hetero_radius'})
+            load(file_path,'hetero_radius');
             n_hetero = max(non_lads(:,3));
             data.hetero_n_locs = zeros(n_hetero,1);
             for i=1:n_hetero
@@ -178,8 +178,8 @@ end
             end
             data.hetero_density = data.hetero_n_locs./(pi*hetero_radius.^2);
         else
-            if ~exist('non_lads','var') && has_variables(filepath,'non_lads')
-                load(filepath,'non_lads');
+            if ~exist('non_lads','var') && has_variables(file_path,'non_lads')
+                load(file_path,'non_lads');
                 non_lads_index = non_lads(:,3);
                 non_lads = non_lads(:,1:2);
             end
@@ -205,11 +205,11 @@ end
             data.hetero_density = hetero_density;
         end
     else
-        load(filepath,'hetero_center');
+        load(file_path,'hetero_center');
     end
 
     % find spacing
-    if ~has_variables(filepath,{'spacing'})
+    if ~has_variables(file_path,{'spacing'})
         N_neighbour = 5;
         dist_mat = mink(pdist2(hetero_center,hetero_center),N_neighbour+1,2);
         spacing = sum(dist_mat,2)/N_neighbour;
@@ -218,7 +218,7 @@ end
     end
     
     %% compute lads thickness
-    if ~has_variables(filepath,{'seg_normals','lad_thickness','seg_locs','lads_seg_thickness'})
+    if ~has_variables(file_path,{'seg_normals','lad_thickness','seg_locs','lads_seg_thickness'})
         % create accumulate center location
         % bd_acc = cumsum([0;vecnorm(diff(bd),2,2)]);
         % create unit vector
@@ -274,7 +274,7 @@ end
         data.lads_seg_thickness = lads_seg_thickness;
         data.lad_thickness = sum(seg_area)/sum(seg_len_store);
     else
-        load(filepath, 'seg_normals','seg_locs','lads_seg_thickness');
+        load(file_path, 'seg_normals','seg_locs','lads_seg_thickness');
     end
 
     %% Perform a Principal Component Analysis to rotate the data (maximizing the length)
@@ -290,31 +290,31 @@ end
         data.components = components;
     else
         [~,rotated_boundary,~] = pca([bd(:,1) bd(:,2)]);
-        load(filepath,'x_length','y_length','locs_norm','components');
+        load(file_path,'x_length','y_length','locs_norm','components');
     end
 
     %% Generate polygon representation of data
-    if ~has_variables(filepath,{'polygon'})
+    if ~has_variables(file_path,{'polygon'})
         polygon = polyshape(rotated_boundary(1:end-1,1),rotated_boundary(1:end-1,2),'Simplify',false); % Create a polygon of the boundary points (which will be completely filled).
         [Cx, Cy] = centroid(polygon);
         polygon = translate(polygon, -[Cx Cy]);
         data.polygon = polygon;
     else
-        load(filepath,'polygon');
+        load(file_path,'polygon');
     end
 
     %% Calculate the boundary descriptors.
-    if ~has_variables(filepath,{'elastic_energy','bending_energy','border_curvature'})
+    if ~has_variables(file_path,{'elastic_energy','bending_energy','border_curvature'})
         [data.elastic_energy, data.bending_energy] = Energy(rotated_boundary); % Calculate the elastic energy and bending energy for each border.
         data.border_curvature = Curvature(rotated_boundary); % Only calculate the curvature for the outer boundary of the point cloud. 
     end
 
     %% calculate radius density
-    if ~has_variables(filepath,{'radial_density'})
+    if ~has_variables(file_path,{'radial_density'})
         radial_density = calculate_radial_density(locs_norm, [x_length y_length], options.ellipse_inc);
         data.radial_density = radial_density;
     else
-        load(filepath,'radial_density')
+        load(file_path,'radial_density')
         if size(radial_density,1) < floor(1/options.ellipse_inc)
             radial_density = calculate_radial_density(locs_norm, [x_length y_length], options.ellipse_inc);
             data.radial_density = radial_density;
@@ -322,12 +322,12 @@ end
     end
 
     %% repeat radial_density for radial_hetero_density
-    if ~has_variables(filepath,{'radial_hetero_density'})
+    if ~has_variables(file_path,{'radial_hetero_density'})
         radial_hetero_density = calculate_radial_density(normalize_points(hetero_center,components,bd,rotated_boundary),...
             [x_length y_length], options.ellipse_inc);
         data.radial_hetero_density = radial_hetero_density;
     else
-        load(filepath,'radial_hetero_density')
+        load(file_path,'radial_hetero_density')
         if size(radial_hetero_density,1) ~= floor(1/options.ellipse_inc)
             radial_hetero_density = calculate_radial_density(normalize_points(hetero_center,components,bd,rotated_boundary),... 
             [x_length y_length], options.ellipse_inc);
@@ -336,7 +336,7 @@ end
     end
 
     %% calculate periphery/interior density
-    if ~has_variables(filepath,{'interior_density','periphery_density'})
+    if ~has_variables(file_path,{'interior_density','periphery_density'})
         [interior_density, periphery_density]  = calculate_periphery_density(locs_norm,polygon,...
             options.periphery_thresh);
         data.interior_density = interior_density;
@@ -344,7 +344,7 @@ end
     end
 
     %% calculate periphery/interior density of Heterochromatin clusters
-    if ~has_variables(filepath,{'interior_hetero_density','periphery_hetero_density'})
+    if ~has_variables(file_path,{'interior_hetero_density','periphery_hetero_density'})
         [interior_hetero_density, periphery_hetero_density]  = calculate_periphery_density(normalize_points(hetero_center,components,bd,rotated_boundary),...
             polygon, options.periphery_thresh);
         data.interior_hetero_density = interior_hetero_density;
@@ -352,7 +352,7 @@ end
     end
 
     if options.plot
-        [dir_name,name,~] = fileparts(filepath);
+        [dir_name,name,~] = fileparts(file_path);
         map_dir = replace(dir_name,"voronoi_data","nuclei_images");
         if ~exist(map_dir, 'dir')
             mkdir(map_dir)
@@ -385,8 +385,8 @@ end
         saveas(f,plot_file);
         close(f);
     end
-    clearvars -except filepath data
-    save_voronoi_data(filepath, data);
+    clearvars -except file_path data
+    save_voronoi_data(file_path, data);
 end
 
 function points_norm = normalize_points(points,components,boundary,rotated_boundary)

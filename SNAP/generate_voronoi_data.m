@@ -51,44 +51,71 @@ else
 end
     %% plot voronoi segmentation with reduced densities
     if options.plot
-        reduced_voronoi_areas_all = data.voronoi_areas_all/mean(data.voronoi_areas_all,'omitnan');
-        reduced_log_voronoi_density_plot = log10(1./reduced_voronoi_areas_all);
-        idx = reduced_log_voronoi_density_plot >= options.min_log_vor_density;
-        reduced_log_voronoi_density_plot = reduced_log_voronoi_density_plot(idx);  
-        reduced_log_voronoi_density_plot(reduced_log_voronoi_density_plot>options.max_log_vor_density) = options.max_log_vor_density;
-        % colorbar setup
-        scale_bar_size_x = 2;
-        scale_bar_size_y = 0.5;
-        CT = interp1([0 2 4 6 8 9]/9,[0 0 0; 0 0 1; 0 1 1; 1 1 0; 1 0 0; 0.3 0 0],linspace(0,1,256),'linear','extrap');
-        map = (colormap(CT));
-        f = figure('visible','off','name','Log Voronoi density Plot','NumberTitle','off','color','k','units','normalized','position',[0.25 0.15 0.6 0.7]);
-        patch('Vertices',data.vertices,'Faces',data.faces(idx,:),'FaceVertexCData',reduced_log_voronoi_density_plot,'FaceColor','flat','edgecolor','none')    
-        axis equal
-        xlim([min(data.x) max(data.x)])
-        ylim([min(data.y) max(data.y)])    
-        h = colorbar();    
-        pbaspect([1 1 1])
-        h.Position = [0.9 0.1 0.02 0.8];
-        h.TickLabelInterpreter = 'latex';
-        h.FontSize = 14;
-        h.Color = 'w';
-        log_vor_density_ticks = unique(sort([0 0.1 0.25, 0.41, 0.7, 1, 1.7, 2, options.min_log_vor_density, options.max_log_vor_density]));
-        log_vor_density_ticks = log_vor_density_ticks(all([(log_vor_density_ticks >= options.min_log_vor_density); (log_vor_density_ticks <= options.max_log_vor_density)]));
-        h.Ticks = log_vor_density_ticks;
-        h.TickLabels = arrayfun(@(elem) sprintf('%.2f',elem), log_vor_density_ticks,  'uni',  0);
-        ylabel(h, 'Reduced Log Voronoi polygon density $(\textrm{nm}^{-2})$','FontSize',14,'interpreter','latex');
-        caxis([options.min_log_vor_density options.max_log_vor_density]);
-        pixels_um_x = scale_bar_size_x*1000;
-        pixels_um_y = scale_bar_size_y*1000;
-        rectangle('Position',[min(data.x) min(data.y) pixels_um_x pixels_um_y],'facecolor','w')
-        set(gca,'colormap',map,'color','k','box','on','BoxStyle','full','XColor','k','YColor','k');
-        set(f, 'InvertHardCopy', 'off'); 
         [dir_name,name,~] = fileparts(filepath);
         map_dir = replace(dir_name,"voronoi_data","nuclei_images");
         if ~exist(map_dir, 'dir')
             mkdir(map_dir)
         end
-        saveas(f,fullfile(map_dir,name+"_reduced.png"));
+        %% setup
+        % colorbar 
+        scale_bar_size_x = 2;
+        scale_bar_size_y = 0.5;
+        nm_to_um_x = scale_bar_size_x*1000;
+        nm_to_um_y = scale_bar_size_y*1000;
+        CT = interp1([0 2 4 6 8 9]/9,[0 0 0; 0 0 1; 0 1 1; 1 1 0; 1 0 0; 0.3 0 0],linspace(0,1,256),'linear','extrap');
+        map = (colormap(CT));
+        %% reduced voronoi density
+        reduced_voronoi_areas_all = data.voronoi_areas_all/mean(data.voronoi_areas_all,'omitnan');
+        reduced_log_voronoi_density_plot = log10(1./reduced_voronoi_areas_all);
+        idx = reduced_log_voronoi_density_plot >= options.min_log_vor_density;
+        reduced_log_voronoi_density_plot = reduced_log_voronoi_density_plot(idx);  
+        reduced_log_voronoi_density_plot(reduced_log_voronoi_density_plot>options.max_log_vor_density) = options.max_log_vor_density;
+        log_vor_density_ticks = unique(sort([0 0.1 0.25, 0.41, 0.7, 1, 1.7, 2, 3, options.min_log_vor_density, options.max_log_vor_density]));
+        log_vor_density_ticks = log_vor_density_ticks(all([(log_vor_density_ticks >= options.min_log_vor_density); (log_vor_density_ticks <= options.max_log_vor_density)]));
+        f_reduced = figure('visible','off','name','Reduced Log Voronoi Density Plot','NumberTitle','off','color','k','units','normalized','position',[0.25 0.15 0.6 0.7]);
+        set(gca,'colormap',map,'color','k','box','on','BoxStyle','full','XColor','k','YColor','k');
+        set(f_reduced, 'InvertHardCopy', 'off'); 
+        patch('Vertices',data.vertices,'Faces',data.faces(idx,:),'FaceVertexCData',reduced_log_voronoi_density_plot,'FaceColor','flat','edgecolor','none')    
+        axis equal
+        xlim([min(data.x) max(data.x)])
+        ylim([min(data.y) max(data.y)])    
+        h = colorbar('Position',[0.9 0.1 0.02 0.8],...
+            'TickLabelInterpreter','latex',...
+            'FontSize',14,...
+            'Color','w',...
+            'Ticks',log_vor_density_ticks,...
+            'TickLabels',arrayfun(@(elem) sprintf('%.2f',elem), log_vor_density_ticks,  'uni',  0));    
+        pbaspect([1 1 1])
+        ylabel(h, 'Reduced $\textrm{Log}_{10}$ Voronoi polygon density $(\textrm{nm}^{-2})$','FontSize',14,'interpreter','latex');
+        caxis([options.min_log_vor_density options.max_log_vor_density]);
+        rectangle('Position',[min(data.x) min(data.y) nm_to_um_x nm_to_um_y],'facecolor','w')
+        saveas(f_reduced,fullfile(map_dir,name+"_reduced.png"));
+        close();
+        %% voronoi area
+        log_voronoi_area_plot = log10(data.voronoi_areas_all);
+        idx = log_voronoi_area_plot >= options.min_log_vor_density;
+        log_voronoi_area_plot = log_voronoi_area_plot(idx);  
+        log_voronoi_area_plot(log_voronoi_area_plot>options.max_log_vor_density) = options.max_log_vor_density;
+        log_vor_area_ticks = unique(sort([0.5, 0.7, 1, 1.7, 2, 3]));
+        log_vor_area_ticks = log_vor_area_ticks(all([(log_vor_area_ticks >=0.5); (log_vor_area_ticks <= 3)]));
+        f = figure('visible','off','name','Log Voronoi Density Plot','NumberTitle','off','color','k','units','normalized','position',[0.25 0.15 0.6 0.7]);
+        set(gca,'colormap',flipud(map),'color','k','box','on','BoxStyle','full','XColor','k','YColor','k');
+        set(f, 'InvertHardCopy', 'off'); 
+        patch('Vertices',data.vertices,'Faces',data.faces(idx,:),'FaceVertexCData',log_voronoi_area_plot,'FaceColor','flat','edgecolor','none')    
+        axis equal
+        xlim([min(data.x) max(data.x)])
+        ylim([min(data.y) max(data.y)])    
+        h = colorbar('Position',[0.9 0.1 0.02 0.8],...
+            'TickLabelInterpreter','latex',...
+            'FontSize',14,...
+            'Color','w',...
+            'Ticks',log_vor_area_ticks,...
+            'TickLabels',arrayfun(@(elem) sprintf('%.2f',elem), log_vor_area_ticks,  'uni',  0));    
+        pbaspect([1 1 1])
+        ylabel(h, '$\textrm{Log}_{10}$ Voronoi polygon area $(\textrm{nm}^{2})$','FontSize',14,'interpreter','latex');
+        caxis([0.5 3]);
+        rectangle('Position',[min(data.x) min(data.y) nm_to_um_x nm_to_um_y],'facecolor','w')
+        saveas(f,fullfile(map_dir,name+".png"));
         close();
     end
     clearvars -except data filepath

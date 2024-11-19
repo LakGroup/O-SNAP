@@ -30,7 +30,7 @@ function T = voronoi_data_to_table(data_info_table)
     load(data_info_table{1,"filepath"},'area_thresholds');
     vars_cluster = reshape("voronoi_cluster"+compose("_%03.0fnm_",area_thresholds)+["area";"density";"gyration_R";"n_locs"]+"_",1,[]);
     vars_cluster = reshape(vars_cluster + ["median";"std";"skewness"],1,[]);
-    vars_cluster = [vars_cluster reshape("voronoi_cluster"+compose("_%03.0fnm_",area_thresholds)+"n_clusters",1,[])];
+    vars_cluster = [vars_cluster reshape("voronoi_cluster"+compose("_%03.0fnm_",area_thresholds)+"clusters_per_area",1,[])];
     vars = [vars_string,...
         vars_morphological,...
         vars_value,...
@@ -149,7 +149,7 @@ function T = voronoi_data_to_table(data_info_table)
                 end
             end
             for k=1:5 
-                T{s,sprintf("voronoi_cluster_%03.0fnm_n_clusters",voronoi_data.area_thresholds(k))} = numel(voronoi_data.cluster_area{k});
+                T{s,sprintf("voronoi_cluster_%03.0fnm_clusters_per_area",voronoi_data.area_thresholds(k))} = numel(voronoi_data.cluster_area{k})/nucleus_area;
             end
             clearvars voronoi_data
         catch ME

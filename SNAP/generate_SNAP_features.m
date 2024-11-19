@@ -105,8 +105,14 @@ if ~all(arrayfun(@(x) has_variables(x,hetero_data_vars,"verbose",0),data_info_ta
         filepaths = data_info_table_p{:,'filepath'};
         density_data{p} = cell(1,length(filepaths));
         for s=1:length(filepaths)
-            sample = load(filepaths(s),'voronoi_areas');
-            density_data{p}{s} = 1./sample.voronoi_areas;
+            try
+                sample = load(filepaths(s),'voronoi_areas');
+                density_data{p}{s} = 1./sample.voronoi_areas;
+            catch ME
+                disp(getReport(ME));
+                disp("        Removing from analysis: " + filepaths(s))
+                split_data{p}(s,:) = [];
+            end
         end
         density_data{p} = vertcat(density_data{p}{:});
     end

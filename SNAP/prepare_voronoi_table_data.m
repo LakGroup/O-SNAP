@@ -28,7 +28,7 @@ group_values = T_norm.group;
 
 % normalize T; note that all information stored in signs is erased
 if options.normalize
-    T_norm(:,vartype('numeric')) = normalize(abs(T_norm(:,vartype('numeric'))));
+    T_norm{:,vartype('numeric')} = normalize(abs(T_norm{:,vartype('numeric')}),1);
 end
 
 % remove NaNs

@@ -9,19 +9,19 @@ if length(unique(T.group)) < 2
     return
 end
 % get table information
-T_norm = prepare_voronoi_table_data(T,"numeric_only",true);
+[T_norm, group_idx] = prepare_voronoi_table_data(T,"numeric_only",true);
 vars = replace(T_norm.Properties.VariableNames,'_',' ');
 % create correlation matrix
 T_corr = abs(corrcoef(table2array(T_norm)));
-% remove nans
-nan_idx = all(isnan(T_corr));
-T_corr = T_corr(~nan_idx,~nan_idx);
-vars = vars(~nan_idx);
+% % remove nans
+% nan_idx = all(isnan(T_corr));
+% T_corr = T_corr(~nan_idx,~nan_idx);
+% vars = vars(~nan_idx);
 % create correlation matrix
 n_features = length(vars);
 T_corr(T_corr < options.thresh) = 0;
 % identify notable features
-[feature_rank,score] = fscmrmr(T_norm,T.group);
+[feature_rank,score] = fscmrmr(T_norm,group_idx);
 n_features_selected = length(unique(T.group))+1;
 feature_idx = feature_rank(1:n_features_selected);
 if all(score == 0)

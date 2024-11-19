@@ -1,5 +1,5 @@
 function extract_cluster_features(filepath)
-    if ~has_variables(filepath,{'cluster_n_locs','cluster_area','cluster_density','cluster_gyration_R'})
+    % if ~has_variables(filepath,{'cluster_n_locs','cluster_area','cluster_density','cluster_gyration_R'})
         vars_to_load = {'x','y','voronoi_areas_all',...
             'area_thresholds','min_number_of_localizations','clusters'};
         data = load_variables(filepath, vars_to_load);
@@ -22,14 +22,14 @@ function extract_cluster_features(filepath)
                 data.cluster_area{j}(i) = sum(points_by_cluster{i}(:,3));
                 data.cluster_density{j}(i) = data.cluster_n_locs{j}(i)./data.cluster_area{j}(i);
                 data.cluster_gyration_R{j}(i) = sqrt(mean(...
-                    (points_by_cluster{i}(:,1)-mean(points_by_cluster{i}(:,1)).^2 ...
-                    + (points_by_cluster{i}(:,2)-mean(points_by_cluster{i}(:,2)).^2))));
+                    (points_by_cluster{i}(:,1)-mean(points_by_cluster{i}(:,1))).^2 ...
+                    + (points_by_cluster{i}(:,2)-mean(points_by_cluster{i}(:,2))).^2));
             end
         end
         clearvars -except filepath data vars_to_load
         data = rmfield(data,vars_to_load);
         save_voronoi_data(filepath, data);
-    end
+    % end
 end
 
 

@@ -6,19 +6,23 @@ function [S,v_fig] = compare_groups(T,group_1,group_2,options)
         options.alpha double = 0.05;
         options.fold_change_threshold double = 2;
         options.plot logical = true;
-        options.plot_labels logical = false;
+        options.plot_labels logical = true;
         options.save_path string = "";
     end
-    % manorm scales by each COLUMN
-    T_norm = manorm(abs(T{:,4:end})); 
-    T1 = T_norm(strcmpi(T.group,group_1),:)';
-    T2 = T_norm(strcmpi(T.group,group_2),:)';
-    % mattest has features in each ROW
-    p = mattest(T1,T2); 
+    [T_num, group_idx] = prepare_voronoi_table_data(T,"normalize",0,"numeric_only",1);
+    mean_1 = zeros(1,size(T_num,2));
+    mean_2 = zeros(1,size(T_num,2));
+    p = zeros(1,size(T_num,2));
+    for i=1:size(T_num,2)
+        data_i = T_num{:,i};
+        data_group_1 = rmoutliers(data_i(strcmpi(group_idx,group_1)));
+        data_group_2 = rmoutliers(data_i(strcmpi(group_idx,group_2)));
+        mean_1(i) = mean(data_group_1,'omitmissing');
+        mean_2(i) = mean(data_group_2,'omitmissing');
+        [~,p(i)] = ttest2(data_group_1,data_group_2);
+    end
     p_adj = pval_adjust(p, 'BH'); % IMPORTANT: adjust for multiple hypothesis testing
     %% Filter samples with no differential expression
-    mean_1 = mean(T{strcmpi(T.group,group_1),4:end},1,'omitmissing');
-    mean_2 = mean(T{strcmpi(T.group,group_2),4:end},1,'omitmissing');
     % note: features where directionality is represented in the sign of the
     %       value (ex: skewness) will not be preserved for the volcano plot
     %       analysis
@@ -29,9 +33,9 @@ function [S,v_fig] = compare_groups(T,group_1,group_2,options)
         mean_1',...
         mean_2',...
         fold_change',...
-        log2(ratios)',...
-        p,...
-        p_adj,...
+        log2(ratios'),...
+        p',...
+        p_adj',...
         'VariableNames',...
         ["feature",...
         "mean_"+group_1,...
@@ -59,19 +63,19 @@ function v_fig = volcano_plot(S,group_1,group_2,options)
         group_2 string;
         options.alpha double = 0.05;
         options.fold_change_threshold double = 2;
-        options.plot_labels logical = false;
+        options.plot_labels logical = true;
     end
     log2_fold_change_threshold = log2(options.fold_change_threshold);
     idx_sig = all([abs(S.log2_fold_change)>log2_fold_change_threshold S.adj_p_value < options.alpha],2);
     idx_sig_up = all([S.log2_fold_change>0 idx_sig],2);
     idx_sig_down = all([S.log2_fold_change<0 idx_sig],2);
-    v_fig_size = 4*ones(size(S,1),1);
-    v_fig_size(idx_sig) = 6*ones(sum(idx_sig),1);
+    v_fig_size = 20*ones(size(S,1),1);
+    v_fig_size(idx_sig) = 35*ones(sum(idx_sig),1);
     v_fig_color = repmat([0.5 0.5 .5],size(S,1),1);
     v_fig_color(idx_sig_up,:) = repmat([1 0 0],sum(idx_sig_up),1);
     v_fig_color(idx_sig_down,:) = repmat([0 0 1],sum(idx_sig_down),1);
     v_fig = figure();
-    scatter(S.log2_fold_change,-log10(S.adj_p_value),v_fig_size,v_fig_color,'filled');
+    scatter(S.log2_fold_change,-log10(S.adj_p_value),v_fig_size,v_fig_color,'filled','MarkerEdgeColor','k');
     hold on
     plot([log2_fold_change_threshold log2_fold_change_threshold],ylim(),'LineStyle','-.','Color',[1 0.3 0],'LineWidth',1.2)
     hold on
@@ -94,7 +98,17 @@ function v_fig = volcano_plot(S,group_1,group_2,options)
             else
                 t_color = 'k';
             end
-            text(x(f),y(f),feature_name(f),'Color',t_color,'FontSize',6,'Interpreter','none');
+            ht = text(x(f),y(f),'    ','HorizontalAlignment','center',...
+                'tag',num2str(f),'Color',t_color,'FontSize',10,'Interpreter','none');
+            pointerBehavior.enterFcn = ...
+                @(v_fig, cpp)set(findobj(v_fig,'tag',num2str(f)), ...
+                'string', {feature_name(f),""});
+            pointerBehavior.traverseFcn = [];
+            pointerBehavior.exitFcn = ...
+                @(v_fig, cpp)set(findobj(v_fig, 'tag',num2str(f)), ...
+                'string', '    ');
+            iptSetPointerBehavior(ht, pointerBehavior);
+            iptPointerManager(v_fig, 'enable');
             hold on
         end
     end
