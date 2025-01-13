@@ -1,9 +1,9 @@
-function plot_ellipse_set_batch(work_dir,groups,reps,T,options)
+function plot_ellipse_set_batch(T,work_dir,groups,reps,options)
 arguments
+    T table
     work_dir string
     groups cell
     reps cell
-    T table
     options.n_processes double= 12;
 end
 %% get data

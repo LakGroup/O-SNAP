@@ -6,24 +6,18 @@ arguments
     options.normalize logical = true;
     options.remove_NaN logical = true;
     options.keep_rep_sample_info logical = false;
-    options.numeric_only logical = false;
+    options.numeric_only logical = false; % only retains numeric columns
 end
 
-% find cells from groups of interest
-if ~isempty(options.groups)
-    in_groups_idx = cellfun(@(x) strcmpi(T.group,x), options.groups,'uni',0);
-    in_groups_idx = any([in_groups_idx{:}],2);
-else
-    in_groups_idx = ones(size(T,1),1);
-end
+T_norm = T;
+
+% select only desired groups and replicates for analysis
 if ~isempty(options.replicates)
-    in_reps_idx = cellfun(@(x) strcmpi(T.biological_replicate,x), options.replicates,'uni',0);
-    in_reps_idx = any([in_reps_idx{:}],2);
-else
-    in_reps_idx = ones(size(T,1),1);
+    T_norm = T_norm(ismember(T_norm.biological_replicate,options.replicates),:);
 end
-idx = all([in_groups_idx in_reps_idx],2);
-T_norm = T(idx,:);
+if ~isempty(options.groups)
+    T_norm = T_norm(ismember(T_norm.group,options.groups),:);
+end
 group_values = T_norm.group;
 
 % normalize T; note that all information stored in signs is erased

@@ -1,9 +1,9 @@
-function interpret_features_graph(T, save_dir, options)
+function interpret_features_graph(T, options)
 arguments
     T table
-    save_dir string
     options.thresh double = 0.8
     options.connected_only logical = true;
+    options.save_path string = ""
 end
 if length(unique(T.group)) < 2
     return
@@ -59,6 +59,8 @@ plot(G,...
     "NodeLabelMode","auto")
     %,'EdgeLabel',compose("%.2f",G.Edges.Weight))
 title(join(unique(T.group), ", "))
-savefig(fullfile(save_dir, "features_graph.fig"));
-saveas(gcf,fullfile(save_dir, "features_graph.png"));
+if options.save_path ~= ""
+    savefig(options.save_path+".fig");
+    saveas(gcf,options.save_path+".png");
+end
 end

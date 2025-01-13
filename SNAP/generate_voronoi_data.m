@@ -6,9 +6,18 @@ arguments
     options.plot logical = true;
 end
 if options.plot
-    vor_data_vars = {'voronoi_areas_all','voronoi_neighbors','voronoi_areas','reduced_log_voronoi_density','faces','vertices'};
+    vor_data_vars = {...
+        'voronoi_areas_all',...
+        'voronoi_neighbors',...
+        'voronoi_areas',...
+        'reduced_log_voronoi_density',...
+        'faces',...
+        'vertices'};
 else
-    vor_data_vars = {'voronoi_areas_all','voronoi_neighbors','voronoi_areas','reduced_log_voronoi_density'};
+    vor_data_vars = {'voronoi_areas_all',...
+        'voronoi_neighbors',...
+        'voronoi_areas',...
+        'reduced_log_voronoi_density'};
 end
 if ~has_variables(filepath,vor_data_vars,"verbose",0)
     data = load_variables(filepath, {'x','y'});
@@ -119,7 +128,7 @@ end
         close();
     end
     clearvars -except data filepath
-    save_voronoi_data(filepath, data);
+    save_SNAP_nucleus_data(filepath, data);
 end
 
 % change structure of neighbors from cell array to matrix

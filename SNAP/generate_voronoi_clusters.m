@@ -4,18 +4,18 @@ arguments
     options.area_threshold_arr double;
     options.min_number_of_localizations_arr double;
 end
-    if ~has_variables(filepath,{'area_thresholds','min_number_of_localizations','clusters'})
+    if ~has_variables(filepath,{'area_thresholds','min_number_of_localizations','voronoi_clusters'})
         vars_to_load = {'voronoi_areas_all','voronoi_neighbors'};
         data = load_variables(filepath,vars_to_load);
         n_area_threshold = length(options.area_threshold_arr);
         n_min_number_of_localizations = length(options.min_number_of_localizations_arr);
         data.area_thresholds = options.area_threshold_arr;
         data.min_number_of_localizations = options.min_number_of_localizations_arr;
-        data.clusters = zeros(length(data.voronoi_areas_all),n_area_threshold*n_min_number_of_localizations);
+        data.voronoi_clusters = zeros(length(data.voronoi_areas_all),n_area_threshold*n_min_number_of_localizations);
         threshold_idx = 1;
         for k=1:n_area_threshold
             for j=1:n_min_number_of_localizations
-                %% calculate cluster for given threshold
+                %% calculate voronoi cluster for given area threshold
                 keep_points = data.voronoi_areas_all <= options.area_threshold_arr(k);
                 used_points = zeros(1,numel(keep_points));
                 idx = find(keep_points);
@@ -49,7 +49,7 @@ end
                 % Constructing the segmented clusters
                 idx_clustered = idx_clustered(~cellfun('isempty',idx_clustered));
                 for i=1:numel(idx_clustered)
-                    data.clusters(idx_clustered{i},threshold_idx) = i;
+                    data.voronoi_clusters(idx_clustered{i},threshold_idx) = i;
                 end
                 %%
                 clearvars keep_points used_points idx_clustered idx
@@ -58,7 +58,7 @@ end
         end
         clearvars -except filepath data vars_to_load
         data = rmfield(data,vars_to_load);
-        save_voronoi_data(filepath, data);
+        save_SNAP_nucleus(filepath, data);
     end
 end
 

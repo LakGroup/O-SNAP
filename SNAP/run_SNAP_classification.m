@@ -1,10 +1,10 @@
-function trained_classifier = run_SNAP_classification(T,options)
+function trained_classifier = run_SNAP_classification(response,pca_result,vars_selected,options)
 arguments
-    T table
-    options.method_feature_selection string = 'fscmrmr'
-    options.num_features_selected double = 10;
+    response string
+    pca_result struct
+    vars_selected cell
     options.model_type string = 'tree_fine'
-    options.num_components_explained double = 0.95
+    options.num_components double = 0.95
     options.compute_validation_accuracy logical = true;
     options.k_folds double = 5;
     options.verbose logical = true;
@@ -26,93 +26,76 @@ if ~ismember(options.model_type,valid_model_types)
     throw(ME)
 end
 
-% Extract predictors and response
-% This code processes the data into the right shape for training the
-% model.
-% Assumption is that all predictors are numerical
-[T_norm,response] = prepare_voronoi_table_data(T,'numeric_only',1);
+%% Get class names (groups) and predictors (preprocessed feature data)
+predictors = array2table(pca_result.pca_scores(:,1:pca_result.num_components_to_keep));
 class_names = unique(response);
-
-% Perform variable selection
-[var_ranked, ~] = select_features(T,"method",options.method_feature_selection);
-var_selected = var_ranked(1:options.num_features_selected);
-T_norm = T_norm(:,var_selected);
-
-% Apply a PCA to the predictor matrix.
-% Run PCA on numeric predictors only. Categorical predictors are passed through PCA untouched.
-[pca_coefficients, pca_scores, ~, ~, explained, pca_centers] = pca(...
-    table2array(T_norm));
-% Keep enough components to explain the desired amount of variance.
-if options.num_components_explained < 1
-    explained_variance_to_keep_as_fraction = 95/100;
-    num_components_to_keep = find(cumsum(explained)/sum(explained) >= explained_variance_to_keep_as_fraction, 1);
-else
-    num_components_to_keep = options.num_components_explained;
-end
-pca_coefficients = pca_coefficients(:,1:num_components_to_keep);
-T_norm = array2table(pca_scores(:,1:num_components_to_keep));
 
 %% Train a classifier
 % This code specifies all the classifier options and trains the classifier.
-[classification_model, predict_fcn] = get_model(options.model_type,T_norm,response,class_names);
-
-% Create the result struct with predict function
-predictor_extraction_fcn = @(t) t(:, predictor_names);
-pca_transformation_fcn = @(x) array2table((table2array(varfun(@double, x)) - pca_centers) * pca_coefficients);
-trained_classifier.predictFcn = @(x) predict_fcn(pca_transformation_fcn(predictor_extraction_fcn(x)));
+[classification_model, predict_fcn] = get_model(options.model_type,predictors,response);
 
 % Add additional fields to the result struct
 trained_classifier.ModelType = options.model_type;
-trained_classifier.RequiredVariables = var_selected;
-trained_classifier.PCACenters = pca_centers;
-trained_classifier.PCACoefficients = pca_coefficients;
-trained_classifier.ClassificationTree = classification_model;
+trained_classifier.RequiredVariables = vars_selected;
+trained_classifier.PCACenters = pca_result.pca_centers;
+trained_classifier.PCACoefficients = pca_result.pca_coefficients;
+trained_classifier.ClassificationModel = classification_model;
 trained_classifier.About = 'This struct is a trained model exported from Classification Learner R2024b.';
 trained_classifier.HowToPredict = sprintf('To make predictions on a new table, T, use: \n  [yfit,scores] = c.predictFcn(T) \nreplace ''c'' with the name of the variable that is this struct, e.g. ''trainedModel''. \n \nThe table, T, must contain the variables returned by: \n  c.RequiredVariables \nVariable formats (e.g. matrix/vector, datatype) must match the original training data. \nAdditional variables are ignored. \n \nFor more information, see <a href="matlab:helpview(fullfile(docroot, ''stats'', ''stats.map''), ''appclassification_exportmodeltoworkspace'')">How to predict using an exported model</a>.');
+% Create the result struct with predict function
+predictor_extraction_fcn = @(t) t(:, trained_classifier.RequiredVariables);
+trained_classifier.predictFcn = @(x) predict_fcn(pca_result.pca_transformation_fcn(predictor_extraction_fcn(x)));
 
 %% Perform cross-validation
 if options.compute_validation_accuracy
-    cvp = cvpartition(response, 'KFold', options.k_folds);
     % Initialize the predictions to the proper sizes
     validation_predictions = response;
-    num_observations = size(T_norm, 1);
-    num_classes = length(class_names);
+    num_observations = size(predictors, 1);
+    num_classes = numel(class_names);
     validation_scores = NaN(num_observations, num_classes);
+    cvp = cvpartition(num_observations, 'KFold', options.k_folds);
     for fold = 1:options.k_folds
-        training_predictors = T_norm(cvp.training(fold), :);
+        training_predictors = predictors(cvp.training(fold), :);
         training_response = response(cvp.training(fold), :);
         % Apply a PCA to the predictor matrix.
         % Run PCA on numeric predictors only. Categorical predictors are passed through PCA untouched.
         [pca_coefficients, pca_scores, ~, ~, explained, pca_centers] = pca(...
             table2array(training_predictors));
         % Keep enough components to explain the desired amount of variance.
-        if options.num_components_explained
+        if options.num_components
             explained_variance_to_keep_as_fraction = 95/100;
             num_components_to_keep = find(cumsum(explained)/sum(explained) >= explained_variance_to_keep_as_fraction, 1);
         else
-            num_components_to_keep = options.num_components_explained;
+            if options.num_components <= pca_result.num_components_to_keep
+                num_components_to_keep = options.num_components;
+            else
+                num_components_to_keep = pca_result.num_components_to_keep;
+            end
         end
         pca_coefficients = pca_coefficients(:,1:num_components_to_keep);
         training_predictors = array2table(pca_scores(:,1:num_components_to_keep));
         % Train a classifier
         % This code specifies all the classifier options and trains the classifier.
-        [~, predict_fcn] = get_model(options.model_type,training_predictors,training_response,class_names);
+        [~, predict_fcn] = get_model(options.model_type,training_predictors,training_response);
         % Create the result struct with predict function
         pca_transformation_fcn = @(x) array2table((table2array(varfun(@double, x)) - pca_centers) * pca_coefficients);
         validation_predict_fcn = @(x) predict_fcn(pca_transformation_fcn(x));
         % Compute validation predictions
-        validationPredictors = T_norm(cvp.test(fold), :);
+        validationPredictors = predictors(cvp.test(fold), :);
         [foldPredictions, foldScores] = validation_predict_fcn(validationPredictors);
         % Store predictions in the original order
         validation_predictions(cvp.test(fold), :) = foldPredictions;
         validation_scores(cvp.test(fold), :) = foldScores;
     end
     % Compute validation accuracy
-    correct_predictions = strcmp(strtrim(validation_predictions), strtrim(response));
-    is_missing = cellfun(@(x) all(isspace(x)), response, 'UniformOutput', true);
+    trained_classifier.ValidationResults.Predictions = strtrim(validation_predictions);
+    trained_classifier.ValidationResults.Response = strtrim(response);
+    correct_predictions = strcmp(trained_classifier.ValidationResults.Predictions,...
+        trained_classifier.ValidationResults.Response);
+    is_missing = cellfun(@(x) all(isspace(x)), response, 'uni', 1);
     correct_predictions = correct_predictions(~is_missing);
-    validation_accuracy = sum(correct_predictions)/length(correct_predictions);
-    trained_classifier.ValidationAccuracy = validation_accuracy;
+    validation_accuracy = sum(correct_predictions)/numel(correct_predictions);
+    trained_classifier.ValidationResults.ValidationAccuracy = validation_accuracy;
     % Show results
     if options.verbose
         % fprintf([trained_classifier.HowToPredict '\n'])
@@ -122,7 +105,8 @@ end
 
 end
 
-function [classification_model, predict_fcn] = get_model(model_type,predictors,response,class_names)
+function [classification_model, predict_fcn] = get_model(model_type,predictors,response)
+class_names = unique(response);
 switch model_type
     case 'tree_fine'
         classification_model = fitctree(...
@@ -171,7 +155,7 @@ switch model_type
     case 'logistic_regression_binary_glm'
         if length(class_names) > 2
             ME = MException('SNAP:too_many_classes_binary_glm', ...
-                sprintf('Too many classes (%d); incompatible with binary glm',length(class_names)));
+                sprintf('Too many classes (%d); incompatible with binary glm',numel(class_names)));
             throw(ME)
         else
             % For logistic regression, the response values must be converted to zeros
@@ -222,7 +206,7 @@ switch model_type
             'ClassNames', class_names);
         predict_fcn = @(x) predict(classification_model, x);
     case 'svm_efficient_linear'
-        if length(class_names)>2
+        if numel(class_names)>2
             template = templateLinear(...
                 'Learner', 'SVM', ...
                 'Lambda', 'auto', ...
@@ -435,7 +419,7 @@ switch model_type
             'ClassNames', class_names);
         predict_fcn = @(x) predict(classification_model, x);
     case 'ensemble_boosted_trees'
-        if length(class_names) == 2
+        if numel(class_names) == 2
             method_boost = 'AdaBoostM1';
         else
             method_boost = 'AdaBoostM2';

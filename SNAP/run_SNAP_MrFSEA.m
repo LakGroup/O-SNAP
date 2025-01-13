@@ -1,8 +1,7 @@
 % setup for MrFSEA analysis
-function run_SNAP_MrFSEA(root_dir, analysis_name, T, feature_universe_names, options)
+function run_SNAP_MrFSEA(work_dir, T, feature_universe_names, options)
 arguments
-    root_dir string
-    analysis_name string
+    work_dir string
     T table
     feature_universe_names string = ["feature_universe_1","feature_universe_2","feature_universe_3"];
     options.alpha double = 0.05;
@@ -14,7 +13,6 @@ for g=1:size(group_pairs,1)
     group_ctrl = group_pairs(g,1);
     group_case = group_pairs(g,2);
     %% directory management
-    work_dir = fullfile(root_dir,analysis_name);
     for i=1:length(feature_universe_names)
         current_dir = cd(work_dir);
         %% file management
@@ -39,10 +37,10 @@ for g=1:size(group_pairs,1)
         X = table2array(T_norm(:,4:end))';
         % get gene set data collection for appropriate feature universes and feature IDs (FS)
         feature_universe = get_feature_universes(feature_universe_names{i});
-        FS_name = ['SNAP_' char(feature_universe_name) '_FS'];
-        file_path_FS = [FS_name '.xlsx'];
-        if ~exist(file_path_FS,"file")
-            generate_SNAP_FS(feature_IDs',feature_universe{1},"filepath",file_path_FS)
+        feature_set_name = ['SNAP_' char(feature_universe_name) '_feature_set'];
+        file_path_feature_set = [feature_set_name '.xlsx'];
+        if ~exist(file_path_feature_set,"file")
+            generate_SNAP_feature_set(feature_IDs',feature_universe{1},"filepath",file_path_feature_set)
         end
         %% set options
         opts = default_FSEA_opts();
@@ -50,7 +48,7 @@ for g=1:size(group_pairs,1)
         opts.save =  false;      %if save results
         opts.perm_nb = 1000;    %number of permutations
         % Default parameters for FSEA method.
-        opts.FS_name = FS_name; %FeatureSet database name
+        opts.FS_name = feature_set_name; %FeatureSet database name
         opts.FS_filt = [1,500]; %minimum and maximum number of genes in FS
         opts.sort_type = 'descend'; %type of ranks sorting
         opts.p = 1; %0 - Kolmogorov-Smirnov statistic, 1-weighting genes by ranking metric

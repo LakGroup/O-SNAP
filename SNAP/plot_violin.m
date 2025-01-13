@@ -1,7 +1,7 @@
-function plot_violin(work_dir,T,options)
+function plot_violin(T,work_dir,options)
 arguments
-    work_dir string
     T table
+    work_dir string
     options.n_processes double = 12
 end
 
@@ -12,9 +12,9 @@ if ~exist(save_dir,"dir")
 end
 
 % get info on groups
-n_groups = length(unique(T.group));
-group_cat_split = repelem({categorical(T.group)},options.n_processes);
+group_cat_split = repelem({categorical(replace(T.group,"_"," "))},options.n_processes);
 [groups,~,group_idx] = unique(T.group);
+n_groups = length(groups);
 
 % split for parallel
 feature_idx = split_data_for_parallel(num2cell(4:(size(T,2)),1));
@@ -48,9 +48,8 @@ parfor p=1:options.n_processes
             median_val = median(feature_data_g,"omitmissing");
             plot([g-0.4 g+0.4], [median_val median_val],"-k","LineWidth",2);
             hold on
-            % mean - NOTE: OUTLIERS ARE REMOVED WHEN CALCULATING MEAN, BUT
-            % NOT MEDIAN
-            scatter(g,mean(feature_data_g_no_outliers,"omitmissing"),50,'pentagramk','filled')
+            % mean - NOTE: OUTLIERS ARE NOT REMOVED WHEN CALCULATING MEAN
+            scatter(g,mean(feature_data_g,"omitmissing"),50,'pentagramk','filled')
             hold on
             l = [l, string(groups(g)), "", "", ""];
             % outliers
