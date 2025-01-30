@@ -12,7 +12,7 @@ arguments
     options.ellipse_inc double = 0.1;
     options.periphery_thresh double = 0.15;
     options.area_threshold_arr double = 10.^(1:0.25:2);
-    options.min_number_of_localizations_arr double = [5];
+    options.min_number_of_localizations double = 5;
     options.plot logical = true;
     options.logID = [];
 end
@@ -23,39 +23,31 @@ warning('off','all')
 SNAP_nucleus_file_list = get_valid_SNAP_nucleus_files(work_dir,groups,reps,{'x','y'});
 
 %% split full data for parallel processing
-[split_data, options.n_workers] = split_files_for_parallel(SNAP_nucleus_file_list, options.n_workers, true);
+[split_file_list, options.n_workers] = split_data_to_n(SNAP_nucleus_file_list,options.n_workers);
 
 %% calculate voronoi density
-if plot_flag
-    vor_data_vars = {'voronoi_areas_all','voronoi_neighbors','voronoi_areas','reduced_log_voronoi_density','faces','vertices'};
-else
-    vor_data_vars = {'voronoi_areas_all','voronoi_neighbors','voronoi_areas','reduced_log_voronoi_density'};
-end
 min_log_vor_density = options.min_log_vor_density;
 max_log_vor_density = options.max_log_vor_density;
-disp("      Calculating Voronoi densities...");
-tic
+fprintf("      Calculating Voronoi densities...\n");
+starttime_step = tic;
 parfor p=1:options.n_workers
-    data_info_table_p = split_data{p};
+    data_info_table_p = split_file_list{p};
     filepaths = data_info_table_p{:,'filepath'};
     for s=1:length(filepaths)
         filepath = filepaths(s);
-        if exist(filepath,'file') && ~has_variables(filepath,vor_data_vars,"verbose",0)
+        if exist(filepath,'file')
             try
                 generate_voronoi_data(filepath, ...
                     "min_log_vor_density", min_log_vor_density, ...
                     "max_log_vor_density", max_log_vor_density,...
                     "plot", plot_flag);
             catch ME
-                disp(getReport(ME));
-                disp("        Removing from analysis: " + filepath)
-                split_data{p}(s,:) = [];
+                split_file_list{p} = remove_sample(ME,split_file_list{p},s)
             end
         end
     end
 end
-toc
-disp(['      Completed: ' char(datetime)])
+fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 %% perform morphometric, dbscan clustering, and radial analysis
 data_vars = {'nucleus_radius',...
             'locs_number',...
@@ -69,6 +61,7 @@ data_vars = {'nucleus_radius',...
             'interior_dbscan_cluster_radius',...
             'interior_dbscan_cluster_n_locs',...
             'interior_dbscan_cluster_density',...
+            'periphery_dbscan_cluster_center',...
             'periphery_dbscan_cluster_radius',...
             'periphery_dbscan_cluster_n_locs',...
             'periphery_dbscan_cluster_density',...
@@ -84,7 +77,7 @@ data_vars = {'nucleus_radius',...
             'x_length',...
             'y_length',...
             'polygon',...
-            'elastic_energy',...
+            'elasstarttime_step = tic;_energy',...
             'bending_energy',...
             'border_curvature',...
             'radial_loc_density',...
@@ -100,10 +93,10 @@ if ~all(arrayfun(@(x) has_variables(x,data_vars,"verbose",0),SNAP_nucleus_file_l
     ellipse_inc = options.ellipse_inc;
     periphery_thresh = options.periphery_thresh;
     density_data=cell(1,options.n_workers);
-    disp("      Calculating density threshold...");
-    tic
+    fprintf("      Calculating density threshold...\n");
+    starttime_step = tic;
     parfor p=1:options.n_workers
-        data_info_table_p = split_data{p};
+        data_info_table_p = split_file_list{p};
         filepaths = data_info_table_p{:,'filepath'};
         density_data{p} = cell(1,length(filepaths));
         for s=1:length(filepaths)
@@ -111,18 +104,16 @@ if ~all(arrayfun(@(x) has_variables(x,data_vars,"verbose",0),SNAP_nucleus_file_l
                 sample = load(filepaths(s),'voronoi_areas');
                 density_data{p}{s} = 1./sample.voronoi_areas;
             catch ME
-                disp(getReport(ME));
-                disp("        Removing from analysis: " + filepaths(s))
-                split_data{p}(s,:) = [];
+                split_file_list{p} = remove_sample(ME,split_file_list{p},s)
             end
         end
         density_data{p} = vertcat(density_data{p}{:});
     end
     density_threshold = prctile(vertcat(density_data{:}),options.dbscan_thresh);
     clearvars density_data
-    disp("      Calculating morphometric, dbscan clustering, and radial features...")
+    fprintf("      Calculating morphometric, dbscan clustering, and radial features...\n")
     parfor p=1:options.n_workers
-        data_info_table_p = split_data{p};
+        data_info_table_p = split_file_list{p};
         filepaths = data_info_table_p{:,'filepath'};
         for s=1:length(filepaths)
             filepath = filepaths(s);
@@ -134,58 +125,47 @@ if ~all(arrayfun(@(x) has_variables(x,data_vars,"verbose",0),SNAP_nucleus_file_l
                         "ellipse_inc",ellipse_inc,...
                         "periphery_thresh",periphery_thresh);
                 catch ME
-                    disp(getReport(ME));
-                    disp("        Removing from analysis: " + filepath)
-                    split_data{p}(s,:) = [];
+                    split_file_list{p} = remove_sample(ME,split_file_list{p},s)
                 end
             end
         end
     end
-    toc
-    disp(['      Completed: ' char(datetime)])
+    fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 end
 %% perform voronoi clustering analysis
-voronoi_cluster_data_vars1 = {'area_thresholds','min_number_of_localizations','voronoi_clusters'};
-voronoi_cluster_data_vars2 = {'voronoi_cluster_n_locs','voronoi_cluster_radius','voronoi_cluster_density','voronoi_cluster_gyration_radius'};
-if ~all(arrayfun(@(x) has_variables(x,[voronoi_cluster_data_vars1 voronoi_cluster_data_vars2],"verbose",0),SNAP_nucleus_file_list{:,'filepath'},'uni',1))
-    disp("      Performing Voronoi Clustering Analysis...")
-    area_threshold_arr = options.area_threshold_arr;
-    min_number_of_localizations_arr = options.min_number_of_localizations_arr;
-    tic
-    parfor p=1:options.n_workers
-        data_info_table_p = split_data{p};
-        filepaths = data_info_table_p{:,'filepath'};
-        for s=1:length(filepaths)
-            filepath = filepaths(s);
-            if exist(filepath,'file')
-                if ~has_variables(filepath,voronoi_cluster_data_vars1,"verbose",0)
-                    try
-                        generate_voronoi_clusters(filepath, ...
-                            "area_threshold_arr",area_threshold_arr,...
-                            "min_number_of_localizations_arr",min_number_of_localizations_arr);
-                    catch ME
-                        disp(getReport(ME));
-                        disp("        Removing from analysis: " + filepath)
-                        split_data{p}(s,:) = [];
-                    end
-                end
-                if ~has_variables(filepath,voronoi_cluster_data_vars2,"verbose",0) && has_variables(filepath,voronoi_cluster_data_vars1,"verbose",0)
-                    try
-                        extract_cluster_features(filepath);
-                    catch ME
-                        disp(getReport(ME));
-                        disp("        Removing from analysis: " + filepath)
-                        split_data{p}(s,:) = [];
-                    end
-                end
-            end 
-        end
+fprintf("      Performing Voronoi Clustering Analysis...\n")
+area_threshold_arr = options.area_threshold_arr;
+min_number_of_localizations_arr = options.min_number_of_localizations;
+starttime_step = tic;
+parfor p=1:options.n_workers
+    data_info_table_p = split_file_list{p};
+    filepaths = data_info_table_p{:,'filepath'};
+    for s=1:length(filepaths)
+        filepath = filepaths(s);
+        if exist(filepath,'file')
+            try
+                generate_voronoi_clusters(filepath,area_threshold_arr,min_number_of_localizations_arr);
+            catch ME
+                split_file_list{p} = remove_sample(ME,split_file_list{p},s)
+            end
+        end 
     end
-    toc
 end
+fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 %%
-disp(['  RUN END: ' char(datetime)])
-disp("- - - - - - - - - - - - - - - - - - - - - - - - - - - - ")
+fprintf("  RUN END: %s\n",datetime);
+fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
 warning('on','all')
 end
 
+function split_file_list = remove_sample(ME,split_file_list,s)
+arguments
+    ME
+    split_file_list table
+    s double
+end
+    fprintf("- - Removing: %s - -\n",filepath)
+    fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
+    fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
+    split_file_list(s,:) = [];
+end

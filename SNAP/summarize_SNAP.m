@@ -3,50 +3,47 @@ rng("default") % reproducibility
 
 % 
 root_dir = "F:\";
-analysis_name = "ANALYSIS_HK_BJ_TSA_H2B";
-% analysis_name = "ANALYSIS_AM_Heterokaryon_H2B";
+analysis_name = "ANALYSIS_KS_CM_H3K9me2";
+% analysis_name = "ANALYSIS_AM_Heterokaryon_H3K27me3_CtrlhFb_HK48h";
+% analysis_name = "ANALYSIS_1";
 work_dir = fullfile(root_dir,analysis_name);
-image_dir = fullfile(root_dir,"ANALYSIS_HK_BJ_TSA_H2B");
-% image_dir = fullfile(root_dir,"ANALYSIS_AM_Heterokaryon_H2B");
-save_analysis_path = fullfile(work_dir,analysis_name+".mat");
-save_classification_path = fullfile(work_dir,analysis_name+"_classifiers.mat");
+image_dir = fullfile(root_dir,"ANALYSIS_KS_CM_H3K9me2");
+% image_dir = fullfile(root_dir,"ANALYSIS_AM_Heterokaryon_H3K27me3");
+analysis_path = fullfile(work_dir,"ANALYSIS_KS_CM_H3K9me2.mat");
 
 %% load data
-loaded_data = load_variables(save_analysis_path,{...
-    'groups',...
-    'replicates',...
-    'feature_comparisons'...
-    'feature_data',...
-    'var_select_result',...
-    'vars_selected',...
-    'pca_result'});
-groups = loaded_data.groups;
-replicates = loaded_data.replicates;
-feature_comparisons = loaded_data.feature_comparisons;
-feature_data = loaded_data.feature_data;
-var_select_result = loaded_data.var_select_result;
-vars_selected = loaded_data.vars_selected;
-pca_result = loaded_data.pca_result;
-classifier_data = load_variables(save_classification_path,{...
-    'classifiers',...
-    'classification_summary'});
-classifiers = classifier_data.classifiers;
-classification_summary = classifier_data.classification_summary;
-% clearvars loaded_data classifier_data
-n_groups = numel(groups);
-n_compare = numel(feature_comparisons);
-n_each_group = groupcounts(feature_data.group);
-SNAP_nucleus_file_list = get_valid_SNAP_nucleus_files(image_dir,groups,replicates,{'voronoi_areas'});
-%% generate feature selection table
-vars_selected_methods = cellfun(@(x) x.Method,var_select_result,'uni',0);
-n_vars_selected_methods = numel(vars_selected_methods);
-n_vars_selected = numel(vars_selected);
-vars_all_table = array2table(reshape(cell2mat(cellfun(@(x) x.VarSel,var_select_result,'uni',0)),[],n_vars_selected_methods),...
-    'VariableNames',vars_selected_methods,...
-    'RowNames',feature_data.Properties.VariableNames(4:end));
-vars_all_table.Properties.VariableTypes=repmat({'logical'},1,n_vars_selected_methods);
-vars_all_table.Ratio = table2array(sum(vars_all_table,2))/n_vars_selected_methods;
-vars_all_table = vars_all_table(:,[end end-1 1:end-2]);
+% loaded_data = load_variables(analysis_path,{...
+%     'groups',...
+%     'replicates',...
+%     'train_idxs',...
+%     'test_idxs',...
+%     'feature_comparisons'...
+%     'feature_data',...
+%     'var_select_result',...
+%     'vars_selected',...
+%     'vars_selected_summary',...
+%     'pca_result',...
+%     'classifiers',...
+%     'classification_summary'});
+% groups = loaded_data.groups;
+% replicates = loaded_data.replicates;
+% train_idxs = loaded_data.train_idxs;
+% test_idxs = loaded_data.test_idxs;
+% feature_comparisons = loaded_data.feature_comparisons;
+% feature_data = loaded_data.feature_data;
+% var_select_result = loaded_data.var_select_result;
+% vars_selected = loaded_data.vars_selected;
+% vars_selected_summary = loaded_data.vars_selected_summary;
+% pca_result = loaded_data.pca_result;
+% classifiers = loaded_data.classifiers;
+% classification_summary = loaded_data.classification_summary;
+% clearvars loaded_data
+% n_groups = numel(groups);
+% n_compare = numel(feature_comparisons);
+% n_each_group = groupcounts(feature_data.group);
+% n_batch = numel(pca_result);
+% SNAP_nucleus_file_list = get_valid_SNAP_nucleus_files(image_dir,groups,replicates,{'voronoi_areas'});
+
 %% SET UP FIGURE
 fig_width = 1920;
 fig_height = 920;
@@ -104,20 +101,20 @@ feature_comparisons_list = cellfun(@(x) join(x.groups," vs "),feature_comparison
 feature_comparisons_list = [feature_comparisons_list{:}];
 gt_volcano = uigridlayout(g_volcano,[1,2]);
 gt_volcano.Layout.Row = 3;
-dd_volcano = uidropdown(g_volcano,"Items",feature_comparisons_list,...
+dd_volcano = uidropdown(g_volcano,...
+    "Items",feature_comparisons_list,...
     "ValueChangedFcn",@(src,event) plot_volcano_table(src,fig,gt_volcano,feature_comparisons),...
     "FontWeight","bold",...
     "FontSize",14);
 dd_volcano.Layout.Row = 2;
 gt_volcano.ColumnWidth = {'2x','3x'};
-plot_volcano_table(dd_volcano,fig,gt_volcano,feature_comparisons,vars_all_table);
+plot_volcano_table(dd_volcano,fig,gt_volcano,feature_comparisons,vars_selected_summary);
 %% FEATURE SELECTION
-vars_selected_table = vars_all_table(ismember(vars_all_table.Properties.RowNames,vars_selected),:);
-vars_selected_table = sortrows(vars_selected_table,"Ratio","descend");
+vars_selected_table = vars_selected_summary(~isnan(vars_selected_summary{:,1}),:);
 p_feature_select = uipanel(g);
 g_feature_select = uigridlayout(p_feature_select,[1 2]);
 g_feature_select.RowHeight = {30,'1x'};
-g_feature_select.ColumnWidth =  {'1x','1.5x'};
+g_feature_select.ColumnWidth =  {'1x','1.2x'};
 title = uilabel(g_feature_select,'Text','FEATURE SELECTION');
 title.HorizontalAlignment = 'center';
 title.FontSize = 24;
@@ -137,8 +134,16 @@ vars_selected_uitable.Selection = 1:4;
 [ratio,~,ratio_idx] = unique(vars_selected_table{:,1});
 for i=1:numel(ratio)
     idx = ratio_idx==i;
-    cell_color = [0 1 0]+([1 0 1]*(1-ratio(i))*2);
+    cell_color = [0 1 0]+([1 0 1]*(1-ratio(i)));
     addStyle(vars_selected_uitable,uistyle("BackgroundColor",cell_color),"cell",[find(idx),ones(sum(idx),1)]);
+end
+for c=2:size(vars_selected_table,2)
+    [ratio,~,ratio_idx] = unique(vars_selected_table{:,c});
+    for i=1:numel(ratio)
+        idx = ratio_idx==i;
+        cell_color = [1 1 0]+([0 0 1]*(1-ratio(i)));
+        addStyle(vars_selected_uitable,uistyle("BackgroundColor",cell_color),"cell",[find(idx),c*ones(sum(idx),1)]);
+    end
 end
 % adjust first column
 vars_selected_uitable.Data{:,1}=vars_selected_uitable.Data{:,1}*100;
@@ -148,14 +153,34 @@ g_PCA_classification = uigridlayout(g,[1,2]);
 g_PCA_classification.ColumnWidth = {'1x','1x'};
 %% PCA
 p_PCA = uipanel(g_PCA_classification);
-g_PCA = uigridlayout(p_PCA,[2,1]);
-g_PCA.RowHeight = {30,'1x'};
+g_PCA = uigridlayout(p_PCA,[3,1]);
+g_PCA.RowHeight = {30,40,'1x'};
 title = uilabel(g_PCA,'Text','PRINCIPAL COMPONENT ANALYSIS');
 title.HorizontalAlignment = 'center';
 title.FontSize = 24;
 title.FontWeight = 'bold';
 g_PCA_ax = axes(g_PCA);
-plot_PCA(g_PCA_ax,pca_result.pca_coefficients,pca_result.pca_scores,pca_result.explained,"groups_info",feature_data.group,"bio_reps_info",feature_data.biological_replicate);
+g_PCA_ax.Layout.Row = 3;
+g_PCA_ui_comps = uigridlayout(g_PCA,[1,2]);
+g_PCA_ui_comps.ColumnWidth = {'1.6x','1x'};
+g_PCA_ui_comps.Layout.Row = 2;
+batch_idx = 1;
+dd_PCA = uidropdown(g_PCA_ui_comps,...
+    "Items","BATCH "+(1:n_batch),...
+    "FontWeight","bold",...
+    "FontSize",14);
+sb_PCA = uibutton(g_PCA_ui_comps,"state",...
+    "Text","Show Test Data",...
+    "VerticalAlignment","Center",...
+    "FontSize",14);
+dd_PCA.ValueChangedFcn = @(src,event) update_PCA_dd(src,g_PCA_ax,feature_data,train_idxs,test_idxs,pca_result,vars_selected,sb_PCA);
+sb_PCA.ValueChangedFcn = @(src,event) update_PCA_sb(src,g_PCA_ax,feature_data,train_idxs,test_idxs,pca_result,vars_selected,dd_PCA);
+% plot_PCA(g_PCA_ax,...
+%     pca_result{batch_idx}.pca_coefficients,...
+%     pca_result{batch_idx}.pca_scores,...
+%     pca_result{batch_idx}.explained,...
+%     "groups_info",feature_data_i{:,"group"},...
+%     "bio_reps_info",feature_data_i{:,"biological_replicate"});
 %% CLASSIFICATION
 p_classification = uipanel(g_PCA_classification);
 g_classification = uigridlayout(p_classification,[4, 1]);
@@ -164,22 +189,22 @@ title = uilabel(g_classification,'Text','CLASSIFICATION');
 title.HorizontalAlignment = 'center';
 title.FontSize = 24;
 title.FontWeight = 'bold';
-title = uilabel(g_classification,'Text',sprintf('Validation accuracies (N=%.0f models)',size(classifiers,2)));
+title = uilabel(g_classification,'Text',sprintf('Validation accuracies (N=%.0f batches)',size(classifiers,2)));
 title.HorizontalAlignment = 'center';
 title.FontSize = 12;
 g_classification_table = uitable(g_classification,...
-    'Data',classification_summary{:,2:end},...
+    'Data',classification_summary{:,[3:end 2]},...
     'RowName',classification_summary{:,1},...
-    'ColumnName',{'Mean','Std'},...
+    'ColumnName',{'Mean','Std','Count'},...
     'SelectionType','row');
 ax_confusion = axes(g_classification);
-plot_confusion(ax_confusion,classifiers(1,1:end)) % only top classifiers
-g_classification_table.SelectionChangedFcn = @(~,event) update_classification_selections(event,ax_confusion,classifiers);
+plot_confusion(ax_confusion,classification_summary.model_type(1),classifiers) % only top classifiers
+g_classification_table.SelectionChangedFcn = @(src,event) update_classification_selections(src,event,ax_confusion,classifiers);
 %% SAVE
 % exportgraphics(fig,fullfile(work_dir,analysis_name+"_summary.pdf"));
 % disp("Results saved to: "+analysis_name+"_summary.pdf")
 %% Previous image in file list
-function rep_image_prev_callback(fig, button_prev,button_next,ax_image,ax_label,filepaths,current_path)
+function rep_image_prev_callback(fig,button_prev,button_next,ax_image,ax_label,filepaths,current_path)
     current_idx = find(strcmp(filepaths,current_path));
     if current_idx > 1
         try
@@ -197,7 +222,7 @@ function rep_image_prev_callback(fig, button_prev,button_next,ax_image,ax_label,
         button_prev.Enable = 'off';
     end
 end
-function rep_image_next_callback(fig, button_prev,button_next,ax_image,ax_label,filepaths,current_path)
+function rep_image_next_callback(fig,button_prev,button_next,ax_image,ax_label,filepaths,current_path)
     current_idx = find(strcmp(filepaths,current_path));
     if current_idx < numel(filepaths)
         try
@@ -218,12 +243,12 @@ function rep_image_next_callback(fig, button_prev,button_next,ax_image,ax_label,
 end
 function plot_volcano_table(src,fig,gridlayout,feature_comparisons,vars_selection_table)
     idx = src.ValueIndex;
-    comparison_table = feature_comparisons{idx}.feature_table;
-    comparison_table.("Selected Freq.") = vars_selection_table{:,1};
-    feature_comparisons{idx}.feature_table;
+    comparison_table = feature_comparisons{idx}.feature_table(:,2:end);
+    comparison_table.Properties.RowNames = feature_comparisons{idx}.feature_table{:,1};
+    comparison_table = innerjoin(vars_selection_table(:,1),comparison_table,"Key","Row");
     comparison_table = sortrows(comparison_table,"log2_fold_change","descend");
     comparison_table = comparison_table(:,...
-        ["feature","Selected Freq.","log2_fold_change","adj_p_value",comparison_table.Properties.VariableNames(2:end-4),"fold_change","p_value"]);
+        ["freq_per_batch","log2_fold_change","adj_p_value",comparison_table.Properties.VariableNames(2:end-4),"fold_change","p_value"]);
     if numel(gridlayout.Children) < 2
         g_volcano_axes = axes(gridlayout);
         g_volcano_table = uitable(gridlayout);
@@ -232,9 +257,9 @@ function plot_volcano_table(src,fig,gridlayout,feature_comparisons,vars_selectio
         g_volcano_table = gridlayout.Children(2);
     end
     plot_volcano(fig,g_volcano_axes,feature_comparisons{idx});
-    g_volcano_table.Data=comparison_table{:,2:end};
-    g_volcano_table.ColumnName=comparison_table.Properties.VariableNames(2:end);
-    g_volcano_table.RowName=comparison_table.feature;
+    g_volcano_table.Data=comparison_table{:,:};
+    g_volcano_table.ColumnName=comparison_table.Properties.VariableNames;
+    g_volcano_table.RowName=comparison_table.Properties.RowNames;
     g_volcano_table.ColumnSortable = true;
     % highlight red
     highlight_idx = all([(g_volcano_table.Data(:,2)>1 ) (g_volcano_table.Data(:,3) < 0.05)],2);
@@ -474,17 +499,18 @@ plot(ax,nan, nan,"-k","LineWidth",2);
 title(ax,replace(feature,"_"," "))
 end
 %% update confusion matrix
-function update_classification_selections(event,ax,classifiers)
-    idx_select = event.Selection;
-    plot_confusion(ax,classifiers(idx_select,:))
+function update_classification_selections(src,event,ax,classifiers)
+    model_type = src.RowName{event.Selection};
+    plot_confusion(ax,model_type,classifiers)
 end
 %% plot confusion matrix
-function plot_confusion(ax,classifiers)
-    confusion_data = cellfun(@(x) confusionmat(x.ValidationResults.Response,x.ValidationResults.Predictions), classifiers,'uni',0);
+function plot_confusion(ax,model_type,classifiers)
+    classifiers_same_model = get_classifers_by_model_type(model_type,classifiers);
+    confusion_data = cellfun(@(x) confusionmat(string(x.TestResponse),string(x.TestPredictions)),classifiers_same_model,'uni',0);
     confusion_data = reshape(cell2mat(confusion_data),2,2,[]);
     confusion_mean = mean(confusion_data,3);
     confusion_std = std(confusion_data,0,3);
-    groups = sort(unique(classifiers{1}.ValidationResults.Response));
+    groups = sort(unique(classifiers_same_model{1}.TestResponse));
     n_groups = numel(groups);
     set(ax,'ydir','reverse')
     xlim(ax,[0 n_groups])
@@ -501,15 +527,23 @@ function plot_confusion(ax,classifiers)
     ylabel(ax,'True Class','FontSize',14,'Rotation',90)
     color_diagonal = [0.00,0.45,0.74];
     color_offdiagonal = [0.85,0.33,0.10];
-    title(ax,replace(classifiers{1}.ModelType,"_"," "),'FontSize',12)
+    title(ax,replace(model_type,"_"," "),'FontSize',12)
     for i_true=1:n_groups
         confusion_rowsum = sum(confusion_data(i_true,:,1));
         for i_pred=1:n_groups
             confusion_ratio = confusion_mean(i_pred,i_true)/confusion_rowsum;
             if i_true == i_pred
-                c = color_diagonal+(1-color_diagonal)*(1-confusion_ratio);
+                if confusion_ratio > 1
+                    c = color_diagonal;
+                else
+                    c = color_diagonal+(1-color_diagonal)*(1-confusion_ratio);
+                end
             else
-                c = color_offdiagonal+(1-color_offdiagonal)*(1-confusion_ratio);
+                if confusion_ratio > 1
+                    c = color_offdiagonal;
+                else
+                    c = color_offdiagonal+(1-color_offdiagonal)*(1-confusion_ratio);
+                end
             end
             if confusion_ratio > 0.5
                 t = 'w';
@@ -538,96 +572,104 @@ function plot_confusion(ax,classifiers)
     end
     disableDefaultInteractivity(ax)
 end
+%% returns classifiers that match the model type
+function classifiers_same_model = get_classifers_by_model_type(model_type,classifiers)
+arguments
+    model_type string
+    classifiers cell
+end
+n_batch = numel(classifiers);
+classifiers_same_model = cell(1,n_batch);
+for i=1:n_batch
+    model_type_list = string(cellfun(@(x) x.ModelType, classifiers{i},'uni',0));
+    classifiers_same_model{i} = classifiers{i}{strcmp(model_type,model_type_list)};
+end
+end
+%% update PCA from state button
+function update_PCA_sb(src,ax,feature_data,train_idxs,test_idxs,pca_result,vars_selected,dd)
+    batch_idx = dd.ValueIndex;
+    col_selected = [{'group','biological_replicate'} vars_selected{batch_idx}];
+    if src.Value
+        src.Text = "Hide Test Data";
+        test_data = preprocess_SNAP_table(feature_data(test_idxs{batch_idx},col_selected),"remove_NaN",true,'keep_rep_sample_info',true);
+    else
+        src.Text = "Show Test Data";
+        test_data = [];
+    end
+    train_data = preprocess_SNAP_table(feature_data(train_idxs{batch_idx},col_selected),"remove_NaN",true,'keep_rep_sample_info',true);
+    plot_PCA(ax,...
+        pca_result{batch_idx},...
+        train_data,...
+        pca_result{batch_idx}.explained,...
+        "test_data",test_data);
+end
+%% update PCA from dropdown
+function update_PCA_dd(src,ax,feature_data,train_idxs,test_idxs,pca_result,vars_selected,sb)
+    batch_idx = src.ValueIndex;
+    col_selected = [{'group','biological_replicate'} vars_selected{batch_idx}];
+    if sb.Value
+        test_data = preprocess_SNAP_table(feature_data(test_idxs{batch_idx},col_selected),"remove_NaN",true,'keep_rep_sample_info',true);
+    else
+        test_data = [];
+    end
+    train_data = preprocess_SNAP_table(feature_data(train_idxs{batch_idx},col_selected),"remove_NaN",true,'keep_rep_sample_info',true);
+    plot_PCA(ax,...
+        pca_result{batch_idx},...
+        train_data,...
+        pca_result{batch_idx}.explained,...
+        "test_data",test_data);
+end
 %% Plot PCA
-function plot_PCA(ax,coeff,score,explained,options)
+function plot_PCA(ax,pca_result,train_data,explained,options)
 arguments
     ax
-    coeff double
-    score double
+    pca_result struct
+    train_data table
     explained double
-    options.bio_reps_info string = []
-    options.groups_info string = []
-    options.color_by_group logical = true
-    options.show_bio_reps logical = true
-    options.marker_size = 20
+    options.test_data table = []
 end
-    if size(score,2)<3
-        return
-    end
-    coeff = coeff(:,1:3);
-    score = score(:,1:3);
-    %% plot
     marker_list = {'o','^','square','v','diamond','pentagram','hexagram'};
-    if ~isempty(options.groups_info)
-        [groups,~,groups_idx] = unique(options.groups_info);
-    end
-    if options.show_bio_reps && ~isempty(options.bio_reps_info)
-        [bio_reps,~,bio_reps_idx] = unique(options.bio_reps_info);
-    end
-    if ~options.color_by_group && exist(bio_reps,"var")
-        s_face_colors = lines(length(bio_reps));
-    elseif ~isempty(groups)
-        s_face_colors = lines(length(groups));
-    else
-        s_face_colors = [0 0 0];
-    end
-    % Force each column of the coefficients to have a positive largest element.
-    % This tends to put the large var vectors in the top and right halves of
-    % the plot.
-    [p,d] = size(coeff);
-    [~,maxind] = max(abs(coeff),[],1);
-    colsign = sign(coeff(maxind + (0:p:(d-1)*p)));
-    coeff = coeff .* colsign;
-    % Scale the scores so they fit on the plot, and change the sign of
-    % their coordinates according to the sign convention for the coefs.
-    max_coef_len = sqrt(max(sum(coeff.^2,2)));
-    score = (max_coef_len.*(score ./ max(abs(score(:))))).*colsign;
-    % only group information is availble
-    if ~exist("bio_reps","var") && ~isempty(groups)
+    marker_size = 20;
+    train_PCA = table2array(pca_result.pca_transformation_fcn(train_data(:,vartype('numeric'))));
+    %% plot
+    [groups,~,groups_idx] = unique(train_data.group);
+    [bio_reps,~,bio_reps_idx] = unique(train_data.biological_replicate);
+    s_face_colors = lines(length(groups));
+    for b=1:length(bio_reps)
         for g=1:length(groups)
-            idx = groups_idx == g;
-            s = scatter3(ax,score(idx,1),score(idx,2),score(idx,3),options.marker_size,'filled');
-            s.MarkerFaceColor = s_face_colors(g,:);
+            idx = all([(groups_idx == g) (bio_reps_idx == b)],2);
+            s = scatter3(ax,train_PCA(idx,1),train_PCA(idx,2),train_PCA(idx,3),'filled',...
+                "MarkerFaceColor",s_face_colors(g,:),...
+                "Marker",marker_list(b));
+            if b == 1
+                s.SizeData = marker_size;
+            else
+                s.SizeData = 2*marker_size;
+            end
             hold(ax,'on')
         end
-        legend(ax,groups,'Location','southoutside','Interpreter','none')
-    % color = groups; marker type = replicate
-    elseif options.color_by_group && ~isempty(groups)
-        for b=1:length(bio_reps)
-            for g=1:length(groups)
-                idx = all([(groups_idx == g) (bio_reps_idx == b)],2);
-                s = scatter3(ax,score(idx,1),score(idx,2),score(idx,3),'filled');
-                s.MarkerFaceColor = s_face_colors(g,:);
-                s.Marker = marker_list(b);
-                if b == 1
-                    s.SizeData = options.marker_size;
-                else
-                    s.SizeData = 2*options.marker_size;
-                end
-                hold(ax,'on')
-            end
-        end
-        legend(ax,groups,'Location','southoutside','Interpreter','none')
-    % color = replicate; marker type = color
-    elseif ~isempty(groups)
-        for b=1:length(bio_reps)
-            for g=1:length(groups)
-                idx = all([(groups_idx == g) (bio_reps_idx == b)],2);
-                s = scatter3(ax,score(idx,1),score(idx,2),score(idx,3),'filled');
-                s.MarkerFaceColor = s_face_colors(b,:);
-                s.Marker = marker_list(g);
-                if g == 1
-                    s.SizeData = options.marker_size;
-                else
-                    s.SizeData = 2*options.marker_size;
-                end
-                hold(ax,'on')
-            end
-        end
-        legend(ax,bio_reps,'Location','southoutside','Interpreter','none')
-    else 
-        scatter3(ax,score(:,1),score(:,2),score(:,3),'filled');
     end
+    if ~isempty(options.test_data)
+        [~,~,groups_idx] = unique(options.test_data.group);
+        test_PCA = table2array(pca_result.pca_transformation_fcn(options.test_data(:,vartype('numeric'))));
+        for b=1:length(bio_reps)
+            for g=1:length(groups)
+                idx = (groups_idx == g);
+                if ~isempty(idx)
+                    s = scatter3(ax,test_PCA(idx,1),test_PCA(idx,2),test_PCA(idx,3),...
+                        "MarkerEdgeColor", s_face_colors(g,:),...
+                        "Marker","o");
+                    if b == 1
+                        s.SizeData = marker_size;
+                    else
+                        s.SizeData = 2*marker_size;
+                    end
+                    hold(ax,'on')
+                end
+            end
+        end
+    end
+    legend(ax,groups,'Location','southoutside','Interpreter','none')
     % biplot(ax,coeff,'VarLabels',T_num.Properties.VariableNames);
     grid(ax,'on');
     set(ax, "XTickLabel",[]);
@@ -636,4 +678,5 @@ end
     xlabel(ax,"PC1 (" +  sprintf("%4.2f",explained(1)) + "%)")
     ylabel(ax,"PC2 (" +  sprintf("%4.2f",explained(2)) + "%)")
     zlabel(ax,"PC3 (" +  sprintf("%4.2f",explained(3)) + "%)")
+    hold(ax,"off");
 end

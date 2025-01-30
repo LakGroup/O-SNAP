@@ -10,18 +10,20 @@ function feature_comparison_pair = compare_group_pair(feature_data,group_1,group
         options.save_path string = "";
         options.remove_outliers logical = false;
     end
-    [T_num, group_idx] = prepare_voronoi_table_data(feature_data,"normalize",0,"numeric_only",1);
+    [T_num, group_idx] = preprocess_SNAP_table(feature_data,"normalize",false,"numeric_only",1);
     mean_1 = zeros(1,size(T_num,2));
     mean_2 = zeros(1,size(T_num,2));
     p = zeros(1,size(T_num,2));
+    idx_group_1 = strcmpi(group_idx,group_1);
+    idx_group_2 = strcmpi(group_idx,group_2);
     for i=1:size(T_num,2)
         data_i = T_num{:,i};
         if options.remove_outliers
-            data_group_1 = rmoutliers(data_i(strcmpi(group_idx,group_1)));
-            data_group_2 = rmoutliers(data_i(strcmpi(group_idx,group_2)));
+            data_group_1 = rmoutliers(data_i(idx_group_1));
+            data_group_2 = rmoutliers(data_i(idx_group_2));
         else
-            data_group_1 = data_i(strcmpi(group_idx,group_1));
-            data_group_2 = data_i(strcmpi(group_idx,group_2));
+            data_group_1 = data_i(idx_group_1);
+            data_group_2 = data_i(idx_group_2);
         end
         mean_1(i) = mean(data_group_1,'omitmissing');
         mean_2(i) = mean(data_group_2,'omitmissing');

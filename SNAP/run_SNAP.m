@@ -69,7 +69,7 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
             save_SNAP_run(save_analysis_path,SNAP_data,'append',false)
         elseif options.load_feature_table
             % load features if file has proper information
-            if exist(save_analysis_path,"file\n",logID)...
+            if exist(save_analysis_path,'file')...
             && has_variables(save_analysis_path,{'feature_data'})
                 load(save_analysis_path,'SNAP_data');
                 SNAP_data.feature_data = SNAP_data;

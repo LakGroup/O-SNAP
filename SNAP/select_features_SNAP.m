@@ -14,11 +14,11 @@ arguments
         'GA_PLSToolbox'... %(Genetic Algorithm from the PLS Toolbox; Eigenvector Inc.)
         }
     options.threshold double = 0.5
-    options.verbose logical = true
+    options.verbose logical = false
 end
 
 %% set up
-[T_num,groups] =  prepare_voronoi_table_data(T,"numeric_only",true,"normalize",true); % get only numeric columns
+[T_num,groups] =  preprocess_SNAP_table(T,"numeric_only",true,"normalize",true); % get only numeric columns
 X = table2array(T_num);
 [~,~,groups_idx] = unique(groups);
 var_select_result = cell(1,numel(options.methods));
@@ -26,7 +26,7 @@ var_select_summary = zeros(1,size(X,2));
 n_selection_methods = 0;
 methods = options.methods;
 %% variable selection
-parfor i=1:length(options.methods)
+for i=1:length(options.methods)
     try
         var_select_result{i} = VariableSelection(X,groups_idx,methods{i});
         if ~isempty(var_select_result{i}.VarSel)
