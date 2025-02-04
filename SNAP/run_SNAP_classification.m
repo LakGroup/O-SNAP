@@ -1,13 +1,11 @@
-function trained_classifier = run_SNAP_classification(response,pca_result,vars_selected,options)
+function trained_classifier = run_SNAP_classification_v2(train_data,options)
 arguments
-    response string
-    pca_result struct
-    vars_selected cell
+    train_data table
+    options.test_data = []
+    options.pca_result struct = []
+    options.vars_selected cell = []
     options.model_type string = 'tree_fine'
-    options.num_components double = 0.95
-    options.compute_validation_accuracy logical = true;
-    options.k_folds double = 5;
-    options.verbose logical = true;
+    options.verbose logical = false
 end
 valid_model_types = ["tree_fine","tree_medium","tree_coarse",...
     "discriminant_linear","discriminant_quadratic",...
@@ -20,15 +18,33 @@ valid_model_types = ["tree_fine","tree_medium","tree_coarse",...
     "ensemble_boosted_trees","ensemble_bagged_trees","ensemble_subspace_discriminant","ensemble_rus_boosted_trees",...
     "NN_narrow","NN_medium","NN_wide","NN_bilayered","NN_trilayered",...
     "kernel_svm","kernel_logistic_regression"];
-if ~ismember(options.model_type,valid_model_types)
-    ME = MException('SNAP:invalid_classification_model', ...
-            'Invalid model type: %s, choose from following valid models:\ntree_fine,tree_medium,tree_coarse,\ndiscriminant_linear,discriminant_quadratic,\nlogistic_regression_binary_glm,\nlogistic_regression_efficient,svm_efficient_linear,\nnaive_bayes_gaussian,naive_bayes_kernel,\nsvm_linear,svm_quadratic,\nsvm_gaussian_fine,svm_gaussian_medium,svm_gaussian_coarse,\nknn_fine,knn_medium,knn_coarse,knn_cosine,knn_cubic,knn_weighted,\nensemble_boosted_trees,ensemble_bagged_trees,ensemble_subspace_discriminant,ensemble_rus_boosted_trees,\nNN_narrow,NN_medium,NN_wide,NN_bilayered,NN_trilayered,\nkernel_svm,kernel_logistic_regression',options.model_type);
-    throw(ME)
-end
+assert(ismember(options.model_type,valid_model_types),...
+    'SNAP:invalid_classification_model',...
+    'Invalid model type: %s, choose from following valid models:\ntree_fine,tree_medium,tree_coarse,\ndiscriminant_linear,discriminant_quadratic,\nlogistic_regression_binary_glm,\nlogistic_regression_efficient,svm_efficient_linear,\nnaive_bayes_gaussian,naive_bayes_kernel,\nsvm_linear,svm_quadratic,\nsvm_gaussian_fine,svm_gaussian_medium,svm_gaussian_coarse,\nknn_fine,knn_medium,knn_coarse,knn_cosine,knn_cubic,knn_weighted,\nensemble_boosted_trees,ensemble_bagged_trees,ensemble_subspace_discriminant,ensemble_rus_boosted_trees,\nNN_narrow,NN_medium,NN_wide,NN_bilayered,NN_trilayered,\nkernel_svm,kernel_logistic_regression',options.model_type);
+
+trained_classifier = struct();
 
 %% Get class names (groups) and predictors (preprocessed feature data)
-predictors = array2table(pca_result.pca_scores(:,1:pca_result.num_components_to_keep));
-class_names = unique(response);
+% Also adds information depending on if variable selection or PCA info is
+% passed to the function. Variable selection information from a PCA takes
+% precedence over ones passed into the function, if they are inconsistent.
+if ~isempty(options.pca_result)
+    [train_data,response] = preprocess_SNAP_table(train_data,'numeric_only',true);
+    pca_result = (options.pca_result);
+    predictors = pca_result.pca_transformation_fcn(train_data(:,pca_result.vars_selected));
+    trained_classifier.PCACenters = pca_result.pca_centers;
+    trained_classifier.PCACoefficients = pca_result.pca_coefficients;
+    trained_classifier.RequiredVariables = pca_result.vars_selected;
+elseif ~isempty(options.vars_selected)
+    [predictors,response] = preprocess_SNAP_table(train_data(:,['group' options.vars_selected]),'numeric_only',true);
+    if ~isempty(options.vars_selected)
+        predictors = predictors(:,options.vars_selected);
+    end
+    trained_classifier.RequiredVariables = options.vars_selected;
+else
+    [predictors,response] = preprocess_SNAP_table(train_data,'numeric_only',true);
+    trained_classifier.RequiredVariables = predictors.Properties.VariableNames;
+end
 
 %% Train a classifier
 % This code specifies all the classifier options and trains the classifier.
@@ -36,70 +52,32 @@ class_names = unique(response);
 
 % Add additional fields to the result struct
 trained_classifier.ModelType = options.model_type;
-trained_classifier.RequiredVariables = vars_selected;
-trained_classifier.PCACenters = pca_result.pca_centers;
-trained_classifier.PCACoefficients = pca_result.pca_coefficients;
 trained_classifier.ClassificationModel = classification_model;
 trained_classifier.About = 'This struct is a trained model exported from Classification Learner R2024b.';
 trained_classifier.HowToPredict = sprintf('To make predictions on a new table, T, use: \n  [yfit,scores] = c.predictFcn(T) \nreplace ''c'' with the name of the variable that is this struct, e.g. ''trainedModel''. \n \nThe table, T, must contain the variables returned by: \n  c.RequiredVariables \nVariable formats (e.g. matrix/vector, datatype) must match the original training data. \nAdditional variables are ignored. \n \nFor more information, see <a href="matlab:helpview(fullfile(docroot, ''stats'', ''stats.map''), ''appclassification_exportmodeltoworkspace'')">How to predict using an exported model</a>.');
 % Create the result struct with predict function
-predictor_extraction_fcn = @(t) t(:, trained_classifier.RequiredVariables);
-trained_classifier.predictFcn = @(x) predict_fcn(pca_result.pca_transformation_fcn(predictor_extraction_fcn(x)));
+predictor_extraction_fcn = @(t) normalize(t(~any(ismissing(t),2), trained_classifier.RequiredVariables));
+if ~isempty(options.pca_result)
+    trained_classifier.predictFcn = @(x) predict_fcn(pca_result.pca_transformation_fcn(predictor_extraction_fcn(x)));
+else
+    trained_classifier.predictFcn = @(x) predict_fcn(predictor_extraction_fcn(x));
+end
 
-%% Perform cross-validation
-if options.compute_validation_accuracy
-    % Initialize the predictions to the proper sizes
-    validation_predictions = response;
-    num_observations = size(predictors, 1);
-    num_classes = numel(class_names);
-    validation_scores = NaN(num_observations, num_classes);
-    cvp = cvpartition(num_observations, 'KFold', options.k_folds);
-    for fold = 1:options.k_folds
-        training_predictors = predictors(cvp.training(fold), :);
-        training_response = response(cvp.training(fold), :);
-        % Apply a PCA to the predictor matrix.
-        % Run PCA on numeric predictors only. Categorical predictors are passed through PCA untouched.
-        [pca_coefficients, pca_scores, ~, ~, explained, pca_centers] = pca(...
-            table2array(training_predictors));
-        % Keep enough components to explain the desired amount of variance.
-        if options.num_components
-            explained_variance_to_keep_as_fraction = 95/100;
-            num_components_to_keep = find(cumsum(explained)/sum(explained) >= explained_variance_to_keep_as_fraction, 1);
-        else
-            if options.num_components <= pca_result.num_components_to_keep
-                num_components_to_keep = options.num_components;
-            else
-                num_components_to_keep = pca_result.num_components_to_keep;
-            end
-        end
-        pca_coefficients = pca_coefficients(:,1:num_components_to_keep);
-        training_predictors = array2table(pca_scores(:,1:num_components_to_keep));
-        % Train a classifier
-        % This code specifies all the classifier options and trains the classifier.
-        [~, predict_fcn] = get_model(options.model_type,training_predictors,training_response);
-        % Create the result struct with predict function
-        pca_transformation_fcn = @(x) array2table((table2array(varfun(@double, x)) - pca_centers) * pca_coefficients);
-        validation_predict_fcn = @(x) predict_fcn(pca_transformation_fcn(x));
-        % Compute validation predictions
-        validationPredictors = predictors(cvp.test(fold), :);
-        [foldPredictions, foldScores] = validation_predict_fcn(validationPredictors);
-        % Store predictions in the original order
-        validation_predictions(cvp.test(fold), :) = foldPredictions;
-        validation_scores(cvp.test(fold), :) = foldScores;
-    end
-    % Compute validation accuracy
-    trained_classifier.ValidationResults.Predictions = strtrim(validation_predictions);
-    trained_classifier.ValidationResults.Response = strtrim(response);
-    correct_predictions = strcmp(trained_classifier.ValidationResults.Predictions,...
-        trained_classifier.ValidationResults.Response);
-    is_missing = cellfun(@(x) all(isspace(x)), response, 'uni', 1);
-    correct_predictions = correct_predictions(~is_missing);
-    validation_accuracy = sum(correct_predictions)/numel(correct_predictions);
-    trained_classifier.ValidationResults.ValidationAccuracy = validation_accuracy;
+%% Calculate accuracy on test data
+if ~isempty(options.test_data)
+    [test_data, trained_classifier.TestResponse] = preprocess_SNAP_table(options.test_data,'numeric_only',true);
+    [test_predictions, test_scores] = trained_classifier.predictFcn(test_data);
+    trained_classifier.TestScores = test_scores;
+    trained_classifier.TestPredictions = strtrim(test_predictions);
+    trained_classifier.TestResponse = strtrim(trained_classifier.TestResponse);
+    correct_predictions = strcmp(...
+        trained_classifier.TestPredictions,...
+        trained_classifier.TestResponse);
+    trained_classifier.TestAccuracy = sum(correct_predictions)/numel(correct_predictions);
     % Show results
     if options.verbose
         % fprintf([trained_classifier.HowToPredict '\n'])
-        fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,validation_accuracy*100)
+        fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,trained_classifier.TestAccuracy*100)
     end
 end
 

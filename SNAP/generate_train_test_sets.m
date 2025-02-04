@@ -1,4 +1,4 @@
-function [train_idx, test_idx] = generate_train_test_sets(feature_data,options)
+function [train_idx, test_idx, by] = generate_train_test_sets(feature_data,options)
 arguments
     feature_data table
     options.by string = "replicate"
@@ -16,14 +16,18 @@ end
             n_reps = numel(bio_reps_all);
             if n_reps >= 4
                 [train_idx, test_idx] = split_for_replicates(feature_data);
+                by = "replicate";
             else 
-                warning("(number of replicates=%.0f) < 4, swapping to 'k-fold' option w/ values: 'k'=%.0f",n_reps,options.k)
+                fprintf("  Warning: Number of replicates (=%.0f) < 4, swapping to 'k-fold' option w/ values: 'k'=%.0f\n",n_reps,options.k)
                 [train_idx, test_idx] = split_for_k_fold(feature_data,options.k);
+                by = "k-fold";
             end
         case "bootstrap"
             [train_idx, test_idx] = split_for_bootstrap(feature_data,options.k,options.proportion);
+            by = "bootstrap";
         case "k-fold"
             [train_idx, test_idx] = split_for_k_fold(feature_data,options.k);
+            by = "k-fold";
         case "none"
             train_idx = {1:size(feature_data,1)};
             test_idx = [];

@@ -15,8 +15,14 @@ arguments
     options.min_number_of_localizations double = 5;
     options.plot logical = true;
     options.logID = [];
+    options.overwrite logical = false;
 end
+min_log_vor_density = options.min_log_vor_density;
+max_log_vor_density = options.max_log_vor_density;
+area_threshold_arr = options.area_threshold_arr;
+min_number_of_localizations_arr = options.min_number_of_localizations;
 plot_flag = options.plot;
+overwrite = options.overwrite;
 warning('off','all')
 
 %% load data
@@ -26,13 +32,12 @@ SNAP_nucleus_file_list = get_valid_SNAP_nucleus_files(work_dir,groups,reps,{'x',
 [split_file_list, options.n_workers] = split_data_to_n(SNAP_nucleus_file_list,options.n_workers);
 
 %% calculate voronoi density
-min_log_vor_density = options.min_log_vor_density;
-max_log_vor_density = options.max_log_vor_density;
 fprintf("      Calculating Voronoi densities...\n");
 starttime_step = tic;
 parfor p=1:options.n_workers
     data_info_table_p = split_file_list{p};
     filepaths = data_info_table_p{:,'filepath'};
+    samps_to_remove = [];
     for s=1:length(filepaths)
         filepath = filepaths(s);
         if exist(filepath,'file')
@@ -40,12 +45,16 @@ parfor p=1:options.n_workers
                 generate_voronoi_data(filepath, ...
                     "min_log_vor_density", min_log_vor_density, ...
                     "max_log_vor_density", max_log_vor_density,...
-                    "plot", plot_flag);
+                    "plot", plot_flag,"overwrite",overwrite);
             catch ME
-                split_file_list{p} = remove_sample(ME,split_file_list{p},s)
+                fprintf("- - Removing: %s - -\n",filepath)
+                fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
+                samps_to_remove = [samps_to_remove s];
+                fprintf("- - - - - - - - - - -\n")
             end
         end
     end
+    split_file_list{p}(samps_to_remove,:) = [];
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 %% perform morphometric, dbscan clustering, and radial analysis
@@ -115,6 +124,7 @@ if ~all(arrayfun(@(x) has_variables(x,data_vars,"verbose",0),SNAP_nucleus_file_l
     parfor p=1:options.n_workers
         data_info_table_p = split_file_list{p};
         filepaths = data_info_table_p{:,'filepath'};
+        samps_to_remove = [];
         for s=1:length(filepaths)
             filepath = filepaths(s);
             if exist(filepath,'file') && ~has_variables(filepath,data_vars,"verbose",0)
@@ -123,19 +133,21 @@ if ~all(arrayfun(@(x) has_variables(x,data_vars,"verbose",0),SNAP_nucleus_file_l
                         "eps",eps,...
                         "min_num",min_num, ...
                         "ellipse_inc",ellipse_inc,...
-                        "periphery_thresh",periphery_thresh);
+                        "periphery_thresh",periphery_thresh,...
+                        "overwrite",overwrite);
                 catch ME
-                    split_file_list{p} = remove_sample(ME,split_file_list{p},s)
+                    fprintf("- - Removing: %s - -\n",filepath)
+                    fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
+                    samps_to_remove = [samps_to_remove s];
                 end
             end
         end
+        split_file_list{p}(samps_to_remove,:) = [];
     end
     fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 end
 %% perform voronoi clustering analysis
 fprintf("      Performing Voronoi Clustering Analysis...\n")
-area_threshold_arr = options.area_threshold_arr;
-min_number_of_localizations_arr = options.min_number_of_localizations;
 starttime_step = tic;
 parfor p=1:options.n_workers
     data_info_table_p = split_file_list{p};
@@ -144,9 +156,13 @@ parfor p=1:options.n_workers
         filepath = filepaths(s);
         if exist(filepath,'file')
             try
-                generate_voronoi_clusters(filepath,area_threshold_arr,min_number_of_localizations_arr);
+                generate_voronoi_clusters(filepath,...
+                    area_threshold_arr,...
+                    min_number_of_localizations_arr,...
+                    "overwrite",overwrite);
             catch ME
-                split_file_list{p} = remove_sample(ME,split_file_list{p},s)
+                fprintf("- - Removing: %s - -\n",filepath)
+                fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
             end
         end 
     end
@@ -158,14 +174,3 @@ fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
 warning('on','all')
 end
 
-function split_file_list = remove_sample(ME,split_file_list,s)
-arguments
-    ME
-    split_file_list table
-    s double
-end
-    fprintf("- - Removing: %s - -\n",filepath)
-    fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
-    fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
-    split_file_list(s,:) = [];
-end

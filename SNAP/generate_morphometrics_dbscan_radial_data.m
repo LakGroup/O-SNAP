@@ -29,6 +29,7 @@ arguments
     options.ellipse_inc double = 0.1;
     options.periphery_thresh double = 0.15;
     options.plot logical = true;
+    options.overwrite logical = false;
 end
 
 data_vars = {'nucleus_radius',...
@@ -69,7 +70,7 @@ data_vars = {'nucleus_radius',...
             'interior_cluster_density',...
             'periphery_cluster_density'};
 
-if has_variables(filepath,data_vars)
+if has_variables(filepath,data_vars) && ~options.overwrite
     return
 end
 
@@ -86,23 +87,23 @@ if ~isfield(data,'boundary')
 end
 
 %% number of localizations
-if ~isfield(data,'locs_number')
+if ~isfield(data,'locs_number') 
     data.locs_number = length(locs(:,1));
 end
 
 %% approximate size of nucleus
-if ~isfield(data,'nucleus_radius')
+if ~isfield(data,'nucleus_radius') 
     nucleus_radius = sqrt(polyarea(data.boundary(:,1),data.boundary(:,2))/pi);
     data.nucleus_radius = nucleus_radius;
 end
 
 %% localization density with respect to nucleus area
-if ~isfield(data,'locs_density')
+if ~isfield(data,'locs_density') 
     data.locs_density = length(locs(:,1))/(pi*data.nucleus_radius^2);
 end
 
 %% dbscan
-if ~isfield(data,'locs_dbscan_cluster_labels')
+if ~isfield(data,'locs_dbscan_cluster_labels') 
     if isfield(data,'voronoi_areas_all')
         locs_to_cluster = locs((1./data.voronoi_areas_all)>=density_threshold,:);
         labels = dbscan(locs_to_cluster,options.eps,options.min_num);
@@ -117,9 +118,9 @@ end
 clearvars density hetero labels locs_dbscan_cluster_labels
 
 %% define dbscan clusters at the periphery (LADs) and interior (non-LADs)
-if ~isfield(data,...
+if ~all(isfield(data,{...
         'locs_dbscan_cluster_periphery_labels',...
-        'locs_dbscan_cluster_interior_labels')
+        'locs_dbscan_cluster_interior_labels'}))  
     labels_flt_shuffle = shuffle_label(labels_flt);
     locs_dbscan_cluster_periphery_is = [];
     locs_dbscan_cluster_periphery_index = [];
@@ -161,85 +162,69 @@ else
 end
 
 %% analysis of lads chromatin domain size
-if ~isfield(data,...
+if ~all(isfield(data,{...
         'periphery_dbscan_cluster_n_locs',...
         'periphery_dbscan_cluster_center',...
-        'periphery_dbscan_cluster_density')
-    if isfield(data,'periphery_dbscan_cluster_radius')
-        n_locs_dbscan_cluster_periphery = max(locs_dbscan_cluster_periphery_labels(:,3));
-        data.periphery_dbscan_cluster_n_locs = zeros(n_locs_dbscan_cluster_periphery,1);
-        for i=1:n_locs_dbscan_cluster_periphery
-            data.periphery_dbscan_cluster_n_locs(i) = sum(locs_dbscan_cluster_periphery_index==i);
-        end
-        data.periphery_dbscan_cluster_density = data.periphery_dbscan_cluster_n_locs./(data.periphery_dbscan_cluster_radius.^2*pi);
-    else
-        if ~exist('locs_dbscan_cluster_periphery_labels','var') && isfield(data,'locs_dbscan_cluster_periphery_labels')
-            locs_dbscan_cluster_periphery_index = data.locs_dbscan_cluster_periphery_labels(:,3);
-            locs_dbscan_cluster_periphery_labels = data.locs_dbscan_cluster_periphery_labels(:,1:2);
-        end
-        n_locs_dbscan_cluster_periphery = max(locs_dbscan_cluster_periphery_index);
-        periphery_dbscan_cluster_n_locs = zeros(n_locs_dbscan_cluster_periphery,1);
-        periphery_dbscan_cluster_center = zeros(n_locs_dbscan_cluster_periphery,2);
-        periphery_dbscan_cluster_area = zeros(n_locs_dbscan_cluster_periphery,1);
-        periphery_dbscan_cluster_density = zeros(n_locs_dbscan_cluster_periphery,1);
-        for i=1:n_locs_dbscan_cluster_periphery
-            grp = locs_dbscan_cluster_periphery_labels(locs_dbscan_cluster_periphery_index==i,:);
-            periphery_dbscan_cluster_n_locs(i) = length(grp);
-            periphery_dbscan_cluster_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
-            [k,periphery_dbscan_cluster_area_i] = boundary(grp,0.3);
-            periphery_dbscan_cluster_area(i) = periphery_dbscan_cluster_area_i;
-            periphery_dbscan_cluster_density(i) = periphery_dbscan_cluster_n_locs(i)./periphery_dbscan_cluster_area_i;
-            data.domain_boundary{i,1}=grp(k,:);
-            clear grp 
-        end
-        data.periphery_dbscan_cluster_n_locs = periphery_dbscan_cluster_n_locs;
-        data.periphery_dbscan_cluster_center = periphery_dbscan_cluster_center;
-        data.periphery_dbscan_cluster_radius = sqrt(periphery_dbscan_cluster_area/pi);
-        data.periphery_dbscan_cluster_density = periphery_dbscan_cluster_density;
+        'periphery_dbscan_cluster_density',...
+        'periphery_dbscan_cluster_radius'}))  
+    if ~exist('locs_dbscan_cluster_periphery_labels','var') && isfield(data,'locs_dbscan_cluster_periphery_labels')
+        locs_dbscan_cluster_periphery_index = data.locs_dbscan_cluster_periphery_labels(:,3);
+        locs_dbscan_cluster_periphery_labels = data.locs_dbscan_cluster_periphery_labels(:,1:2);
     end
+    n_locs_dbscan_cluster_periphery = max(locs_dbscan_cluster_periphery_index);
+    periphery_dbscan_cluster_n_locs = zeros(n_locs_dbscan_cluster_periphery,1);
+    periphery_dbscan_cluster_center = zeros(n_locs_dbscan_cluster_periphery,2);
+    periphery_dbscan_cluster_area = zeros(n_locs_dbscan_cluster_periphery,1);
+    periphery_dbscan_cluster_density = zeros(n_locs_dbscan_cluster_periphery,1);
+    for i=1:n_locs_dbscan_cluster_periphery
+        grp = locs_dbscan_cluster_periphery_labels(locs_dbscan_cluster_periphery_index==i,:);
+        periphery_dbscan_cluster_n_locs(i) = length(grp);
+        periphery_dbscan_cluster_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
+        [k,periphery_dbscan_cluster_area_i] = boundary(grp,0.3);
+        periphery_dbscan_cluster_area(i) = periphery_dbscan_cluster_area_i;
+        periphery_dbscan_cluster_density(i) = periphery_dbscan_cluster_n_locs(i)./periphery_dbscan_cluster_area_i;
+        data.domain_boundary{i,1}=grp(k,:);
+        clear grp 
+    end
+    data.periphery_dbscan_cluster_n_locs = periphery_dbscan_cluster_n_locs;
+    data.periphery_dbscan_cluster_center = periphery_dbscan_cluster_center;
+    data.periphery_dbscan_cluster_radius = sqrt(periphery_dbscan_cluster_area/pi);
+    data.periphery_dbscan_cluster_density = periphery_dbscan_cluster_density;
 end
 
 %% analysis of inner heterochromatin domain size
-if ~isfield(data,...
+if ~all(isfield(data,{...
         'interior_dbscan_cluster_n_locs',...
         'interior_dbscan_cluster_center',...
-        'interior_dbscan_cluster_density')
-    if isfield(data,'interior_dbscan_cluster_radius')
-        n_hetero = max(locs_dbscan_cluster_interior_labels(:,3));
-        data.interior_dbscan_cluster_n_locs = zeros(n_hetero,1);
-        for i=1:n_hetero
-            data.interior_dbscan_cluster_n_locs(i) = sum(locs_dbscan_cluster_interior_labels_index==i);
-        end
-        data.interior_dbscan_cluster_density = data.interior_dbscan_cluster_n_locs./(pi*data.interior_dbscan_cluster_radius.^2);
-    else
-        if ~exist('locs_dbscan_cluster_interior_labels','var') && isfield(data,'locs_dbscan_cluster_interior_labels')
-            locs_dbscan_cluster_interior_labels_index = data.locs_dbscan_cluster_interior_labels(:,3);
-            locs_dbscan_cluster_interior_labels = data.locs_dbscan_cluster_interior_labels(:,1:2);
-        end
-        n_hetero = max(locs_dbscan_cluster_interior_labels_index);
-        interior_dbscan_cluster_n_locs = zeros(n_hetero,1);
-        interior_dbscan_cluster_center = zeros(n_hetero,2);
-        interior_dbscan_cluster_radius = zeros(n_hetero,1);
-        interior_dbscan_cluster_density = zeros(n_hetero,1);
-        for i=1:n_hetero
-            grp = locs_dbscan_cluster_interior_labels(locs_dbscan_cluster_interior_labels_index==i,:);
-            interior_dbscan_cluster_n_locs(i) = length(grp);
-            interior_dbscan_cluster_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
-            [k,hetero_area]=boundary(grp,0.3);
-            interior_dbscan_cluster_radius(i) = sqrt(hetero_area/pi);
-            interior_dbscan_cluster_density(i) = interior_dbscan_cluster_n_locs(i)./hetero_area;
-            data.domain_boundary{i,1}=grp(k,:);
-            clear grp 
-        end
-        data.interior_dbscan_cluster_n_locs = interior_dbscan_cluster_n_locs;
-        data.interior_dbscan_cluster_center = interior_dbscan_cluster_center;
-        data.interior_dbscan_cluster_radius = interior_dbscan_cluster_radius;
-        data.interior_dbscan_cluster_density = interior_dbscan_cluster_density;
+        'interior_dbscan_cluster_density',...
+        'interior_dbscan_cluster_radius'}))  
+    if ~exist('locs_dbscan_cluster_interior_labels','var') && isfield(data,'locs_dbscan_cluster_interior_labels')
+        locs_dbscan_cluster_interior_labels_index = data.locs_dbscan_cluster_interior_labels(:,3);
+        locs_dbscan_cluster_interior_labels = data.locs_dbscan_cluster_interior_labels(:,1:2);
     end
+    n_hetero = max(locs_dbscan_cluster_interior_labels_index);
+    interior_dbscan_cluster_n_locs = zeros(n_hetero,1);
+    interior_dbscan_cluster_center = zeros(n_hetero,2);
+    interior_dbscan_cluster_radius = zeros(n_hetero,1);
+    interior_dbscan_cluster_density = zeros(n_hetero,1);
+    for i=1:n_hetero
+        grp = locs_dbscan_cluster_interior_labels(locs_dbscan_cluster_interior_labels_index==i,:);
+        interior_dbscan_cluster_n_locs(i) = length(grp);
+        interior_dbscan_cluster_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
+        [k,hetero_area]=boundary(grp,0.3);
+        interior_dbscan_cluster_radius(i) = sqrt(hetero_area/pi);
+        interior_dbscan_cluster_density(i) = interior_dbscan_cluster_n_locs(i)./hetero_area;
+        data.domain_boundary{i,1}=grp(k,:);
+        clear grp 
+    end
+    data.interior_dbscan_cluster_n_locs = interior_dbscan_cluster_n_locs;
+    data.interior_dbscan_cluster_center = interior_dbscan_cluster_center;
+    data.interior_dbscan_cluster_radius = interior_dbscan_cluster_radius;
+    data.interior_dbscan_cluster_density = interior_dbscan_cluster_density;
 end
 
 %% find  lad segment spacing
-if ~isfield(data,'model_lad_segment_spacing')
+if ~isfield(data,'model_lad_segment_spacing')  
     N_neighbour = 5;
     dist_mat = mink(pdist2(data.locs_dbscan_cluster_periphery_labels,data.locs_dbscan_cluster_periphery_labels),N_neighbour+1,2);
     model_lad_segment_spacing = sum(dist_mat,2)/N_neighbour;
@@ -253,7 +238,7 @@ if ~all(isfield(data,...
         'model_lad_segment_normals',...
         'model_lad_segment_locs',...
         'model_lad_segment_length',...
-        'model_lad_segment_thickness'}))
+        'model_lad_segment_thickness'}))  
     % create accumulate center location
     % bd_acc = cumsum([0;vecnorm(diff(data.boundary),2,2)]);
     % create unit vector
@@ -312,7 +297,11 @@ if ~all(isfield(data,...
 end
 
 %% Perform a Principal Component Analysis to rotate the data (maximizing the length)
-if ~all(isfield(data,{'locs_norm','x_length','y_length','eigenvalues','components'}))
+if ~all(isfield(data,{'locs_norm',...
+        'x_length', ...
+        'y_length', ...
+        'eigenvalues', ...
+        'components'}))  
     [components,rotated_boundary,eigenvalues] = pca([data.boundary(:,1) data.boundary(:,2)]); % Uses the built-in Matlab pca routine.
     locs_norm = normalize_points(locs,components,data.boundary,rotated_boundary);        
     x_length = max(locs_norm(:,1))-min(locs_norm(:,1)); % Determine the length of the cloud in x.
@@ -323,12 +312,12 @@ if ~all(isfield(data,{'locs_norm','x_length','y_length','eigenvalues','component
     data.y_length = y_length;
     data.components = components;
     clearvars locs_norm eigenvalues x_length y_length components
-else
+elseif  ~options.overwrite
     [~,rotated_boundary,~] = pca([data.boundary(:,1) data.boundary(:,2)]);
 end
 
 %% Generate polygon representation of data
-if ~isfield(data,'polygon')
+if ~isfield(data,'polygon') 
     polygon = polyshape(rotated_boundary(1:end-1,1),rotated_boundary(1:end-1,2),'Simplify',false); % Create a polygon of the boundary points (which will be completely filled).
     [Cx, Cy] = centroid(polygon);
     polygon = translate(polygon, -[Cx Cy]);
@@ -337,16 +326,19 @@ if ~isfield(data,'polygon')
 end
 
 %% calculate the boundary descriptors
-if ~isfield(data,'elastic_energy','bending_energy','border_curvature')
+if ~all(isfield(data,{...
+        'elastic_energy',...
+        'bending_energy',...
+        'border_curvature'})) 
     [data.elastic_energy, data.bending_energy] = Energy(rotated_boundary); % Calculate the elastic energy and bending energy for each border.
     data.border_curvature = Curvature(rotated_boundary); % Only calculate the curvature for the outer boundary of the point cloud. 
 end
 
 %% calculate radial localization density
-if ~isfield(data,'radial_loc_density')
+if ~isfield(data,'radial_loc_density') 
     radial_loc_density = calculate_radial_loc_density(data.locs_norm, [data.x_length data.y_length], options.ellipse_inc);
     data.radial_loc_density = radial_loc_density;
-else
+elseif ~options.overwrite
     load(filepath,'radial_loc_density')
     if size(radial_loc_density,1) < floor(1/options.ellipse_inc)
         radial_loc_density = calculate_radial_loc_density(data.locs_norm, [data.x_length data.y_length], options.ellipse_inc);
@@ -355,11 +347,11 @@ else
 end
 
 %% calculate radial dbscan cluster density
-if ~isfield(data,'radial_dbscan_cluster_density')
+if ~isfield(data,'radial_dbscan_cluster_density') 
     radial_dbscan_cluster_density = calculate_radial_loc_density(normalize_points(data.locs_dbscan_cluster_periphery_labels,data.components,data.boundary,rotated_boundary),...
         [data.x_length data.y_length], options.ellipse_inc);
     data.radial_dbscan_cluster_density = radial_dbscan_cluster_density;
-else
+elseif ~options.overwrite
     load(filepath,'radial_dbscan_cluster_density')
     if size(radial_dbscan_cluster_density,1) ~= floor(1/options.ellipse_inc)
         radial_dbscan_cluster_density = calculate_radial_loc_density(normalize_points(data.locs_dbscan_cluster_periphery_labels,data.components,data.boundary,rotated_boundary),... 
@@ -369,7 +361,8 @@ else
 end
 
 %% calculate periphery/interior density
-if ~isfield(data,'interior_loc_density','periphery_loc_density')
+if ~all(isfield(data,{'interior_loc_density', ...
+        'periphery_loc_density'})) 
     [interior_loc_density, periphery_loc_density]  = calculate_periphery_loc_density(data.locs_norm,data.polygon,...
         options.periphery_thresh);
     data.interior_loc_density = interior_loc_density;
@@ -377,7 +370,8 @@ if ~isfield(data,'interior_loc_density','periphery_loc_density')
 end
 
 %% calculate periphery/interior density of Heterochromatin clusters
-if ~isfield(data,'interior_cluster_density','periphery_cluster_density')
+if ~all(isfield(data,{'interior_cluster_density', ...
+        'periphery_cluster_density'})) 
     [interior_cluster_density, periphery_cluster_density]  = calculate_periphery_loc_density(normalize_points(data.locs_dbscan_cluster_periphery_labels,data.components,data.boundary,rotated_boundary),...
         data.polygon, options.periphery_thresh);
     data.interior_cluster_density = interior_cluster_density;
@@ -401,16 +395,16 @@ if options.plot
     % plot(data.boundary(:,1),data.boundary(:,2),'r-','LineWidth',2); hold on
     locs_dbscan_cluster_periphery_labels = normalize_points(locs_dbscan_cluster_periphery_labels,data.components,data.boundary,rotated_boundary);
     locs_dbscan_cluster_interior_labels = normalize_points(locs_dbscan_cluster_interior_labels,data.components,data.boundary,rotated_boundary);
-    model_lad_segment_locs = normalize_points(model_lad_segment_locs,data.components,data.boundary,rotated_boundary);
-    model_lad_segment_normals = model_lad_segment_normals*data.components;
+    model_lad_segment_locs = normalize_points(data.model_lad_segment_locs,data.components,data.boundary,rotated_boundary);
+    model_lad_segment_normals = data.model_lad_segment_normals*data.components;
     scatter(locs_dbscan_cluster_periphery_labels(:,1),locs_dbscan_cluster_periphery_labels(:,2),0.5,'g'); hold on
     scatter(locs_dbscan_cluster_interior_labels(:,1),locs_dbscan_cluster_interior_labels(:,2),0.5,'k'); hold on
     legend('off')
     for i = 1:length(model_lad_segment_locs(:,1))-1
         point1 = model_lad_segment_locs(i,:);
         point2 = model_lad_segment_locs(i+1,:);
-        point4 = point1 + model_lad_segment_thickness(i)*model_lad_segment_normals(i,:);
-        point3 = point2 + model_lad_segment_thickness(i)*model_lad_segment_normals(i+1,:);
+        point4 = point1 + data.model_lad_segment_thickness(i)*model_lad_segment_normals(i,:);
+        point3 = point2 + data.model_lad_segment_thickness(i)*model_lad_segment_normals(i+1,:);
         pgon = polyshape([point1(1);point2(1);point3(1);point4(1);point1(1)],...
             [point1(2);point2(2);point3(2);point4(2);point1(2)]);
         plot(pgon,'FaceColor','k');hold on
@@ -423,6 +417,6 @@ end
 end
 
 function points_norm = normalize_points(points,components,boundary,rotated_boundary)
-    points_norm = points*data.components - min(boundary*components) - range(rotated_boundary)/2;
+    points_norm = points*components - min(boundary*components) - range(rotated_boundary)/2;
 end
 

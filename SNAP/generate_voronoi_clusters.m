@@ -1,8 +1,9 @@
-function generate_voronoi_clusters(filepath,area_threshold_arr,min_number_of_localizations)
+function generate_voronoi_clusters(filepath,area_threshold_arr,min_number_of_localizations,options)
 arguments
     filepath string
     area_threshold_arr double;
     min_number_of_localizations double;
+    options.overwrite logical = false;
 end
 
 data_vars = {...
@@ -14,7 +15,7 @@ data_vars = {...
     'voronoi_cluster_density',...
     'voronoi_cluster_gyration_radius'};
 
-if has_variables(filepath,data_vars)
+if has_variables(filepath,data_vars) && ~options.overwrite
     return
 end
 

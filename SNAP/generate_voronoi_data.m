@@ -4,6 +4,7 @@ arguments
     options.min_log_vor_density double = 0;
     options.max_log_vor_density double = 3;
     options.plot logical = true;
+    options.overwrite logical = false;
 end
 vor_data_vars = {...
     'voronoi_areas_all',...
@@ -13,7 +14,7 @@ vor_data_vars = {...
     'faces',...
     'vertices'};
 
-if has_variables(filepath,vor_data_vars)
+if has_variables(filepath,vor_data_vars) && ~options.overwrite
     return
 end
 
