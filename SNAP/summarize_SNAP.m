@@ -3,45 +3,48 @@ rng("default") % reproducibility
 
 % 
 root_dir = "F:\";
-analysis_name = "ANALYSIS_AM_Heterokaryon_H3K4me3_HK06h_HK48h";
+analysis_name = "ANALYSIS_HK_BJ_TSA_H2B";
 % analysis_name = "ANALYSIS_AM_Heterokaryon_H3K27me3_CtrlhFb_HK48h";
 work_dir = fullfile(root_dir,analysis_name);
-image_dir = fullfile(root_dir,"ANALYSIS_AM_Heterokaryon_H3K4me3");
+image_dir = fullfile(root_dir,"ANALYSIS_HK_BJ_TSA_H2B");
 % image_dir = fullfile(root_dir,"ANALYSIS_AM_Heterokaryon_H3K27me3");
-analysis_path = fullfile(work_dir,"ANALYSIS_AM_Heterokaryon_H3K4me3_HK06h_HK48h.mat");
+analysis_path = fullfile(work_dir,"ANALYSIS_HK_BJ_TSA_H2B.mat");
 
-% %% load data
-% loaded_data = load_variables(analysis_path,{...
-%     'groups',...
-%     'replicates',...
-%     'train_idxs',...
-%     'test_idxs',...
-%     'feature_comparisons'...
-%     'feature_data',...
-%     'var_select_result',...
-%     'vars_selected',...
-%     'vars_selected_summary',...
-%     'pca_result',...
-%     'classifiers',...
-%     'classification_summary'});
-% groups = loaded_data.groups;
-% replicates = loaded_data.replicates;
-% train_idxs = loaded_data.train_idxs;
-% test_idxs = loaded_data.test_idxs;
-% feature_comparisons = loaded_data.feature_comparisons;
-% feature_data = loaded_data.feature_data;
-% var_select_result = loaded_data.var_select_result;
-% vars_selected = loaded_data.vars_selected;
-% vars_selected_summary = loaded_data.vars_selected_summary;
-% pca_result = loaded_data.pca_result;
-% classifiers = loaded_data.classifiers;
-% classification_summary = loaded_data.classification_summary;
-% clearvars loaded_data
-% n_groups = numel(groups);
-% n_compare = numel(feature_comparisons);
-% n_each_group = groupcounts(feature_data.group);
-% n_batch = numel(pca_result);
-% SNAP_nucleus_file_list = get_valid_SNAP_nucleus_files(image_dir,groups,replicates,{'voronoi_areas'});
+%% load data
+loaded_data = load_variables(analysis_path,{...
+    'groups',...
+    'replicates',...
+    'train_idxs',...
+    'test_idxs',...
+    'feature_comparisons'...
+    'feature_data',...
+    'var_select_result',...
+    'vars_selected',...
+    'vars_selected_summary',...
+    'pca_result',...
+    'classifiers',...
+    'classification_summary'});
+groups = loaded_data.groups;
+replicates = loaded_data.replicates;
+train_idxs = loaded_data.train_idxs;
+test_idxs = loaded_data.test_idxs;
+feature_comparisons = loaded_data.feature_comparisons;
+feature_data = loaded_data.feature_data;
+var_select_result = loaded_data.var_select_result;
+vars_selected = loaded_data.vars_selected;
+vars_selected_all = loaded_data.vars_selected_all;
+vars_selected_summary = loaded_data.vars_selected_summary;
+pca_result = loaded_data.pca_result;
+classifiers = loaded_data.classifiers;
+classification_summary = loaded_data.classification_summary;
+clearvars loaded_data
+n_groups = numel(groups);
+n_compare = numel(feature_comparisons);
+n_each_group = groupcounts(feature_data.group);
+n_batch = numel(pca_result);
+SNAP_nucleus_file_list = get_valid_SNAP_nucleus_files(image_dir,groups,replicates,{'voronoi_areas'});
+
+vars_selected = repelem({vars_selected_all},1,n_batch);
 
 %% SET UP FIGURE
 fig_width = 1920;
@@ -174,12 +177,13 @@ sb_PCA = uibutton(g_PCA_ui_comps,"state",...
     "FontSize",14);
 dd_PCA.ValueChangedFcn = @(src,event) update_PCA_dd(src,g_PCA_ax,feature_data,train_idxs,test_idxs,pca_result,vars_selected,sb_PCA);
 sb_PCA.ValueChangedFcn = @(src,event) update_PCA_sb(src,g_PCA_ax,feature_data,train_idxs,test_idxs,pca_result,vars_selected,dd_PCA);
+col_selected = [{'group','biological_replicate'} vars_selected{batch_idx}];
+train_data = preprocess_SNAP_table(feature_data(train_idxs{batch_idx},col_selected),"remove_NaN",true,'keep_rep_sample_info',true);
+test_data = preprocess_SNAP_table(feature_data(test_idxs{batch_idx},col_selected),"remove_NaN",true,'keep_rep_sample_info',true);
 plot_PCA(g_PCA_ax,...
-    pca_result{batch_idx}.pca_coefficients,...
-    pca_result{batch_idx}.pca_scores,...
-    pca_result{batch_idx}.explained,...
-    "groups_info",feature_data_i{:,"group"},...
-    "bio_reps_info",feature_data_i{:,"biological_replicate"});
+    pca_result{batch_idx},...
+    train_data,...
+    "test_data",test_data);
 %% CLASSIFICATION
 p_classification = uipanel(g_PCA_classification);
 g_classification = uigridlayout(p_classification,[4, 1]);
@@ -470,7 +474,7 @@ for g=1:n_groups
     idx = group_idx==g;
     group_idx_g = group_cat(idx);
     feature_data_g = feature_data(idx);
-    % [feature_data_g_no_outliers, outliers_idx] = rmoutliers(feature_data_g);
+    [feature_data_g_no_outliers, outliers_idx] = rmoutliers(feature_data_g);
     group_idx_g = group_idx_g(~outliers_idx);
     % violin
     v = violinplot(ax,group_idx_g,feature_data_g_no_outliers);
@@ -597,7 +601,6 @@ function update_PCA_sb(src,ax,feature_data,train_idxs,test_idxs,pca_result,vars_
     plot_PCA(ax,...
         pca_result{batch_idx},...
         train_data,...
-        pca_result{batch_idx}.explained,...
         "test_data",test_data);
 end
 %% update PCA from dropdown
@@ -613,16 +616,14 @@ function update_PCA_dd(src,ax,feature_data,train_idxs,test_idxs,pca_result,vars_
     plot_PCA(ax,...
         pca_result{batch_idx},...
         train_data,...
-        pca_result{batch_idx}.explained,...
         "test_data",test_data);
 end
 %% Plot PCA
-function plot_PCA(ax,pca_result,train_data,explained,options)
+function plot_PCA(ax,pca_result,train_data,options)
 arguments
     ax
     pca_result struct
     train_data table
-    explained double
     options.test_data table = []
 end
     marker_list = {'o','^','square','v','diamond','pentagram','hexagram'};
@@ -635,9 +636,17 @@ end
     for b=1:length(bio_reps)
         for g=1:length(groups)
             idx = all([(groups_idx == g) (bio_reps_idx == b)],2);
-            s = scatter3(ax,train_PCA(idx,1),train_PCA(idx,2),train_PCA(idx,3),'filled',...
-                "MarkerFaceColor",s_face_colors(g,:),...
-                "Marker",marker_list(b));
+            if size(train_PCA,2) > 2
+                s = scatter3(ax,train_PCA(idx,1),train_PCA(idx,2),train_PCA(idx,3),'filled',...
+                    "MarkerFaceColor",s_face_colors(g,:),...
+                    "Marker",marker_list(b));
+            elseif size(train_PCA,2) == 2
+                s = scatter(ax,train_PCA(idx,1),train_PCA(idx,2),'filled',...
+                    "MarkerFaceColor",s_face_colors(g,:),...
+                    "Marker",marker_list(b));
+            else
+                return
+            end
             if b == 1
                 s.SizeData = marker_size;
             else
@@ -652,9 +661,17 @@ end
         for g=1:length(groups)
             idx = (groups_idx == g);
             if ~isempty(idx)
-                scatter3(ax,test_PCA(idx,1),test_PCA(idx,2),test_PCA(idx,3),...
-                    "MarkerEdgeColor", s_face_colors(g,:),...
-                    "Marker","o","SizeData",marker_size,"LineWidth",1);
+                if size(train_PCA,2) > 2
+                    scatter3(ax,test_PCA(idx,1),test_PCA(idx,2),test_PCA(idx,3),...
+                        "MarkerEdgeColor", s_face_colors(g,:),...
+                        "Marker","o","SizeData",marker_size,"LineWidth",1);
+                elseif size(train_PCA,2) == 2
+                    scatter(ax,test_PCA(idx,1),test_PCA(idx,2),...
+                        "MarkerEdgeColor", s_face_colors(g,:),...
+                        "Marker","o","SizeData",marker_size,"LineWidth",1);
+                else
+                    return
+                end
                 hold(ax,'on')
             end
         end
@@ -665,8 +682,8 @@ end
     set(ax, "XTickLabel",[]);
     set(ax, "YTickLabel",[]);
     set(ax, "ZTickLabel",[]);
-    xlabel(ax,"PC1 (" +  sprintf("%4.2f",explained(1)) + "%)")
-    ylabel(ax,"PC2 (" +  sprintf("%4.2f",explained(2)) + "%)")
-    zlabel(ax,"PC3 (" +  sprintf("%4.2f",explained(3)) + "%)")
+    xlabel(ax,"PC1 (" +  sprintf("%4.2f",pca_result.explained(1)) + "%)")
+    ylabel(ax,"PC2 (" +  sprintf("%4.2f",pca_result.explained(2)) + "%)")
+    zlabel(ax,"PC3 (" +  sprintf("%4.2f",pca_result.explained(3)) + "%)")
     hold(ax,"off");
 end

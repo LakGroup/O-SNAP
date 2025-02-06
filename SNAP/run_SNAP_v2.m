@@ -1,4 +1,4 @@
-function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
+function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,options)
     arguments
         root_dir char
         analysis_name char
@@ -25,7 +25,7 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
         options.test_train_ratio double = 0.2;
         options.test_train_k double = 5;
         % feature selection options
-        options.feature_selection_threshold double = 0.5
+        options.select_features_threshold double = 0.5
         options.feature_selection_methods cell = {...
             'biPLS',...
             'rPLS',...
@@ -49,8 +49,8 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
         options.verbose logical = 0
         % save options
         options.suffix = ""
-        options.save = true;
-        options.save_if_error = true;
+        options.save = 1;
+        options.save_if_error = 0;
         options.check_overwrite = 0
     end
 
@@ -186,6 +186,7 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
     % feature selection
     try
         if options.run_feature_selection
+            select_features_threshold = options.select_features_threshold;
             % clear variable for new run
             if isfield(SNAP_data,"vars_selected")
                 SNAP_data = rmfield(SNAP_data,"vars_selected");
@@ -208,7 +209,7 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
                 train_idx_b = train_idx_p{p};
                 for b=1:numel(train_idx_b)
                     train_data = feature_data_p{p}(train_idx_b{b},:);
-                    [vars_selected_p{p}{b}, var_select_result_p{p}{b}] = select_features_SNAP(train_data);
+                    [vars_selected_p{p}{b}, var_select_result_p{p}{b}] = select_features_SNAP(train_data,"threshold",select_features_threshold);
                 end
             end
             % bring together batches from each parallel process
@@ -224,6 +225,12 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
         handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
         return
     end
+    vars_selected_all = SNAP_data.vars_selected_summary(SNAP_data.vars_selected_summary{:,"freq_per_batch"} > options.select_features_threshold,:).Properties.RowNames;
+    SNAP_data.vars_selected_all = vars_selected_all;
+    fprintf("  Selected features:\n")
+    for i=1:numel(vars_selected_all)
+        fprintf("    - %s\n", vars_selected_all{i})
+    end
     %% PCA
     try
         if options.run_PCA
@@ -237,14 +244,14 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
             num_components_explained = options.num_components_explained;
             train_idx_p = split_data_to_n(SNAP_data.train_idxs,options.n_processes,"shuffle",false);
             n_processes = numel(train_idx_p);
-            if ~isempty(SNAP_data.vars_selected)
-                vars_selected_p = split_data_to_n(SNAP_data.vars_selected,n_processes,"shuffle",false);
-            end
+            % if ~isempty(SNAP_data.vars_selected)
+            %     vars_selected_p = split_data_to_n(SNAP_data.vars_selected,n_processes,"shuffle",false);
+            % end
             pca_result_p = cell(1,n_processes);
             if ~exist('feature_data_p','var')
                 feature_data_p = cell(1,n_processes);
                 for p=1:n_processes
-                    feature_data_p{p} = feature_data;
+                    feature_data_p{p} = feature_data_filtered;
                 end
             end
             parfor p=1:n_processes
@@ -252,7 +259,7 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
                 for b=1:numel(train_idx_b)
                     train_data = feature_data_p{p}(train_idx_b{b},:);
                     pca_result_p{p}{b} = run_SNAP_PCA(train_data,...
-                        "vars_sel",vars_selected_p{p}{b},...
+                        "vars_sel",vars_selected_all,...
                         "save_path",save_path,...
                         "num_components_explained",num_components_explained);
                 end
@@ -264,7 +271,6 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
     catch ME
         handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
     end
-
     %% run classification
     try
         if options.run_classification
@@ -293,11 +299,11 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
             if ~exist('feature_data_p','var')
                 feature_data_p = cell(1,n_processes);
                 for p=1:n_processes
-                    feature_data_p{p} = feature_data;
+                    feature_data_p{p} = feature_data_filtered;
                 end
             end
             classifiers_p = cell(1,n_processes);
-            for p=1:n_processes
+            parfor p=1:n_processes
                 train_idx_b = train_idx_p{p};
                 test_idx_b = test_idx_p{p};
                 for b=1:numel(train_idx_b)
@@ -306,7 +312,7 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
                     classifiers_p{p}{b} =...
                         run_SNAP_classification_batch(...
                         train_data,...
-                        'vars_selected',vars_selected_p{p}{b},...
+                        'vars_selected',vars_selected_all,...
                         'pca_result',pca_result_p{p}{b},....
                         'test_data',test_data,...
                         'verbose',0);
@@ -320,6 +326,7 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
             classification_summary = sortrows(groupsummary(classification_summary,"model_type",["mean","std"]),"mean_test_accuracy","descend");
             SNAP_data.classifiers = classifiers;
             SNAP_data.classification_summary = classification_summary;
+            head(classification_summary)
             fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
         end
     catch ME
@@ -336,7 +343,7 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
                 save_path = join([save_path suffix],'_');
             end
             if ~all(isfield(SNAP_data,{'cluster_observations_idx_PCA','cluster_observations_idx_tSNE'}))
-                [SNAP_data.cluster_observations_idx_PCA,SNAP_data.cluster_observations_idx_tSNE] = cluster_observations_hierarchical(feature_data,SNAP_data.vars_sel,...
+                [SNAP_data.cluster_observations_idx_PCA,SNAP_data.cluster_observations_idx_tSNE] = cluster_observations_hierarchical(feature_data_filtered,SNAP_data.vars_sel,...
                     "save_path",save_path);
             end
             fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
@@ -468,26 +475,6 @@ function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
 
     % Finish run
     conclude_SNAP_run(save_analysis_path,SNAP_data,"save",options.save)
-end
-
-function feature_data_filtered = filter_SNAP_feature_data(feature_data,groups,replicates)
-arguments
-    feature_data table
-    groups cell
-    replicates cell
-end
-% filter for groups and replicates
-fprintf("  Filtering feature data table for desired groups and replicates...\n")
-feature_data_filtered = preprocess_SNAP_table(feature_data,...
-    "groups",groups,"replicates",replicates,...
-    "normalize",false,"remove_NaN",true,...
-    "keep_rep_sample_info",true);
-% end execution if not enough groups after filtering
-if numel(unique(feature_data_filtered.group)) < 2
-    ME = MException('SNAP:insufficient_group_number', ...
-                    sprintf('Only one group found: %s',groups{1}));
-    throw(ME)
-end
 end
 
 function conclude_SNAP_run(path,data,options)

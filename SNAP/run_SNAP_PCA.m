@@ -1,4 +1,4 @@
-function pca_result = run_SNAP_PCA_v2(T,options)
+function pca_result = run_SNAP_PCA(T,options)
 arguments
     T table
     options.vars_selected cell = {}
