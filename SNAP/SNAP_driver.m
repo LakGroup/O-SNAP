@@ -1,8 +1,8 @@
-% %% prepare compiler for faster run
-% if ~exist('first_run','var')
-%     setup_SNAP
-%     first_run = true;
-% end
+%% prepare compiler for faster run
+if ~exist('first_run','var')
+    setup_SNAP
+    first_run = true;
+end
 
 %% start parallel pool
 p_pool = gcp('nocreate');
