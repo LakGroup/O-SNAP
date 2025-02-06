@@ -9,17 +9,21 @@ arguments
 end
 %% define feature_universes
 feature_universes = get_feature_universes(options.feature_universe_names);
-group_pairs = nchoosek(unique(T.group),2);
+groups = unique(T.group);
+for g=1:size(groups,1)
+    groups_is_alpha = isstrprop(groups(g),'alpha');
+    if ~groups_is_alpha(1)
+        groups(g) = "t" + groups(g);
+    end
+end
+group_pairs = nchoosek(groups,2);
 for g=1:size(group_pairs,1)
     group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
     %% calculate adjusted p-values, fold changes
-    [S,v_fig] = compare_groups(T,group_pairs(g,1),group_pairs(g,2),...
+    S = compare_groups(T,group_pairs(g,1),group_pairs(g,2),...
         "alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,...
         "plot",options.plot,"save_path",fullfile(save_dir, "features_diff_"+join(group_pairs(g,:),'_')+".csv"));
-    if options.plot && ~isempty(v_fig)
-        savefig(v_fig,fullfile(save_dir, "features_volcano_"+join(group_pairs(g,:),'_')+".fig"));
-        saveas(v_fig,fullfile(save_dir, "features_volcano_"+join(group_pairs(g,:),'_')+".png"));
-    end
+    
     data.(group_pair_string) = sortrows(S,"adj_p_value");
     %% run loop on all universes
     for f = 1:size(feature_universes,2)
@@ -58,17 +62,20 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
     end
     % BgRatio = (size of the feature set)/(total number of features)
     for i=1:size(S_universe,1)
-        S{strcmpi(S{:,feature_universe_name},S_universe{i,feature_universe_name}),"bg_ratio_"+feature_universe_name} = S_universe{i,"Percent"}/100;
+        idx = strcmpi(S{:,feature_universe_name},S_universe{i,feature_universe_name});
+        S{idx,"bg_ratio_"+feature_universe_name} = repmat(S_universe{i,"Percent"}/100,sum(idx),1);
     end
     % FeatureRatio = (number of hits in data for a specific feature set)/(number of hits in data across all features)
     for i=1:size(S_diff_grouped,1)
         S_diff{strcmpi(S_diff{:,feature_universe_name},S_diff_grouped{i,feature_universe_name}),"feature_ratio_"+feature_universe_name} = sprintf("%d/%d",S_diff_grouped{i,"GroupCount"},sum(S_diff_grouped.GroupCount));
     end
     for i=1:size(S_diff,1)
-        S{strcmpi(S{:,"feature"},S_diff{i,"feature"}),"feature_ratio_"+feature_universe_name} = S_diff{i,"feature_ratio_"+feature_universe_name};
+        idx = strcmpi(S{:,"feature"},S_diff{i,"feature"});
+        S{idx,"feature_ratio_"+feature_universe_name} = repmat(S_diff{i,"feature_ratio_"+feature_universe_name},sum(idx),1);
     end
-    if sum(strcmpi(S{:,"feature_ratio_"+feature_universe_name},"")) > 0
-        S{strcmpi(S(:,"feature_ratio_"+feature_universe_name),""),"feature_ratio_"+feature_universe_name} = NaN(sum(strcmpi(S{:,"feature_ratio_"+feature_universe_name},"")),1);
+    idx = strcmpi(S{:,"feature_ratio_"+feature_universe_name},"");
+    if sum(idx) > 0
+        S{idx,"feature_ratio_"+feature_universe_name} = NaN(sum(idx),1);
     end
     %% plot
     if options.plot

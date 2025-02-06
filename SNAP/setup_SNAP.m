@@ -2,6 +2,9 @@ try
     old_folder = cd('C:\Users\HannahKim\Documents\STORM\SNAP\inside_poly_folder');
     insidepoly_install
     cd(old_folder)
+    % Use correct functions (shadowed by the PLS toolbox installation)
+    top_in_search_path('skewness','stats\stats\skewness.m');
+    top_in_search_path('pca','stats\stats\pca.m');
 catch ME
     if(strcmp(ME.identifier,'MATLAB:mex:No_compiler_found_link_Win64'))
         msgbox({'Install C compiler for Matlab:',...

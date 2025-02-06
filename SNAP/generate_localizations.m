@@ -4,7 +4,7 @@ function data = generate_localizations(data,pixel_size)
     y = data.y_data;
     % flip to match conventional images
     % y = max(y) - y; 
-    if pixel_size == 117
+    if pixel_size == 117 % pixel size in nm
         y = 684 - y;
     end
     % clean data

@@ -1,4 +1,4 @@
-function [inpoly onboundary] = insidepoly(varargin)
+function [inpoly, onboundary] = insidepoly(varargin)
 % [inpoly onboundary] = insidepoly(X, Y, PX, PY)
 % 
 % Check if (X,Y) are inside the interior of a 2D polygon delimited by the

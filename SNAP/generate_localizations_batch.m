@@ -4,7 +4,7 @@ function generate_localizations_batch(data, work_dir)
 if work_dir == 0
     error('Error: Directory selection canceled');
 else
-    save_dir = fullfile(work_dir,'voronoi_data');
+    save_dir = fullfile(work_dir,'SNAP_nucleus_data');
     if ~exist(save_dir, 'dir')
         mkdir(save_dir)
     end
@@ -33,7 +33,7 @@ parfor p=1:n_processes
         sample = data_p{s};
         %% GENERATE VORONOI DENSITY MAP
         sample = generate_localizations(sample, pixel_size);
-        save_voronoi_data(fullfile(save_dir,[sample.name '.mat']), sample);
+        save_SNAP_nucleus(fullfile(save_dir,[sample.name '.mat']), sample);
         disp("   " + sample.name + ": " + string(datetime))
     end
 end
