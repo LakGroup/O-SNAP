@@ -19,7 +19,8 @@ if has_variables(filepath,data_vars) && ~options.overwrite
     return
 end
 
-n_area_threshold = length(area_threshold_arr);
+n_area_threshold = numel(area_threshold_arr);
+
 data = load(filepath);
 data.area_thresholds = area_threshold_arr;
 data.min_number_of_localizations = min_number_of_localizations;
@@ -80,7 +81,7 @@ for k=1:n_area_threshold
     data.voronoi_cluster_gyration_radius{k} = zeros(n_cluster,1);
     for i=1:n_cluster
         data.voronoi_cluster_radius{k}(i) = sqrt(sum(points_by_cluster{i}(:,3))/pi);
-        data.voronoi_cluster_density{k}(i) = data.cluster_n_locs{k}(i)./data.voronoi_cluster_radius{k}(i);
+        data.voronoi_cluster_density{k}(i) = data.voronoi_cluster_n_locs{k}(i)./data.voronoi_cluster_radius{k}(i);
         data.voronoi_cluster_gyration_radius{k}(i) = sqrt(mean(...
             (points_by_cluster{i}(:,1)-mean(points_by_cluster{i}(:,1))).^2 ...
             + (points_by_cluster{i}(:,2)-mean(points_by_cluster{i}(:,2))).^2));

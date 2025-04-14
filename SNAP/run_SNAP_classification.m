@@ -1,10 +1,11 @@
-function trained_classifier = run_SNAP_classification_v2(train_data,options)
+function trained_classifier = run_SNAP_classification(data,options)
 arguments
-    train_data table
+    data table
     options.test_data = []
     options.pca_result struct = []
-    options.vars_selected cell = []
+    options.vars_selected cell = {}
     options.model_type string = 'tree_fine'
+    options.k double = 5;
     options.verbose logical = false
 end
 valid_model_types = ["tree_fine","tree_medium","tree_coarse",...
@@ -24,42 +25,40 @@ assert(ismember(options.model_type,valid_model_types),...
 
 trained_classifier = struct();
 
+data = preprocess_SNAP_table(data,'normalize',false);
+
 %% Get class names (groups) and predictors (preprocessed feature data)
 % Also adds information depending on if variable selection or PCA info is
 % passed to the function. Variable selection information from a PCA takes
 % precedence over ones passed into the function, if they are inconsistent.
 if ~isempty(options.pca_result)
-    [train_data,response] = preprocess_SNAP_table(train_data,'numeric_only',true);
-    pca_result = (options.pca_result);
-    predictors = pca_result.pca_transformation_fcn(train_data(:,pca_result.vars_selected));
+    [train_data,response] = preprocess_SNAP_table(data,'numeric_only',true);
+    pca_result = options.pca_result;
+    predictors = pca_result.pca_transformation_fcn(train_data);
     trained_classifier.PCACenters = pca_result.pca_centers;
     trained_classifier.PCACoefficients = pca_result.pca_coefficients;
     trained_classifier.RequiredVariables = pca_result.vars_selected;
 elseif ~isempty(options.vars_selected)
-    [predictors,response] = preprocess_SNAP_table(train_data(:,['group' options.vars_selected]),'numeric_only',true);
-    if ~isempty(options.vars_selected)
-        predictors = predictors(:,options.vars_selected);
-    end
+    [predictors,response] = preprocess_SNAP_table(data(:,['group' options.vars_selected]),'numeric_only',true);
     trained_classifier.RequiredVariables = options.vars_selected;
 else
-    [predictors,response] = preprocess_SNAP_table(train_data,'numeric_only',true);
+    [predictors,response] = preprocess_SNAP_table(data,'numeric_only',true);
     trained_classifier.RequiredVariables = predictors.Properties.VariableNames;
 end
 
 %% Train a classifier
 % This code specifies all the classifier options and trains the classifier.
 [classification_model, predict_fcn] = get_model(options.model_type,predictors,response);
-
 % Add additional fields to the result struct
 trained_classifier.ModelType = options.model_type;
 trained_classifier.ClassificationModel = classification_model;
 trained_classifier.About = 'This struct is a trained model exported from Classification Learner R2024b.';
 trained_classifier.HowToPredict = sprintf('To make predictions on a new table, T, use: \n  [yfit,scores] = c.predictFcn(T) \nreplace ''c'' with the name of the variable that is this struct, e.g. ''trainedModel''. \n \nThe table, T, must contain the variables returned by: \n  c.RequiredVariables \nVariable formats (e.g. matrix/vector, datatype) must match the original training data. \nAdditional variables are ignored. \n \nFor more information, see <a href="matlab:helpview(fullfile(docroot, ''stats'', ''stats.map''), ''appclassification_exportmodeltoworkspace'')">How to predict using an exported model</a>.');
 % Create the result struct with predict function
-predictor_extraction_fcn = @(t) normalize(t(~any(ismissing(t),2), trained_classifier.RequiredVariables));
 if ~isempty(options.pca_result)
-    trained_classifier.predictFcn = @(x) predict_fcn(pca_result.pca_transformation_fcn(predictor_extraction_fcn(x)));
+    trained_classifier.predictFcn = @(x) predict_fcn(pca_result.pca_transformation_fcn(x));
 else
+    predictor_extraction_fcn = @(t) normalize(t(~any(ismissing(t),2), trained_classifier.RequiredVariables));
     trained_classifier.predictFcn = @(x) predict_fcn(predictor_extraction_fcn(x));
 end
 
@@ -74,10 +73,63 @@ if ~isempty(options.test_data)
         trained_classifier.TestPredictions,...
         trained_classifier.TestResponse);
     trained_classifier.TestAccuracy = sum(correct_predictions)/numel(correct_predictions);
+    groups = unique(trained_classifier.TestResponse);
+    trained_classifier.PerformanceCurve = cell(numel(groups),1);
+    for i=1:numel(groups)
+        trained_classifier.PerformanceCurve{i}.group = groups(i);
+        [trained_classifier.PerformanceCurve{i}.x,trained_classifier.PerformanceCurve{i}.y,trained_classifier.PerformanceCurve{i}.threshold,trained_classifier.PerformanceCurve{i}.AUC] = perfcurve(trained_classifier.TestResponse,trained_classifier.TestScores(:,i),groups(i));
+    end
     % Show results
     if options.verbose
-        % fprintf([trained_classifier.HowToPredict '\n'])
         fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,trained_classifier.TestAccuracy*100)
+    end
+
+%% Calculate validation accuracy if no test data is given
+else
+    % Perform cross-validation
+    options.k = 5;
+    cvp = cvpartition(response, 'KFold', options.k);
+    % Initialize the predictions to the proper sizes
+    trained_classifier.ValidationPredictions = response;
+    n_obs = size(predictors,1);
+    n_groups = numel(unique(response));
+    trained_classifier.ValidationScores = NaN(n_obs,n_groups);
+    for k = 1:options.k
+        % split train from test
+        train_k = data(cvp.training(k),:);
+        % PCA on train data
+        if ~isempty(options.pca_result)
+            [train_k,response_k] = preprocess_SNAP_table(train_k,'numeric_only',true);
+            pca_result_k = run_SNAP_PCA(train_k,...
+                                "vars_sel",options.vars_selected,...
+                                "num_components_explained",options.pca_result.num_comps_to_keep);
+            predictors_k = pca_result_k.pca_transformation_fcn(train_k);
+        elseif ~isempty(options.vars_selected)
+            [predictors_k,response_k] = preprocess_SNAP_table(train_k(:,['group' options.vars_selected]),'numeric_only',true);
+        else
+            [predictors_k,response_k] = preprocess_SNAP_table(train_k,'numeric_only',true);
+        end
+        % Train classifier
+        [~, predict_fcn_k] = get_model(options.model_type,predictors_k,response_k);
+        if ~isempty(options.pca_result)
+            predictFcn_k = @(x) predict_fcn_k(pca_result_k.pca_transformation_fcn(x));
+        else
+            predictor_extraction_fcn_k = @(t) normalize(t(~any(ismissing(t),2), trained_classifier.RequiredVariables));
+            predictFcn_k = @(x) predict_fcn_k(predictor_extraction_fcn_k(x));
+        end
+        % Compute validation predictions
+        test_k = data(cvp.test(k),:);
+        [predictors_k, ~] = preprocess_SNAP_table(test_k,'numeric_only',true);
+        [predictions_k, scores_k] = predictFcn_k(predictors_k);
+        % Store predictions in the original order
+        trained_classifier.ValidationPredictions(cvp.test(k), :) = strtrim(predictions_k);
+        trained_classifier.ValidationScores(cvp.test(k),:) = scores_k;
+    end
+    correct_predictions = strcmp(trained_classifier.ValidationPredictions,strtrim(response));
+    trained_classifier.ValidationAccuracy = sum(correct_predictions)/numel(correct_predictions);
+    % Show results
+    if options.verbose
+        fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,trained_classifier.ValidationAccuracy*100)
     end
 end
 

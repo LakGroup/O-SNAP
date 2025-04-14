@@ -32,9 +32,10 @@ else
     group_values = [];
 end
 
-% normalize T; note that all information stored in signs is erased
+% normalize T
 if options.normalize
-    T_norm{:,vartype('numeric')} = normalize(abs(T_norm{:,vartype('numeric')}),1);
+    % T_norm{:,vartype('numeric')} = normalize(abs(T_norm{:,vartype('numeric')}),1);
+    T_norm{:,vartype('numeric')} = normalize(T_norm{:,vartype('numeric')},1);
 end
 
 % remove unnecessary columns (group, bio replicate)

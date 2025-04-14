@@ -1,4 +1,4 @@
-function plot_violin(T,work_dir,options)
+function plot_SNAP_violin(T,work_dir,options)
 arguments
     T table
     work_dir string
@@ -9,6 +9,8 @@ end
 save_dir = fullfile(work_dir,"violin_plots");
 if ~exist(save_dir,"dir")
     mkdir(save_dir)
+else
+    delete(fullfile(save_dir,'*.png'))
 end
 
 % get info on groups
@@ -17,7 +19,7 @@ group_cat_split = repelem({categorical(replace(T.group,"_"," "))},options.n_proc
 n_groups = length(groups);
 
 % split for parallel
-feature_idx = split_data_for_parallel(num2cell(4:(size(T,2)),1));
+feature_idx = split_data_to_n(num2cell(4:(size(T,2))),options.n_processes);
 T_split = cellfun(@(x) T{:,cell2mat(x)},feature_idx,'uni',0);
 feature_split = cellfun(@(x) T.Properties.VariableNames(cell2mat(x)),feature_idx,'uni',0);
 
@@ -26,7 +28,7 @@ parfor p=1:options.n_processes
     feature_idx_p = feature_idx{p};
     c_map = lines(numel(groups));
     for i=1:numel(feature_idx_p)
-        feature = feature_split{p}{i};
+        feature = feature_split{p}(i);
         feature_data = T_split{p}(:,i);
         group_cat = group_cat_split{p};
         figure('visible','off');
@@ -61,9 +63,10 @@ parfor p=1:options.n_processes
         scatter(nan,nan,50,'pentagramk','filled');
         plot(nan, nan,"-k","LineWidth",2);
         l = [l "Mean" "Median"];
-        legend(l);
+        legend(l,"Location","eastoutside","interpreter","none");
         title(replace(feature,"_"," "))
-        xlabel("Groups")
+        xlabel("Groups",'FontSize',24)
+        set(gca,'FontSize',16)
         saveas(gcf,fullfile(save_dir,"violin_plot_"+feature+".png"));
     end
 end

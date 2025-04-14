@@ -1,8 +1,8 @@
-function T = SNAP_nucleus_to_feature_table_batch(work_dir,groups,reps,options)
+function T = SNAP_nucleus_to_feature_table_batch(work_dir,groups,replicates,options)
 arguments
     work_dir string
     groups cell
-    reps cell
+    replicates cell
     options.load logical = true
     options.n_workers double = maxNumCompThreads
 end
@@ -10,7 +10,7 @@ end
 
     %% organize into tables
     % get data
-    data_info_table = get_valid_SNAP_nucleus_files(work_dir,groups,reps,{'voronoi_cluster_radius'});
+    data_info_table = get_valid_SNAP_nucleus_files(work_dir,groups,replicates,{'voronoi_cluster_radius'});
     % split data for parallel processing
     [split_file_list, options.n_workers] = split_data_to_n(data_info_table, options.n_workers);
     T_cell = cell(1,options.n_workers);

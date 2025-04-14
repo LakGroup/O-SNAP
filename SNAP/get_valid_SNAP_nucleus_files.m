@@ -1,26 +1,29 @@
-function SNAP_nucleus_file_list = get_valid_SNAP_nucleus_files(work_dir,groups,reps,vars_to_load)
+function SNAP_nucleus_file_list = get_valid_SNAP_nucleus_files(work_dir,groups,replicates,vars_to_load)
     save_name = "nucleus_SNAP_file_list.csv";
     if exist(fullfile(work_dir,save_name),'file')
         SNAP_nucleus_file_list = readtable(fullfile(work_dir,save_name),'NumHeaderLines',0,'TextType','string', 'VariableNamingRule', 'preserve');
         SNAP_nucleus_file_list.Properties.VariableTypes = repmat("string",1,5);
         reps_loaded = unique(SNAP_nucleus_file_list.rep);
         groups_loaded = unique(SNAP_nucleus_file_list.group);
-        if (numel(reps) > numel(reps_loaded)) || (numel(groups) > numel(groups_loaded))
-            SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,reps,vars_to_load);
+        if (numel(replicates) > numel(reps_loaded)) || (numel(groups) > numel(groups_loaded))
+            SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,replicates,vars_to_load);
         end
-        for i=1:numel(reps)
-            if ~ismember(reps{i}, reps_loaded)
-                SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,reps,vars_to_load);
+        for i=1:numel(replicates)
+            if ~ismember(replicates{i}, reps_loaded)
+                SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,replicates,vars_to_load);
             end
         end
         for i=1:numel(groups)
             if ~ismember(groups{i}, groups_loaded)
-                SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,reps,vars_to_load);
+                SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,replicates,vars_to_load);
             end
         end
     else
-        SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,reps,vars_to_load);
+        SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,replicates,vars_to_load);
     end
+    % filter for groups and replicates
+    SNAP_nucleus_file_list = SNAP_nucleus_file_list(ismember(SNAP_nucleus_file_list.rep,replicates),:);
+    SNAP_nucleus_file_list = SNAP_nucleus_file_list(ismember(SNAP_nucleus_file_list.group,groups),:);
 end
 
 function SNAP_nucleus_file_list = generate_valid_SNAP_nucleus_files(work_dir,groups,reps,vars_to_load)

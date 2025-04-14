@@ -49,45 +49,49 @@ function T = SNAP_nucleus_to_feature_table(SNAP_nucleus_file_list)
         "interior_dbscan_cluster_radius",...
         "interior_dbscan_cluster_density",...
         "interior_dbscan_cluster_n_locs",...
+        "interior_dbscan_cluster_spacing",...
         "periphery_dbscan_cluster_radius",...
         "periphery_dbscan_cluster_density",...
         "periphery_dbscan_cluster_n_locs",...
         "model_lad_segment_length",...
         "model_lad_segment_thickness",...
         "log_voronoi_density",...
-        "reduced_log_voronoi_density",...
-        "model_lad_segment_spacing",...
         "border_curvature"];
-    vars_distribution = reshape(vars_distribution_names + ["_median";"_std";"_skewness"],1,[]);
+    dist_already_log = contains(vars_distribution_names,"log");
+    vars_distribution_names_log = vars_distribution_names;
+    vars_distribution_names_log(~dist_already_log) = "log_"+vars_distribution_names(~dist_already_log);
+    vars_distribution = reshape(vars_distribution_names_log + ["_mean";"_std";"_skewness"],1,[]);
     vars_lads = [...
         "interior_dbscan_cluster_n_locs",...
         "interior_dbscan_cluster_n_clusters",...
         "periphery_dbscan_cluster_n_locs",...
-        "periphery_dbscan_cluster_n_clusters",...
-        "periphery_dbscan2total_n_locs",...
-        "periphery_dbscan2total_n_clusters"];
+        "periphery_dbscan_cluster_n_clusters"];
     vars_radial_loc_density = compose("radial_loc_density_ring_%02d", 1:10);
-    vars_radial_heterochromatin_density = compose("radial_heterochromatin_density_ring_%02d", 1:10);
+    vars_radial_dbscan_cluster_density = compose("radial_dbscan_cluster_density_ring_%02d", 1:10);
     vars_radial_delta = [...
         "radial_loc_density_ring_gradient_major_axis",...
         "radial_loc_density_ring_gradient_minor_axis",...
-        "radial_heterochromatin_density_ring_gradient_major_axis",...
-        "radial_heterochromatin_density_ring_gradient_minor_axis"];
-    load(SNAP_nucleus_file_list{1,"filepath"},'area_thresholds');
-    vars_cluster = reshape("voronoi_cluster"+compose("_%03.0fnm^2_",area_thresholds)+["radius";"density";"gyration_radius"]+"_",1,[]);
-    vars_cluster = reshape(vars_cluster + ["median";"std";"skewness"],1,[]);
-    vars_cluster = [vars_cluster reshape("voronoi_cluster"+compose("_%03.0fnm^2_",area_thresholds)+"clusters_per_nucleus_area",1,[])];
+        "radial_dbscan_cluster_density_ring_gradient_major_axis",...
+        "radial_dbscan_cluster_density_ring_gradient_minor_axis"];
+    %% CHANGE
+    % load(SNAP_nucleus_file_list{1,"filepath"},'area_thresholds');
+    area_thresholds = 10.^(1.25:0.25:2);
+    %%
+    vars_voronoi_cluster = reshape("voronoi_cluster"+compose("_%03.0fnm^2_",area_thresholds)+"log_"+["radius";"density";"gyration_radius"]+"_",1,[]);
+    vars_voronoi_cluster = reshape(vars_voronoi_cluster + ["mean";"std";"skewness"],1,[]);
+    vars_voronoi_cluster = [vars_voronoi_cluster reshape("voronoi_cluster"+compose("_%03.0fnm^2_",area_thresholds)+"clusters_per_nucleus_area",1,[])];
     vars = [vars_string,...
         vars_morphological,...
         vars_value,...
         vars_ratio,...
         vars_chromatin_percentiles,...
         vars_distribution,...
+        "reduced_log_voronoi_density_mean",...
         vars_lads,...
         vars_radial_loc_density,...
-        vars_radial_heterochromatin_density,...
+        vars_radial_dbscan_cluster_density,...
         vars_radial_delta,...
-        vars_cluster];
+        vars_voronoi_cluster];
     vars_to_load = cellstr([vars_value vars_distribution_names,...
         ["area_thresholds"...
         "voronoi_areas",...
@@ -179,46 +183,56 @@ function T = SNAP_nucleus_to_feature_table(SNAP_nucleus_file_list)
                     T{s,vars_for_percentiles(j)+"_"+percentile_thresh(k)} = percentile_values_j(k);
                 end
             end
+            T{s,"reduced_log_voronoi_density_mean"} = mean(data.reduced_log_voronoi_density,"omitmissing");
             %% distribution variables
-            for j=1:numel(vars_distribution_names)
+            for j=1:numel(vars_distribution_names_log)
+                prefix = vars_distribution_names_log(j);
                 if ~isempty(data.(vars_distribution_names(j)))
-                    T{s,vars_distribution_names(j)+"_median"} = median(data.(vars_distribution_names(j)),"omitmissing");
-                    T{s,vars_distribution_names(j)+"_std"} = std(data.(vars_distribution_names(j)),"omitmissing");
-                    T{s,vars_distribution_names(j)+"_skewness"} = skewness(data.(vars_distribution_names(j)),1);
+                    if dist_already_log(j)
+                        d = data.(vars_distribution_names(j));
+                    else
+                        d = log10(data.(vars_distribution_names(j)));
+                    end
+                    T{s,prefix+"_mean"} = mean(d,"omitmissing");
+                    T{s,prefix+"_std"} = std(d,"omitmissing");
+                    T{s,prefix+"_skewness"} = skewness(d,1);
                 else
-                    T{s,vars_distribution_names(j)+["_median","_std","_skewness"]} = [NaN NaN NaN];
+                    T{s,prefix+["_mean","_std","_skewness"]} = [NaN NaN NaN];
                 end
             end
             %% model lad variables
             T{s,"interior_dbscan_cluster_n_locs"} = numel(data.locs_dbscan_cluster_interior_labels);
             T{s,"interior_dbscan_cluster_n_clusters"} = numel(data.interior_dbscan_cluster_n_locs);
             T{s,"periphery_dbscan_cluster_n_locs"} = numel(data.locs_dbscan_cluster_periphery_labels);
-            T{s,"periphery_dbscan_cluster_n_clusters"} = numel(data.periphery_dbscan_cluster_n_locs);
-            T{s,"periphery_dbscan2total_n_locs"} = T{s,"periphery_dbscan_cluster_n_locs"} /(T{s,"periphery_dbscan_cluster_n_locs"} +T{s,"interior_dbscan_cluster_n_locs"});
-            T{s,"periphery_dbscan2total_n_clusters"} = T{s,"periphery_dbscan_cluster_n_clusters"} /(T{s,"periphery_dbscan_cluster_n_clusters"} +T{s,"interior_dbscan_cluster_n_clusters"});
-            %% radial features
+            T{s,"periphery_dbscan_cluster_n_clusters"} = numel(data.periphery_dbscan_cluster_n_locs);            %% radial features
             for j=1:numel(vars_radial_loc_density)
                 T{s,vars_radial_loc_density(j)} = data.radial_loc_density(j);
             end
-            for j=1:numel(vars_radial_heterochromatin_density)
-                T{s,vars_radial_heterochromatin_density(j)} = data.radial_dbscan_cluster_density(j);
+            for j=1:numel(vars_radial_dbscan_cluster_density)
+                T{s,vars_radial_dbscan_cluster_density(j)} = data.radial_dbscan_cluster_density(j);
             end
-            n_ring = floor(numel(vars_radial_loc_density)*0.8);
-            T{s,"radial_loc_density_ring_gradient_major_axis"} = mean(data.radial_loc_density(1:n_ring))/(0.8*T{s,"major_axis"});
-            T{s,"radial_loc_density_ring_gradient_minor_axis"} = mean(data.radial_loc_density(1:n_ring))/(0.8*T{s,"minor_axis"});
-            T{s,"radial_heterochromatin_density_ring_gradient_major_axis"} = mean(data.radial_dbscan_cluster_density(1:n_ring))/(0.8*T{s,"major_axis"});
-            T{s,"radial_heterochromatin_density_ring_gradient_minor_axis"} = mean(data.radial_dbscan_cluster_density(1:n_ring))/(0.8*T{s,"minor_axis"});
+            prop_interior = 0.8;% proportion to consider for gradient (focus on interior of nucleus)
+            n_ring = floor(numel(vars_radial_loc_density)*prop_interior);
+            mdl=fitlm(linspace(0,prop_interior*T{s,"minor_axis"},n_ring),data.radial_loc_density(1:n_ring));
+            T{s,"radial_loc_density_ring_gradient_major_axis"} = mdl.Coefficients{2,'Estimate'};
+            mdl=fitlm(linspace(0,prop_interior*T{s,"minor_axis"},n_ring),data.radial_loc_density(1:n_ring));
+            T{s,"radial_loc_density_ring_gradient_minor_axis"} = mdl.Coefficients{2,'Estimate'};
+            mdl=fitlm(linspace(0,prop_interior*T{s,"major_axis"},n_ring),data.radial_dbscan_cluster_density(1:n_ring));
+            T{s,"radial_dbscan_cluster_density_ring_gradient_major_axis"} = mdl.Coefficients{2,'Estimate'};
+            mdl=fitlm(linspace(0,prop_interior*T{s,"minor_axis"},n_ring),data.radial_dbscan_cluster_density(1:n_ring));
+            T{s,"radial_dbscan_cluster_density_ring_gradient_minor_axis"} = mdl.Coefficients{2,'Estimate'};
             %% cluster features
             metrics = ["radius","density","gyration_radius"];
             for j=1:numel(metrics)
-                for k=1:5
-                    prefix = sprintf("voronoi_cluster_%03.0fnm^2_%s_",data.area_thresholds(k),metrics(j));
-                    T{s,prefix+"median"} = median(data.("voronoi_cluster_"+metrics(j)){k},"omitmissing");
-                    T{s,prefix+"std"} = std(data.("voronoi_cluster_"+metrics(j)){k},"omitmissing");
-                    T{s,prefix+"skewness"} = skewness(data.("voronoi_cluster_"+metrics(j)){k},1);
+                for k=1:numel(data.area_thresholds)
+                    prefix = sprintf("voronoi_cluster_%03.0fnm^2_log_%s_",data.area_thresholds(k),metrics(j));
+                    d = log10(data.("voronoi_cluster_"+metrics(j)){k});
+                    T{s,prefix+"mean"} = mean(d,"omitmissing");
+                    T{s,prefix+"std"} = std(d,"omitmissing");
+                    T{s,prefix+"skewness"} = skewness(d,1);
                 end
             end
-            for k=1:5 
+            for k=1:numel(data.area_thresholds)
                 T{s,sprintf("voronoi_cluster_%03.0fnm^2_clusters_per_nucleus_area",data.area_thresholds(k))} = numel(data.voronoi_cluster_radius{k})/nucleus_area;
             end
             clearvars voronoi_data

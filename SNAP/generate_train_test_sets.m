@@ -1,11 +1,11 @@
-function [train_idx, test_idx, by] = generate_train_test_sets(feature_data,options)
+function [train_idx, test_idx, split_method] = generate_train_test_sets(feature_data,options)
 arguments
     feature_data table
-    options.by string = "replicate"
+    options.split_method string = "replicate"
     options.k double = 5
     options.proportion double = 0.2 % ratio of test:train
 end
-    switch options.by
+    switch options.split_method
         case "replicate"
             % check for proper number of replicates
             bio_reps_by_group=arrayfun(@(x) unique(feature_data{strcmp(feature_data.group,x),"biological_replicate"}), unique(feature_data.group),'uni',0);
@@ -16,24 +16,24 @@ end
             n_reps = numel(bio_reps_all);
             if n_reps >= 4
                 [train_idx, test_idx] = split_for_replicates(feature_data);
-                by = "replicate";
+                split_method = "replicate";
             else 
                 fprintf("  Warning: Number of replicates (=%.0f) < 4, swapping to 'k-fold' option w/ values: 'k'=%.0f\n",n_reps,options.k)
                 [train_idx, test_idx] = split_for_k_fold(feature_data,options.k);
-                by = "k-fold";
+                split_method = "k-fold";
             end
         case "bootstrap"
             [train_idx, test_idx] = split_for_bootstrap(feature_data,options.k,options.proportion);
-            by = "bootstrap";
+            split_method = "bootstrap";
         case "k-fold"
             [train_idx, test_idx] = split_for_k_fold(feature_data,options.k);
-            by = "k-fold";
+            split_method = "k-fold";
         case "none"
             train_idx = {1:size(feature_data,1)};
             test_idx = [];
         otherwise
             ME = MException('SNAP:invalid_argument_for_feature_selection', ...
-                sprintf("Argument 'by' is invalid: %s\nChoose from: 'replicate' (default),'bootstrap','k-fold','none'",options.by));
+                sprintf("Argument 'by' is invalid: %s\nChoose from: 'replicate' (default),'bootstrap','k-fold','none'",options.split_method));
             throw(ME)
     end
 end

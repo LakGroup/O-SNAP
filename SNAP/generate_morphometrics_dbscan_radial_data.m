@@ -44,6 +44,7 @@ data_vars = {'nucleus_radius',...
             'interior_dbscan_cluster_radius',...
             'interior_dbscan_cluster_n_locs',...
             'interior_dbscan_cluster_density',...
+            'interior_dbscan_cluster_spacing',...
             'periphery_dbscan_cluster_center',...
             'periphery_dbscan_cluster_radius',...
             'periphery_dbscan_cluster_n_locs',...
@@ -52,7 +53,6 @@ data_vars = {'nucleus_radius',...
             'model_lad_segment_locs',...
             'model_lad_segment_length',...
             'model_lad_segment_thickness',...
-            'model_lad_segment_spacing',...
             'model_lad_segment_normals',...
             'components',...
             'eigenvalues',...
@@ -223,12 +223,12 @@ if ~all(isfield(data,{...
     data.interior_dbscan_cluster_density = interior_dbscan_cluster_density;
 end
 
-%% find  lad segment spacing
-if ~isfield(data,'model_lad_segment_spacing')  
+%% find spacing between interior dbscan clusters
+if ~isfield(data,'interior_dbscan_cluster_spacing')  
     N_neighbour = 5;
-    dist_mat = mink(pdist2(data.locs_dbscan_cluster_periphery_labels,data.locs_dbscan_cluster_periphery_labels),N_neighbour+1,2);
-    model_lad_segment_spacing = sum(dist_mat,2)/N_neighbour;
-    data.model_lad_segment_spacing = model_lad_segment_spacing;
+    dist_mat = mink(pdist2(data.interior_dbscan_cluster_center,data.interior_dbscan_cluster_center),N_neighbour+1,2);
+    interior_dbscan_cluster_spacing = sum(dist_mat,2)/N_neighbour;
+    data.interior_dbscan_cluster_spacing = interior_dbscan_cluster_spacing;
     clearvars dist_mat N_neighbour
 end
 
@@ -283,7 +283,7 @@ if ~all(isfield(data,...
         seg_len_store = [seg_len_store;norm(point1-point2)];
         model_lad_segment_thickness = [model_lad_segment_thickness;area/norm(point1-point2)];
         model_lad_segment_locs = [model_lad_segment_locs;point1];
-        
+
     end
     model_lad_segment_locs(end+1,:) = model_lad_segment_locs(1,:);
     model_lad_segment_normals(end+1,:) = model_lad_segment_normals(1,:);
@@ -303,7 +303,7 @@ if ~all(isfield(data,{'locs_norm',...
         'eigenvalues', ...
         'components'}))  
     [components,rotated_boundary,eigenvalues] = pca([data.boundary(:,1) data.boundary(:,2)]); % Uses the built-in Matlab pca routine.
-    locs_norm = normalize_points(locs,components,data.boundary,rotated_boundary);        
+    locs_norm = normalize_points(locs,components,data.boundary);        
     x_length = max(locs_norm(:,1))-min(locs_norm(:,1)); % Determine the length of the cloud in x.
     y_length = max(locs_norm(:,2))-min(locs_norm(:,2)); % Determine the length of the cloud in y.
     data.locs_norm = locs_norm;
@@ -312,7 +312,7 @@ if ~all(isfield(data,{'locs_norm',...
     data.y_length = y_length;
     data.components = components;
     clearvars locs_norm eigenvalues x_length y_length components
-elseif  ~options.overwrite
+else
     [~,rotated_boundary,~] = pca([data.boundary(:,1) data.boundary(:,2)]);
 end
 
@@ -336,26 +336,31 @@ end
 
 %% calculate radial localization density
 if ~isfield(data,'radial_loc_density') 
-    radial_loc_density = calculate_radial_loc_density(data.locs_norm, [data.x_length data.y_length], options.ellipse_inc);
+    radial_loc_density = calculate_radial_density(data.locs_norm, [data.x_length data.y_length], options.ellipse_inc);
     data.radial_loc_density = radial_loc_density;
 elseif ~options.overwrite
     load(filepath,'radial_loc_density')
     if size(radial_loc_density,1) < floor(1/options.ellipse_inc)
-        radial_loc_density = calculate_radial_loc_density(data.locs_norm, [data.x_length data.y_length], options.ellipse_inc);
+        radial_loc_density = calculate_radial_density(data.locs_norm, [data.x_length data.y_length], options.ellipse_inc);
         data.radial_loc_density = radial_loc_density;
     end
 end
 
+locs_dbscan_cluster = [data.periphery_dbscan_cluster_center; data.interior_dbscan_cluster_center];
+locs_dbscan_cluster = normalize_points(locs_dbscan_cluster,data.components,data.boundary);
+
 %% calculate radial dbscan cluster density
 if ~isfield(data,'radial_dbscan_cluster_density') 
-    radial_dbscan_cluster_density = calculate_radial_loc_density(normalize_points(data.locs_dbscan_cluster_periphery_labels,data.components,data.boundary,rotated_boundary),...
+    radial_dbscan_cluster_density = calculate_radial_density(locs_dbscan_cluster,...
         [data.x_length data.y_length], options.ellipse_inc);
     data.radial_dbscan_cluster_density = radial_dbscan_cluster_density;
 elseif ~options.overwrite
     load(filepath,'radial_dbscan_cluster_density')
     if size(radial_dbscan_cluster_density,1) ~= floor(1/options.ellipse_inc)
-        radial_dbscan_cluster_density = calculate_radial_loc_density(normalize_points(data.locs_dbscan_cluster_periphery_labels,data.components,data.boundary,rotated_boundary),... 
-        [data.x_length data.y_length], options.ellipse_inc);
+        locs_dbscan_cluster = [data.periphery_dbscan_cluster_center; data.interior_dbscan_cluster_center];
+        locs_dbscan_cluster = normalize_points(locs_dbscan_cluster,data.components,data.boundary);
+        radial_dbscan_cluster_density = calculate_radial_density(locs_dbscan_cluster,... 
+            [data.x_length data.y_length], options.ellipse_inc);
         data.radial_dbscan_cluster_density = radial_dbscan_cluster_density;
     end
 end
@@ -363,16 +368,17 @@ end
 %% calculate periphery/interior density
 if ~all(isfield(data,{'interior_loc_density', ...
         'periphery_loc_density'})) 
-    [interior_loc_density, periphery_loc_density]  = calculate_periphery_loc_density(data.locs_norm,data.polygon,...
+    [interior_loc_density, periphery_loc_density]  = calculate_periphery_density(data.locs_norm,data.polygon,...
         options.periphery_thresh);
     data.interior_loc_density = interior_loc_density;
     data.periphery_loc_density = periphery_loc_density;
 end
 
-%% calculate periphery/interior density of Heterochromatin clusters
+%% calculate periphery/interior density of heterochromatin clusters
 if ~all(isfield(data,{'interior_cluster_density', ...
         'periphery_cluster_density'})) 
-    [interior_cluster_density, periphery_cluster_density]  = calculate_periphery_loc_density(normalize_points(data.locs_dbscan_cluster_periphery_labels,data.components,data.boundary,rotated_boundary),...
+    locs_dbscan_cluster = [data.periphery_dbscan_cluster_center; data.interior_dbscan_cluster_center];
+    [interior_cluster_density, periphery_cluster_density] = calculate_periphery_density(normalize_points(locs_dbscan_cluster,data.components,data.boundary),...
         data.polygon, options.periphery_thresh);
     data.interior_cluster_density = interior_cluster_density;
     data.periphery_cluster_density = periphery_cluster_density;
@@ -393,9 +399,9 @@ if options.plot
     polygon_inner = scale(polygon_outer,(1-options.periphery_thresh));
     plot(polygon_inner); hold on
     % plot(data.boundary(:,1),data.boundary(:,2),'r-','LineWidth',2); hold on
-    locs_dbscan_cluster_periphery_labels = normalize_points(locs_dbscan_cluster_periphery_labels,data.components,data.boundary,rotated_boundary);
-    locs_dbscan_cluster_interior_labels = normalize_points(locs_dbscan_cluster_interior_labels,data.components,data.boundary,rotated_boundary);
-    model_lad_segment_locs = normalize_points(data.model_lad_segment_locs,data.components,data.boundary,rotated_boundary);
+    locs_dbscan_cluster_periphery_labels = normalize_points(locs_dbscan_cluster_periphery_labels(:,[1 2]),data.components,data.boundary);
+    locs_dbscan_cluster_interior_labels = normalize_points(locs_dbscan_cluster_interior_labels(:,[1 2]),data.components,data.boundary);
+    model_lad_segment_locs = normalize_points(data.model_lad_segment_locs(:,[1 2]),data.components,data.boundary);
     model_lad_segment_normals = data.model_lad_segment_normals*data.components;
     scatter(locs_dbscan_cluster_periphery_labels(:,1),locs_dbscan_cluster_periphery_labels(:,2),0.5,'g'); hold on
     scatter(locs_dbscan_cluster_interior_labels(:,1),locs_dbscan_cluster_interior_labels(:,2),0.5,'k'); hold on
@@ -416,7 +422,8 @@ if options.plot
 end
 end
 
-function points_norm = normalize_points(points,components,boundary,rotated_boundary)
+function points_norm = normalize_points(points,components,boundary)
+    rotated_boundary = boundary*components;
     points_norm = points*components - min(boundary*components) - range(rotated_boundary)/2;
 end
 

@@ -3,7 +3,9 @@ arguments
     train_data table
     options.test_data = []
     options.pca_result struct = []
-    options.vars_selected cell = []
+    options.vars_selected cell = {}
+    options.n_models_per_type double = 5
+    options.n_processes double = 12
     options.verbose logical = false
 end
 groups = unique(train_data.group);
@@ -21,36 +23,52 @@ model_types = [...
 if numel(groups) == 2
     model_types = [model_types "logistic_regression_binary_glm"];
 end
-n_model_types = numel(model_types);
 
+n_models_per_type = options.n_models_per_type;
+pca_result = options.pca_result;
+vars_selected = options.vars_selected;
+test_data = options.test_data;
+verbose = options.verbose;
+[model_types_p,n_processes] = split_data_to_n(model_types,options.n_processes,"shuffle",false);
+classifiers_p = cell(1,n_processes);
 % generate classifiers of given model types
-classifiers = cell(1,n_model_types);
-for i=1:numel(model_types)
+parfor p=1:n_processes
     warning('off','all')
-    try
-        classifiers{i} = run_SNAP_classification(...
-            train_data,...
-            'pca_result',options.pca_result,...
-            'vars_selected',options.vars_selected,...
-            'test_data',options.test_data,...
-            'model_type',model_types(i),...
-            'verbose',false);
-    catch ME
-        if options.verbose
-            disp("Error with model type: " + model_types(i))
-            disp(getReport(ME))
+    n_model_types = numel(model_types_p{p});
+    classifiers_p{p} = cell(n_models_per_type,n_model_types);
+    for j=1:n_model_types
+        try
+            for i=1:n_models_per_type
+                classifiers_p{p}{i,j} = run_SNAP_classification(...
+                    train_data,...
+                    'pca_result',pca_result,...
+                    'vars_selected',vars_selected,...
+                    'test_data',test_data,...
+                    'model_type',model_types_p{p}(j),...
+                    'verbose',false);
+            end
+        catch ME
+            if verbose
+                disp("Error with model type: " + model_types_p{p}(j))
+                disp(getReport(ME))
+            end
+            for i=1:n_models_per_type
+                classifiers_p{p}{i,j} = [];
+            end
         end
-        classifiers{i} = [];
     end
     warning('on','all')
 end
+classifiers = [classifiers_p{:}];
 
 % filter models that threw errors
-valid_idx = true(n_model_types,1);
-for i=1:numel(model_types)
-    if isempty(classifiers(i))
-        valid_idx(i) = false;
+valid_idx = true(size(classifiers,2),1);
+for j=1:numel(model_types)
+    for i=1:options.n_models_per_type
+        if isempty(classifiers{i,j})
+            valid_idx(j) = false;
+        end
     end
 end
-classifiers = classifiers(~cellfun(@isempty, classifiers));
+classifiers = classifiers(:,valid_idx);
 end

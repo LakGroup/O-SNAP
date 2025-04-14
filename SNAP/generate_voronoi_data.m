@@ -51,7 +51,7 @@ data.voronoi_neighbors = uneven_cell2mat(neighbors);
 data.reduced_log_voronoi_density = reduced_log_voronoi_density;
 data.faces = uneven_cell2mat(connections)';
 data.vertices = vertices;
-save_SNAP_nucleus_data(filepath, data);
+save_SNAP_nucleus(filepath, data);
 
 %% plot voronoi segmentation with reduced densities
 if options.plot

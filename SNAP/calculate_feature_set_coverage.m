@@ -1,33 +1,23 @@
-function data = interpret_features_ontology(T,save_dir,options)
+function data = calculate_feature_set_coverage(feature_comparisons,save_dir,options)
 arguments
-    T table
+    feature_comparisons cell
     save_dir string
     options.plot = true;
     options.alpha double = 0.05;
     options.fold_change_threshold double = 2;
-    options.feature_universe_names = ["feature_universe_1","feature_universe_2","feature_universe_3"];
+    options.feature_universe_names = ["universe_1"];
 end
 %% define feature_universes
 feature_universes = get_feature_universes(options.feature_universe_names);
-groups = unique(T.group);
-for g=1:size(groups,1)
-    groups_is_alpha = isstrprop(groups(g),'alpha');
-    if ~groups_is_alpha(1)
-        groups(g) = "t" + groups(g);
-    end
-end
-group_pairs = nchoosek(groups,2);
-for g=1:size(group_pairs,1)
-    group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
-    %% calculate adjusted p-values, fold changes
-    S = compare_groups(T,group_pairs(g,1),group_pairs(g,2),...
-        "alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,...
-        "plot",options.plot,"save_path",fullfile(save_dir, "features_diff_"+join(group_pairs(g,:),'_')+".csv"));
-    
-    data.(group_pair_string) = sortrows(S,"adj_p_value");
+
+for i=1:numel(feature_comparisons)
+    group_ctrl = feature_comparisons{i}.groups(1);
+    group_case = feature_comparisons{i}.groups(2);
+    group_pair_string = replace(group_ctrl + "__vs__" + group_case,"-","_");
+    data.(group_pair_string) = sortrows(feature_comparisons{i}.feature_table,"adj_p_value");
     %% run loop on all universes
     for f = 1:size(feature_universes,2)
-        data.(group_pair_string) = analyze_feature_family(data.(group_pair_string),group_pairs(g,:),feature_universes{f},save_dir,options);
+        data.(group_pair_string) = analyze_feature_family(data.(group_pair_string),[group_ctrl group_case],feature_universes{f},save_dir,options);
     end
 end
 end
@@ -35,7 +25,7 @@ end
 %% perform ontology analysis for a given feature universe
 function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,options)
     feature_universe_name = feature_universe_info.name;
-    feature_universe = feature_universe_info.universe;
+    feature_universe = feature_universe_info.feature_set;
     %% get feature families (defined in functions below)
     S = sort_features(S,feature_universe,feature_universe_name);
     S_universe = groupcounts(S,feature_universe_name);
@@ -88,7 +78,6 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
             x = replace(S_diff_grouped{:,feature_universe_name},"_"," ");
             x = reordercats(categorical(x),x);
             bar(x,S_diff_grouped.GroupCount);
-            xlabel("Feature Families")
             ylabel("Counts")
             y_lim_counts = ylim();
             title({"Differential features", "Counts"},"Interpreter","none")
@@ -158,8 +147,8 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
             title({"Features increased for " + group_pair(2),"Coverage"},"Interpreter","none")
         end
         sgtitle({replace(feature_universe_name,"_"," "),join(group_pair(:),' vs ')});
-        savefig(fullfile(save_dir, "features_ontology_"+join(group_pair(:),'_')+"_"+ feature_universe_name + ".fig"));
-        saveas(gcf,fullfile(save_dir, "features_ontology_"+join(group_pair(:),'_')+"_"+ feature_universe_name +".png"));
+        savefig(fullfile(save_dir, "feature_set_coverage_"+join(group_pair(:),'_')+"_"+ feature_universe_name + ".fig"));
+        saveas(gcf,fullfile(save_dir, "feature_set_coverage_"+join(group_pair(:),'_')+"_"+ feature_universe_name +".png"));
     end
 end
 
