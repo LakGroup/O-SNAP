@@ -44,7 +44,7 @@ opts.direction = [FS.entrez_dir{:}];
 opts.direction = opts.direction(sign_sort);
 
 %calculate ranks
-[data_ranks,opts.tail] = calc_ranks(data,group,opts.rank_type,opts.abs,opts.tied_rank,opts.direction);
+[data_ranks,opts.tail] = calc_ranks_FSEA(data,group,opts.rank_type,opts.abs,opts.tied_rank,opts.direction);
 
 %sort data by ranks
 [data_ranks,ind] = sort(data_ranks,opts.sort_type);
@@ -85,7 +85,7 @@ end
 if opts.show
     disp('Calculate ranking metrics for all permutations.')
 end
-ranks_perm = pre_calc_ranks(data_ranks,data,group,opts);
+ranks_perm = pre_calc_ranks_FSEA(data_ranks,data,group,opts);
 switch opts.tail
     case 'both'
         p_feature = 1-(sum(repmat(abs(data_ranks),1,opts.perm_nb) > ranks_perm,2))/opts.perm_nb;
@@ -121,7 +121,7 @@ parfor a=1:FS.nb
     ESmax = ES(ind);
     
     if opts.show
-        plot_classic(replace(file_name,'FSEA_','FSEA_plots_'),ES,ESmax,data_ranks,ind_d{a},FS.ID{a},Phit,Pmiss);
+        plot_classic_FSEA(replace(file_name,'FSEA_','FSEA_plots_'),ES,ESmax,data_ranks,ind_d{a},FS.ID{a},Phit,Pmiss);
     end
     
     % Find p-value by permutation test
