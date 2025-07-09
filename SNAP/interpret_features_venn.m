@@ -95,19 +95,26 @@ for i=1:n_group_pairs
 end
 %% plot result
 if options.plot
-    venn_labels_increase = cellfun(@(x) x.n_increase_features_group_1,venn_data,'uni',1);
-    venn(3,'sets',group_pairs_string,'labels',venn_labels_increase,'alpha',0.7,'colors',autumn(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
+    venn_labels_increase_1 = cellfun(@(x) x.n_increase_features_group_1,venn_data,'uni',1);
+    venn(3,'sets',group_pairs_string,'labels',venn_labels_increase_1,'alpha',0.7,'colors',autumn(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
     title("FEATURE VALUE INCREASE (GROUP 2)",'Position', [1.5 -0.3, 0])
     if options.save_path~=""
         savefig(options.save_path+"_increase.fig");
         saveas(gcf,options.save_path+"_increase.png");
     end
-    venn_labels_decrease = cellfun(@(x) x.n_increase_features_group_2,venn_data,'uni',1);
-    venn(3,'sets',group_pairs_string,'labels',venn_labels_decrease,'alpha',0.7,'colors',winter(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
+    venn_labels_increase_2 = cellfun(@(x) x.n_increase_features_group_2,venn_data,'uni',1);
+    venn(3,'sets',group_pairs_string,'labels',venn_labels_increase_2,'alpha',0.7,'colors',winter(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
     title("FEATURE VALUE INCREASE (GROUP 1)",'Position', [1.5 -0.3, 0])
     if options.save_path~=""
         savefig(options.save_path+"_decrease.fig");
         saveas(gcf,options.save_path+"_decrease.png");
+    end
+    venn_labels_increase_all = venn_labels_increase_1+venn_labels_increase_2;
+    venn(3,'sets',group_pairs_string,'labels',venn_labels_increase_all,'alpha',0.7,'colors',summer(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
+    title("FEATURE VALUE CHANGE",'Position', [1.5 -0.3, 0])
+    if options.save_path~=""
+        savefig(options.save_path+"_all.fig");
+        saveas(gcf,options.save_path+"_all.png");
     end
 end
 end
@@ -120,6 +127,8 @@ arguments
     options.fold_change_threshold double = 2;
     options.save_path string = "";
 end
+groups = cellfun(@(x) x.groups,feature_comparisons,'uni',0);
+groups = unique([groups{:}]);
 %% data preparation
 group_pairs_string = cellfun(@(x) join(x.groups, " vs "),feature_comparisons,'uni',1);
 n_group_pairs = numel(feature_comparisons);
@@ -208,19 +217,26 @@ for i=1:n_group_pairs
 end
 %% plot result
 if options.plot
-    venn_labels_increase = cellfun(@(x) x.n_increase_features_group_1,venn_data,'uni',1);
-    venn(4,'sets',group_pairs_string,'labels',venn_labels_increase,'alpha',0.7,'colors',autumn(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
+    venn_labels_increase_1 = cellfun(@(x) x.n_increase_features_group_1,venn_data,'uni',1);
+    venn(4,'sets',group_pairs_string,'labels',venn_labels_increase_1,'alpha',0.7,'colors',autumn(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
     title("FEATURE VALUE INCREASE",'Position', [1.5 -0.3, 0])
     if options.save_path~=""
         savefig(options.save_path+"_increase.fig");
         saveas(gcf,options.save_path+"_increase.png");
     end
-    venn_labels_decrease = cellfun(@(x) x.n_increase_features_group_2,venn_data,'uni',1);
-    venn(4,'sets',group_pairs_string,'labels',venn_labels_decrease,'alpha',0.7,'colors',winter(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
+    venn_labels_increase_2 = cellfun(@(x) x.n_increase_features_group_2,venn_data,'uni',1);
+    venn(4,'sets',group_pairs_string,'labels',venn_labels_increase_2,'alpha',0.7,'colors',winter(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
     title("FEATURE VALUE DECREASE",'Position', [1.5 -0.3, 0])
     if options.save_path~=""
         savefig(options.save_path+"_decrease.fig");
         saveas(gcf,options.save_path+"_decrease.png");
+    end
+    venn_labels_increase_all = venn_labels_increase_1+venn_labels_increase_2;
+    venn(4,'sets',group_pairs_string,'labels',venn_labels_increase_all,'alpha',0.7,'colors',summer(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
+    title("FEATURE VALUE CHANGE",'Position', [1.5 -0.3, 0])
+    if options.save_path~=""
+        savefig(options.save_path+"_all.fig");
+        saveas(gcf,options.save_path+"_all.png");
     end
 end
 end

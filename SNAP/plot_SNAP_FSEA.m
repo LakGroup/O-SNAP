@@ -69,10 +69,11 @@ ytickangle(30)
 xlabel("Normalized Enrichment Score")
 ylim([-0.5,n_feature_families+0.25])
 title(group,"Interpreter","none")
-cbar.Label.String = "adj. p-value";
+cbar.Label.String = "FDR q-value";
 clim([0 options.p_show]);
 cbar.Direction = 'reverse';
-cbar.TickLabels = compose("%0.2f",cbar.Ticks);
+% cbar.TickLabels = compose("%0.2f",cbar.Ticks);
+cbar.Ruler.TickLabelFormat = '%.2f';
 marker_refs = 5*unique(round(T_FSEA.("FS size")/5),'sorted');
 if marker_refs(1) == 0
     marker_refs(1) = 5;

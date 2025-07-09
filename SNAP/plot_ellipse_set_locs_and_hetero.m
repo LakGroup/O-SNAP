@@ -12,7 +12,7 @@ end
         'voronoi_areas_all'};
     data = load_variables(file_path,vars_to_load);
     [save_dir,name,~] = fileparts(file_path);
-    save_dir = replace(save_dir,"SNAP_nucleus_data","radial_density_images");
+    save_dir = replace(save_dir,"SNAP_nucleus_data","SNAP_radial_density_images");
     if ~exist(save_dir,'dir')
         mkdir(save_dir)
     end

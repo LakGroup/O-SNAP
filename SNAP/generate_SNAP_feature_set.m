@@ -17,9 +17,9 @@ end
         'VariableTypes',[{'string','string'}  repmat({'double'},1,max_n_features)]);
     for s=1:n_feature_sets
         data_feature_set{s,1} = feature_set_names(s);
-        data_feature_set{s,2} = NaN;
+        data_feature_set{s,2} = {NaN};
         data_feature_set{s,3:max_n_features+2} = [feature_idxs{s} NaN(1,max_n_features - length(feature_idxs{s}))];
     end
-    writetable(data_feature_set,filepath,"WriteVariableNames",false);
+    writetable(data_feature_set,filepath,"WriteVariableNames",false,"WriteMode","overwritesheet");
     update_FS(char(filepath))
 end

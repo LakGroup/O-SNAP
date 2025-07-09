@@ -61,7 +61,7 @@ error(nargchk(1,2,nargin));
 inum = isnumeric(L);
 
 % reset labeling?
-if nargin == 1;
+if nargin == 1
     % by default no.
     r = false;
 else

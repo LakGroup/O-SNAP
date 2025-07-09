@@ -161,12 +161,13 @@ else
     locs_dbscan_cluster_interior_labels = data.locs_dbscan_cluster_interior_labels(:,1:2);
 end
 
-%% analysis of lads chromatin domain size
+%% analysis of lads chromatin domain properties
 if ~all(isfield(data,{...
         'periphery_dbscan_cluster_n_locs',...
         'periphery_dbscan_cluster_center',...
         'periphery_dbscan_cluster_density',...
-        'periphery_dbscan_cluster_radius'}))  
+        'periphery_dbscan_cluster_radius',...
+        'periphery_dbscan_cluster_gyration_radius'}))  
     if ~exist('locs_dbscan_cluster_periphery_labels','var') && isfield(data,'locs_dbscan_cluster_periphery_labels')
         locs_dbscan_cluster_periphery_index = data.locs_dbscan_cluster_periphery_labels(:,3);
         locs_dbscan_cluster_periphery_labels = data.locs_dbscan_cluster_periphery_labels(:,1:2);
@@ -176,13 +177,17 @@ if ~all(isfield(data,{...
     periphery_dbscan_cluster_center = zeros(n_locs_dbscan_cluster_periphery,2);
     periphery_dbscan_cluster_area = zeros(n_locs_dbscan_cluster_periphery,1);
     periphery_dbscan_cluster_density = zeros(n_locs_dbscan_cluster_periphery,1);
+    periphery_dbscan_cluster_gyration_radius = zeros(n_locs_dbscan_cluster_periphery,1);
     for i=1:n_locs_dbscan_cluster_periphery
         grp = locs_dbscan_cluster_periphery_labels(locs_dbscan_cluster_periphery_index==i,:);
-        periphery_dbscan_cluster_n_locs(i) = length(grp);
+        periphery_dbscan_cluster_n_locs(i) = size(grp,1);
         periphery_dbscan_cluster_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
-        [k,periphery_dbscan_cluster_area_i] = boundary(grp,0.3);
-        periphery_dbscan_cluster_area(i) = periphery_dbscan_cluster_area_i;
-        periphery_dbscan_cluster_density(i) = periphery_dbscan_cluster_n_locs(i)./periphery_dbscan_cluster_area_i;
+        [k,grp_area] = boundary(grp(:,1:2),0.3);
+        periphery_dbscan_cluster_area(i) = grp_area;
+        periphery_dbscan_cluster_density(i) = periphery_dbscan_cluster_n_locs(i)./grp_area;
+        periphery_dbscan_cluster_gyration_radius(i) = sqrt(mean(...
+            (grp(:,1)-mean(grp(:,1))).^2 ...
+            + (grp(:,2)-mean(grp(:,2))).^2));
         data.domain_boundary{i,1}=grp(k,:);
         clear grp 
     end
@@ -190,30 +195,36 @@ if ~all(isfield(data,{...
     data.periphery_dbscan_cluster_center = periphery_dbscan_cluster_center;
     data.periphery_dbscan_cluster_radius = sqrt(periphery_dbscan_cluster_area/pi);
     data.periphery_dbscan_cluster_density = periphery_dbscan_cluster_density;
+    data.periphery_dbscan_cluster_gyration_radius = periphery_dbscan_cluster_gyration_radius;
 end
 
-%% analysis of inner heterochromatin domain size
+%% analysis of inner heterochromatin domain properties
 if ~all(isfield(data,{...
         'interior_dbscan_cluster_n_locs',...
         'interior_dbscan_cluster_center',...
         'interior_dbscan_cluster_density',...
-        'interior_dbscan_cluster_radius'}))  
+        'interior_dbscan_cluster_radius',...
+        'interior_dbscan_cluster_gyration_radius'}))  
     if ~exist('locs_dbscan_cluster_interior_labels','var') && isfield(data,'locs_dbscan_cluster_interior_labels')
         locs_dbscan_cluster_interior_labels_index = data.locs_dbscan_cluster_interior_labels(:,3);
         locs_dbscan_cluster_interior_labels = data.locs_dbscan_cluster_interior_labels(:,1:2);
     end
-    n_hetero = max(locs_dbscan_cluster_interior_labels_index);
-    interior_dbscan_cluster_n_locs = zeros(n_hetero,1);
-    interior_dbscan_cluster_center = zeros(n_hetero,2);
-    interior_dbscan_cluster_radius = zeros(n_hetero,1);
-    interior_dbscan_cluster_density = zeros(n_hetero,1);
-    for i=1:n_hetero
+    n_locs_dbscan_cluster_interior = max(locs_dbscan_cluster_interior_labels_index);
+    interior_dbscan_cluster_n_locs = zeros(n_locs_dbscan_cluster_interior,1);
+    interior_dbscan_cluster_center = zeros(n_locs_dbscan_cluster_interior,2);
+    interior_dbscan_cluster_radius = zeros(n_locs_dbscan_cluster_interior,1);
+    interior_dbscan_cluster_density = zeros(n_locs_dbscan_cluster_interior,1);
+    interior_dbscan_cluster_gyration_radius = zeros(n_locs_dbscan_cluster_interior,1);
+    for i=1:n_locs_dbscan_cluster_interior
         grp = locs_dbscan_cluster_interior_labels(locs_dbscan_cluster_interior_labels_index==i,:);
         interior_dbscan_cluster_n_locs(i) = length(grp);
         interior_dbscan_cluster_center(i,:) = [mean(grp(:,1)),mean(grp(:,2))];
-        [k,hetero_area]=boundary(grp,0.3);
-        interior_dbscan_cluster_radius(i) = sqrt(hetero_area/pi);
-        interior_dbscan_cluster_density(i) = interior_dbscan_cluster_n_locs(i)./hetero_area;
+        [k,grp_area]=boundary(grp(:,1:2),0.3);
+        interior_dbscan_cluster_radius(i) = sqrt(grp_area/pi);
+        interior_dbscan_cluster_density(i) = interior_dbscan_cluster_n_locs(i)./grp_area;
+        interior_dbscan_cluster_gyration_radius(i) = sqrt(mean(...
+            (grp(:,1)-mean(grp(:,1))).^2 ...
+            + (grp(:,2)-mean(grp(:,2))).^2));
         data.domain_boundary{i,1}=grp(k,:);
         clear grp 
     end
@@ -221,6 +232,7 @@ if ~all(isfield(data,{...
     data.interior_dbscan_cluster_center = interior_dbscan_cluster_center;
     data.interior_dbscan_cluster_radius = interior_dbscan_cluster_radius;
     data.interior_dbscan_cluster_density = interior_dbscan_cluster_density;
+    data.interior_dbscan_cluster_gyration_radius = interior_dbscan_cluster_gyration_radius;
 end
 
 %% find spacing between interior dbscan clusters
@@ -297,7 +309,8 @@ if ~all(isfield(data,...
 end
 
 %% Perform a Principal Component Analysis to rotate the data (maximizing the length)
-if ~all(isfield(data,{'locs_norm',...
+if ~all(isfield(data,{...
+        'locs_norm',...
         'x_length', ...
         'y_length', ...
         'eigenvalues', ...

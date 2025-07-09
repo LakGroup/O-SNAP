@@ -64,9 +64,10 @@ parfor p=1:options.n_processes
         plot(nan, nan,"-k","LineWidth",2);
         l = [l "Mean" "Median"];
         legend(l,"Location","eastoutside","interpreter","none");
-        title(replace(feature,"_"," "))
-        xlabel("Groups",'FontSize',24)
+        xlabel("Groups",'FontSize',2)
+        xtickangle(30)
         set(gca,'FontSize',16)
+        % title(replace(feature,"_"," "),'FontSize',10)
         saveas(gcf,fullfile(save_dir,"violin_plot_"+feature+".png"));
     end
 end

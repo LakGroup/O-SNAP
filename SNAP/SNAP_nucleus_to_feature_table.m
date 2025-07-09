@@ -47,10 +47,12 @@ function T = SNAP_nucleus_to_feature_table(SNAP_nucleus_file_list)
     vars_chromatin_percentiles = table2array(rowfun(@strcat,combinations(vars_for_percentiles,"_"+percentile_thresh)))';
     vars_distribution_names = [...
         "interior_dbscan_cluster_radius",...
+        "interior_dbscan_cluster_gyration_radius",...
         "interior_dbscan_cluster_density",...
         "interior_dbscan_cluster_n_locs",...
         "interior_dbscan_cluster_spacing",...
         "periphery_dbscan_cluster_radius",...
+        "periphery_dbscan_cluster_gyration_radius",...
         "periphery_dbscan_cluster_density",...
         "periphery_dbscan_cluster_n_locs",...
         "model_lad_segment_length",...
@@ -61,6 +63,8 @@ function T = SNAP_nucleus_to_feature_table(SNAP_nucleus_file_list)
     vars_distribution_names_log = vars_distribution_names;
     vars_distribution_names_log(~dist_already_log) = "log_"+vars_distribution_names(~dist_already_log);
     vars_distribution = reshape(vars_distribution_names_log + ["_mean";"_std";"_skewness"],1,[]);
+    % remove n_locs_skewness variables, which even after log transform is very far from normal
+    vars_distribution = vars_distribution(~endsWith(vars_distribution,"_n_locs_skewness"));
     vars_lads = [...
         "interior_dbscan_cluster_n_locs",...
         "interior_dbscan_cluster_n_clusters",...
@@ -93,7 +97,7 @@ function T = SNAP_nucleus_to_feature_table(SNAP_nucleus_file_list)
         vars_radial_delta,...
         vars_voronoi_cluster];
     vars_to_load = cellstr([vars_value vars_distribution_names,...
-        ["area_thresholds"...
+        [ ...
         "voronoi_areas",...
         "reduced_log_voronoi_density"...
         "locs_norm",...
@@ -195,9 +199,17 @@ function T = SNAP_nucleus_to_feature_table(SNAP_nucleus_file_list)
                     end
                     T{s,prefix+"_mean"} = mean(d,"omitmissing");
                     T{s,prefix+"_std"} = std(d,"omitmissing");
-                    T{s,prefix+"_skewness"} = skewness(d,1);
+                    % skip skewness measurement for n_locs since
+                    % distribution is not well-suited for skewness
+                    % measurement
+                    if ~contains(prefix,"n_locs")
+                        T{s,prefix+"_skewness"} = skewness(d,1);
+                    end
                 else
-                    T{s,prefix+["_mean","_std","_skewness"]} = [NaN NaN NaN];
+                    T{s,prefix+["_mean","_std"]} = [NaN NaN];
+                    if ~contains(prefix,"n_locs")
+                        T{s,prefix+"_skewness"} = NaN;
+                    end
                 end
             end
             %% model lad variables
@@ -213,7 +225,7 @@ function T = SNAP_nucleus_to_feature_table(SNAP_nucleus_file_list)
             end
             prop_interior = 0.8;% proportion to consider for gradient (focus on interior of nucleus)
             n_ring = floor(numel(vars_radial_loc_density)*prop_interior);
-            mdl=fitlm(linspace(0,prop_interior*T{s,"minor_axis"},n_ring),data.radial_loc_density(1:n_ring));
+            mdl=fitlm(linspace(0,prop_interior*T{s,"major_axis"},n_ring),data.radial_loc_density(1:n_ring));
             T{s,"radial_loc_density_ring_gradient_major_axis"} = mdl.Coefficients{2,'Estimate'};
             mdl=fitlm(linspace(0,prop_interior*T{s,"minor_axis"},n_ring),data.radial_loc_density(1:n_ring));
             T{s,"radial_loc_density_ring_gradient_minor_axis"} = mdl.Coefficients{2,'Estimate'};
@@ -221,19 +233,19 @@ function T = SNAP_nucleus_to_feature_table(SNAP_nucleus_file_list)
             T{s,"radial_dbscan_cluster_density_ring_gradient_major_axis"} = mdl.Coefficients{2,'Estimate'};
             mdl=fitlm(linspace(0,prop_interior*T{s,"minor_axis"},n_ring),data.radial_dbscan_cluster_density(1:n_ring));
             T{s,"radial_dbscan_cluster_density_ring_gradient_minor_axis"} = mdl.Coefficients{2,'Estimate'};
-            %% cluster features
+            %% voronoi cluster features
             metrics = ["radius","density","gyration_radius"];
             for j=1:numel(metrics)
-                for k=1:numel(data.area_thresholds)
-                    prefix = sprintf("voronoi_cluster_%03.0fnm^2_log_%s_",data.area_thresholds(k),metrics(j));
+                for k=1:numel(area_thresholds)
+                    prefix = sprintf("voronoi_cluster_%03.0fnm^2_log_%s_",area_thresholds(k),metrics(j));
                     d = log10(data.("voronoi_cluster_"+metrics(j)){k});
                     T{s,prefix+"mean"} = mean(d,"omitmissing");
                     T{s,prefix+"std"} = std(d,"omitmissing");
                     T{s,prefix+"skewness"} = skewness(d,1);
                 end
             end
-            for k=1:numel(data.area_thresholds)
-                T{s,sprintf("voronoi_cluster_%03.0fnm^2_clusters_per_nucleus_area",data.area_thresholds(k))} = numel(data.voronoi_cluster_radius{k})/nucleus_area;
+            for k=1:numel(area_thresholds)
+                T{s,sprintf("voronoi_cluster_%03.0fnm^2_clusters_per_nucleus_area",area_thresholds(k))} = numel(data.voronoi_cluster_radius{k})/nucleus_area;
             end
             clearvars voronoi_data
         catch ME

@@ -29,9 +29,11 @@ for i = 1:numel(connections)
         voronoi_areas_all(i) = polyarea(tmp(:,1),tmp(:,2));
     end
 end
-% clean data
-idx = ~isnan(voronoi_areas_all);
-voronoi_areas = voronoi_areas_all(idx);
+% clean data (boundary points that cause outliers and NaN values)
+voronoi_areas = voronoi_areas_all;
+boundary_idx = boundary(data.x,data.y);
+voronoi_areas(boundary_idx) = [];
+voronoi_areas = voronoi_areas(~isnan(voronoi_areas));
 % connections = connections(idx);
 reduced_voronoi_areas = voronoi_areas ./ mean(voronoi_areas);
 reduced_log_voronoi_density = log10(1./reduced_voronoi_areas);

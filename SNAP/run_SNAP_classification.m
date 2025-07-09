@@ -126,7 +126,14 @@ else
         trained_classifier.ValidationScores(cvp.test(k),:) = scores_k;
     end
     correct_predictions = strcmp(trained_classifier.ValidationPredictions,strtrim(response));
+    trained_classifier.ValidationResponse = strtrim(response);
     trained_classifier.ValidationAccuracy = sum(correct_predictions)/numel(correct_predictions);
+    groups = unique(trained_classifier.ValidationResponse);
+    trained_classifier.PerformanceCurve = cell(numel(groups),1);
+    for i=1:numel(groups)
+        trained_classifier.PerformanceCurve{i}.group = groups(i);
+        [trained_classifier.PerformanceCurve{i}.x,trained_classifier.PerformanceCurve{i}.y,trained_classifier.PerformanceCurve{i}.threshold,trained_classifier.PerformanceCurve{i}.AUC] = perfcurve(trained_classifier.ValidationResponse,trained_classifier.ValidationScores(:,i),groups(i));
+    end
     % Show results
     if options.verbose
         fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,trained_classifier.ValidationAccuracy*100)

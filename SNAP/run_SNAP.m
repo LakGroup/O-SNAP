@@ -1,26 +1,146 @@
-function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,options)
+% -------------------------------------------------------------------------
+% run_SNAP.m
+% -------------------------------------------------------------------------
+% Function that runs the suite of analysis available in O-SNAP, excluding
+% the pseudotime analysis that implemented in R.
+% <FILL>
+% Most descriptors/features that are calculated are calculated with respect to
+% the point cloud or an accurate representation of a pointcloud (based on
+% the alphaShape or polyshape functions of Matlab). 
+%
+% Example on how to use it:
+%   results = run_SNAP("C:\Users\JohnSmith\Documents\O-SNAP_Analysis\,...
+%                      "SmithJohn_HeLa_ProteinKO_H2BHistone",...
+%                      {'Control','KO'},...
+%                      {'20250101','20250108','20250201'},...
+%                      "run_generate_features",1,
+%                      "run_generate_table",1,...
+%                      "run_comparison",1,...
+%                      "run_generate_batches",1,
+%                      "run_feature_selection",1,
+%                      "run_PCA",1, ...
+%                      "run_classification_batch",1, ...
+%                      "run_plot_violin",1,...
+%                      "run_plot_radial",1,...
+%                      "run_FSEA",1,...
+%                      "save",1);
+% -------------------------------------------------------------------------
+% Input:
+%   root_dir:  The parent directory that contains the directory where the
+%              analysis results are saved
+%   analysis_name: Analysis identifier string
+%   groups: Cell array containing char array of the identifiers of the 
+%           phenotypes/cell states *ENSURE THAT EACH SAMPLE FILENAME 
+%           CONTAINS EXACTLY ONE IDENTIFIER FROM groups*
+%   replicates: Cell array containing char array of the identifiers of the 
+%               replicates. *ENSURE THAT EACH REPLCIATE IS STORED IN A
+%               SEPARATE FOLDER PREFIXED BY "Rep"*
+% Output:
+%   SNAP_data:  A struct containing the following fields related to the 
+%               SNAP analysis:
+%                  - analysis_name: Analysis identifier string
+%                  - classification_summary_all: Table of classification
+%                                                accuracies using "all"
+%                                                approach
+%                  - classification_summary_batch_all: Table of
+%                                                      classification
+%                                                      accuracies using
+%                                                      "batch_all" approach
+%                  - classification_summary_batch_each: Table of
+%                                                       classification 
+%                                                       accuracies using 
+%                                                       "batch_each"
+%                                                       approach
+%                  - classifiers_all: Cell array with all instances of 
+%                                     trained models using "all" approach
+%                  - classifiers_batch_all: Cell array with all instances
+%                                           of trained models using
+%                                           "batch_all" approach
+%                  - classifiers_batch_each: Cell array with all instances
+%                                            of trained models using
+%                                            "batch_each" approach
+%                  - date: The most recent date the analysis was run
+%                  - feature_comparisons: A cell array where every cell is
+%                                         a pair-wise combination of the
+%                                         fold-change analysis used in the
+%                                         volcano plots
+%                  - feature_data: The table containing the O-SNAP feature
+%                                  values where each row represents a
+%                                  sample (nucleus) and each column is an
+%                                  O-SNAP feature
+%                  - groups: Cell array containing char array of the
+%                            identifiers of the phenotypes/cell states
+%                            *ENSURE THAT EACH SAMPLE FILENAME CONTAINS 
+%                            EXACTLY ONE IDENTIFIER FROM groups*
+%                  - options: Struct array of parameter values for 
+%                             O-SNAP analysis
+%                  - pca_result_all: Info on PCA transformation in the 
+%                                    classification pipeline using the
+%                                    "all" approach
+%                  - pca_result_batch_all: Info on the PCA transformation
+%                                          in the classification pipeline
+%                                          using the "batch_all" approach
+%                  - pca_result_batch_each: Info on the PCA transformation
+%                                          in the classification pipeline
+%                                          using the "batch_each" approach"
+%                  - replicates: Cell array containing char array of the 
+%                                identifiers of the replicates.
+%                                *ENSURE THAT EACH REPLCIATE IS STORED IN
+%                                 A SEPARATE FOLDER PREFIXED BY "Rep"*
+%                  - starttime: The starttime identifier for the analysis
+%                               run
+%                  - test_idxs: A cell array where each cell contains a
+%                               logical array indicating samples for the
+%                               test data of each fold
+%                  - train_idxs: A cell array where each cell contains a
+%                                logical array indicating samples for the
+%                                training data of each fold
+%                  - vars_select_result_all: MRMR scores of features for
+%                                            ranking performed on entire
+%                                            feature data
+%                  - vars_select_result_batch: Table with MRMR scores of
+%                                              each fold and the sum of the
+%                                              scores across all folds
+%                  - vars_selected_all: Features selected from MRMR
+%                                       performed on entire dataset
+%                  - vars_selected_batch: Table of boolean values
+%                                         indicating whether a feature is
+%                                         selected within a batch and from
+%                                         the aggregated selection
+%                  - venn_data: Data for Venn diagram to compare changes
+%                               between 3-4 comparisons of phenotype pairs
+% Options:
+%   run_generate_features:  
+%   run_generate_table:  
+%   run_comparison:  
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+function SNAP_data = run_SNAP(root_dir,analysis_name,groups,replicates,options)
     arguments
         root_dir char
         analysis_name char
         groups cell
         replicates cell
         % run options (will overwrite)
-        options.run_generate_features logical = 0
-        options.run_generate_table logical = 0
-        options.run_comparison logical = 0
-        options.run_generate_batches logical = 0
-        options.run_feature_selection logical = 0
-        options.run_PCA logical = 0
-        options.run_classification_all logical = 0
-        options.run_classification_batch logical = 0
-        options.run_cluster_observations logical = 0
-        options.run_cluster_features logical = 0 
-        options.run_graph_features logical = 0 
-        options.run_venn logical = 1
+        options.run_generate_features logical = 1
+        options.run_generate_table logical = 1
+        options.run_comparison logical = 1
+        options.run_generate_batches logical = 1
+        options.run_feature_selection logical = 1
+        options.run_PCA logical = 1
+        options.run_classification_all logical = 1
+        options.run_classification_batch logical = 1
+        options.run_venn logical = 0
         options.run_plot_violin logical = 0
         options.run_plot_radial logical = 0
-        options.run_FSEA logical = 1
-        options.run_ripley_k logical = 0        
+        options.run_FSEA logical = 0
         % generate batch options
         options.split_method string = "k-fold"
         options.test_train_ratio double = 0.2;
@@ -29,6 +149,8 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
         options.max_idx = 12;
         % PCA options
         options.num_components_explained double = 0.75
+        % classification options
+        options.n_models_per_type = 5;
         % comparison options
         options.alpha double = 0.05
         options.fold_change_threshold double = 2;
@@ -37,14 +159,12 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
         options.FSEA_rank_type string = "S2N";
         % other
         options.n_processes double = 12
-        options.verbose logical = 0
         % save options
         options.suffix = ""
         options.save = 1;
-        options.save_if_error = 0;
+        options.save_if_error = 1;
         options.check_overwrite = 0
     end
-
     %% prepare SNAP run
     work_dir = fullfile(root_dir,analysis_name);
     save_analysis_path = fullfile(work_dir,analysis_name+".mat");
@@ -56,9 +176,9 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
     fprintf("   GROUPS: %s\n", string(join(groups(:),', ')))
     fprintf("   REPS: %s\n", string(join(replicates(:),', ')))
     warning('off','all');
-    close all
+    close('all');
 
-    rng("default");
+    rng('default');
 
     try
         if exist(save_analysis_path,"file")
@@ -75,7 +195,6 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
             SNAP_data.analysis_name = analysis_name;
             SNAP_data.groups = unique(groups);
             SNAP_data.replicates = unique(replicates);
-
             % generate SNAP feature table data if not loaded
             if isfield(SNAP_data,'feature_data')
                 feature_data = SNAP_data.feature_data;
@@ -183,7 +302,7 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
         if options.run_plot_violin
             fprintf("  Plotting violin plots...\n")
             starttime_step = tic;
-            plot_SNAP_violin(feature_data,work_dir)
+            plot_SNAP_violin(feature_data_filtered,work_dir)
             fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
         end
     catch ME
@@ -229,7 +348,6 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
         handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
         return
     end
-
     %% run classification steps if needed
     % generate train and test batches
     try
@@ -277,7 +395,11 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
             scores = [var_scores_p{:}];
             scores = vertcat(scores{:})';
             % store values
-            [SNAP_data.vars_select_result_batch,SNAP_data.vars_selected_batch] = select_features_SNAP_v2(scores,feature_data_filtered(:,vartype('numeric')).Properties.VariableNames,"max_idx",options.max_idx,"save_path",save_path);
+            [SNAP_data.vars_select_result_batch,SNAP_data.vars_selected_batch] = select_features_SNAP( ...
+                scores, ...
+                feature_data_filtered(:,vartype('numeric')).Properties.VariableNames, ...
+                "max_idx",options.max_idx, ...
+                "save_path",save_path);
             fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
         end
     catch ME
@@ -296,7 +418,7 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
         if options.run_PCA
             save_path = fullfile(work_dir, string(join(['PCA',groups],'_')));
             if options.suffix ~= ""
-                save_path = string(join([save_path suffix],'_'));
+                save_path = string(join([save_path options.suffix],'_'));
             end
             fprintf("  Performing PCA (batch-wise)...\n")
             starttime_step = tic;
@@ -355,6 +477,7 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
     %% run classification batch-wise
     try
         if options.run_classification_batch
+            n_models_per_type = options.n_models_per_type;
             fprintf("  Running classification (batch-wise)...\n")
             starttime_step = tic;
             % cell_dims = [numel(SNAP_data.train_idxs),numel(SNAP_data.vars_selected_batch),numel(SNAP_data.pca_result)];
@@ -382,22 +505,19 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
                 test_data = feature_data_filtered(SNAP_data.test_idxs{b},:);
                 classifiers{b} = run_SNAP_classification_batch(...
                     train_data,...
+                    'n_models_per_type',n_models_per_type,...
                     'vars_selected',vars_selected_b{b},...
                     'pca_result',pca_result_b{b},....
                     'test_data',test_data,...
                     'verbose',0);
             end
             SNAP_data.classifiers_batch_each = classifiers;
-            model_type = cellfun(@(x) x.ModelType, [SNAP_data.classifiers_batch_each{:}], 'uni', 1);
-            model_type = model_type(1,:)';
-            mean_model_acc = mean(cellfun(@(x) x.TestAccuracy, [SNAP_data.classifiers_batch_each{:}], 'uni', 1),1)';
-            std_model_acc = std(cellfun(@(x) x.TestAccuracy, [SNAP_data.classifiers_batch_each{:}], 'uni', 1),1)';
-            classification_summary = table(model_type,mean_model_acc,std_model_acc);
-            classification_summary = groupsummary(classification_summary,"model_type",["mean","std"]);
-            classification_summary.std_std_model_acc = [];
-            classification_summary = renamevars(classification_summary,{'mean_mean_model_acc','std_mean_model_acc','mean_std_model_acc','GroupCount'},{'mean_batch_acc','std_batch_acc','std_model_acc','n_batch'});
-            classification_summary = sortrows(classification_summary(:,[1 3 4 5 2]),{'mean_batch_acc','std_batch_acc'},{'descend','ascend'});
-            SNAP_data.classification_summary_batch_each = classification_summary;
+            % plot figures
+            if options.save
+                SNAP_data.classification_summary_batch_each = evaluate_classifiers(SNAP_data.classifiers_batch_each,"save_path",fullfile(work_dir,"batch_each"));
+            else
+                SNAP_data.classification_summary_batch_each = evaluate_classifiers(SNAP_data.classifiers_batch_each);
+            end
             
             % classification based on feature selection on ALL batches
             if isfield(SNAP_data,'vars_select_result_batch')
@@ -421,47 +541,35 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
                 classifiers{b} =...
                     run_SNAP_classification_batch(...
                     train_data,...
+                    'n_models_per_type',n_models_per_type,...
                     'vars_selected',vars_selected_b,...
                     'pca_result',pca_result_b{b},....
                     'test_data',test_data,...
                     'verbose',0);
             end
             SNAP_data.classifiers_batch_all = classifiers;
-            model_type = cellfun(@(x) x.ModelType, [SNAP_data.classifiers_batch_all{:}], 'uni', 1);
-            model_type = model_type(1,:)';
-            mean_model_acc = mean(cellfun(@(x) x.TestAccuracy, [SNAP_data.classifiers_batch_all{:}], 'uni', 1),1)';
-            std_model_acc = std(cellfun(@(x) x.TestAccuracy, [SNAP_data.classifiers_batch_all{:}], 'uni', 1),1)';
-            classification_summary = table(model_type,mean_model_acc,std_model_acc);
-            classification_summary = groupsummary(classification_summary,"model_type",["mean","std"]);
-            classification_summary.std_std_model_acc = [];
-            classification_summary = renamevars(classification_summary,{'mean_mean_model_acc','std_mean_model_acc','mean_std_model_acc','GroupCount'},{'mean_batch_acc','std_batch_acc','std_model_acc','n_batch'});
-            classification_summary = sortrows(classification_summary(:,[1 3 4 5 2]),{'mean_batch_acc','std_batch_acc'},{'descend','ascend'});
-            SNAP_data.classification_summary_batch_all = classification_summary;
-            % plot figures
-            figure('visible','off');
-            plot_SNAP_confusion(gca,classification_summary{1,"model_type"},SNAP_data.classifiers_batch_all);
-            savefig(gcf,fullfile(work_dir,"confusion_batch_all.fig"))
-            exportgraphics(gcf,fullfile(work_dir,"confusion_batch_all.png"));
-            figure('visible','off');
-            plot_SNAP_ROC(gca,classification_summary{1,"model_type"},SNAP_data.classifiers_batch_all);
-            savefig(gcf,fullfile(work_dir,"ROC_batch_all.fig"))
-            exportgraphics(gcf,fullfile(work_dir,"ROC_batch_all.png"));
+            if options.save
+                SNAP_data.classification_summary_batch_all = evaluate_classifiers(SNAP_data.classifiers_batch_all,"save_path",fullfile(work_dir,"batch_all"));
+            else
+                SNAP_data.classification_summary_batch_all = evaluate_classifiers(SNAP_data.classifiers_batch_allSNAP_data.classifiers_batch_all);
+            end
             fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
         end
     catch ME
         handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
     end
     if isfield(SNAP_data,"classification_summary_batch_each")
-        fprintf('    Classification summary (batch - each):\n');
+        fprintf('    Classification summary (batch - fully independent feature selection):\n');
         head(SNAP_data.classification_summary_batch_each,3)
     end
     if isfield(SNAP_data,"classification_summary_batch_all")
-        fprintf('    Classification summary (batch - all):\n');
+        fprintf('    Classification summary (batch - aggregated feature selection):\n');
         head(SNAP_data.classification_summary_batch_all,3)
     end
 
     %% run classification on whole data
     if options.run_classification_all
+        n_models_per_type = options.n_models_per_type;
         fprintf("  Running classification (whole dataset)...\n")
         starttime_step = tic;
         % cell_dims = [numel(SNAP_data.train_idxs),numel(SNAP_data.vars_selected_batch),numel(SNAP_data.pca_result)];
@@ -470,10 +578,10 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
         % variable selection
         save_path = fullfile(work_dir, join(['feature_selection_all',groups],'_'));
         if options.suffix ~= ""
-            save_path = string(join([save_path suffix],'_'));
+            save_path = string(join([save_path options.suffix],'_'));
         end
         [~, SNAP_data.vars_select_result_all] = fscmrmr(feature_data_filtered(:,vartype('numeric')),feature_data_filtered.group);
-        [~,SNAP_data.vars_selected_all] = select_features_SNAP_v2(SNAP_data.vars_select_result_all',feature_data_filtered(:,vartype('numeric')).Properties.VariableNames,"max_idx",options.max_idx,"save_path",save_path);
+        [~,SNAP_data.vars_selected_all] = select_features_SNAP(SNAP_data.vars_select_result_all',feature_data_filtered(:,vartype('numeric')).Properties.VariableNames,"max_idx",options.max_idx,"save_path",save_path);
         fprintf("      Selected features - ALL (n = %.0f):\n",numel(SNAP_data.vars_selected_all))
         for i=1:numel(SNAP_data.vars_selected_all)
             fprintf("        - %s\n", SNAP_data.vars_selected_all{i})
@@ -481,7 +589,7 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
         % pca
         save_path = fullfile(work_dir, string(join(['PCA',groups],'_')));
         if options.suffix ~= ""
-            save_path = string(join([save_path suffix],'_'));
+            save_path = string(join([save_path options.suffix],'_'));
         end
         SNAP_data.pca_result_all = run_SNAP_PCA(feature_data_filtered,...
                                         "vars_sel",SNAP_data.vars_selected_all,...
@@ -491,86 +599,27 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
         classifiers =...
             run_SNAP_classification_batch(...
                 feature_data_filtered,...
+                'n_models_per_type',n_models_per_type,...
                 'vars_selected',SNAP_data.vars_selected_all,...
                 'pca_result',SNAP_data.pca_result_all,....
                 'verbose',0);
-        SNAP_data.classifiers_all = classifiers;
-        model_type = cellfun(@(x) x.ModelType, SNAP_data.classifiers_all, 'uni', 1);
-        model_type = model_type(1,:)';
-        mean_model_acc = mean(cellfun(@(x) x.ValidationAccuracy, SNAP_data.classifiers_all, 'uni', 1),1)';
-        std_model_acc = std(cellfun(@(x) x.ValidationAccuracy, SNAP_data.classifiers_all, 'uni', 1),1)';
-        classification_summary = table(model_type,mean_model_acc,std_model_acc);
-        classification_summary = sortrows(classification_summary,{'mean_model_acc','std_model_acc'},{'descend','ascend'});
-        SNAP_data.classification_summary_all = classification_summary;
-        fprintf('    Classification summary (all):\n');
-        head(SNAP_data.classification_summary_all,3)
-        % plot figures
-        figure('visible','off');
-        plot_SNAP_confusion(gca,classification_summary{1,"model_type"},SNAP_data.classifiers_all);
-        savefig(gcf,fullfile(work_dir,"confusion_all.fig"))
-        exportgraphics(gcf,fullfile(work_dir,"confusion_all.png"));
-        figure('visible','off');
-        plot_SNAP_ROC(gca,classification_summary{1,"model_type"},SNAP_data.classifiers_all);
-        savefig(gcf,fullfile(work_dir,"ROC_all.fig"))
-        exportgraphics(gcf,fullfile(work_dir,"ROC_all.png"));
+        SNAP_data.classifiers_all = {classifiers};
+        if options.save
+            SNAP_data.classification_summary_all = evaluate_classifiers(SNAP_data.classifiers_all,"save_path",fullfile(work_dir,"all"));
+        else
+            SNAP_data.classification_summary_all = evaluate_classifiers(SNAP_data.classifiers_allSNAP_data.classifiers_all);
+        end
         fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
     end
-
-   %% cluster observations
-   try
-        if options.run_cluster_observations
-            fprintf("  Clustering observations...\n")
-            starttime_step = tic;
-            save_path = fullfile(work_dir, string(join(['clustering_observations',groups],'_')));
-            if options.suffix ~= ""
-                save_path = string(join([save_path suffix],'_'));
-            end
-            if ~all(isfield(SNAP_data,{'cluster_observations_idx_PCA','cluster_observations_idx_tSNE'}))
-                [SNAP_data.cluster_observations_idx_PCA,SNAP_data.cluster_observations_idx_tSNE] = cluster_observations_hierarchical(feature_data_filtered,SNAP_data.vars_sel,...
-                    "save_path",save_path);
-            end
-            fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-        end
-    catch ME
-        handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
-        return
+    if isfield(SNAP_data,"classification_summary_all")
+        fprintf('    Classification summary (batch - aggregated feature selection):\n');
+        head(SNAP_data.classification_summary_all,3)
     end
-    %% cluster features  
-    try
-        if options.run_cluster_features
-            fprintf("  Clustering features...\n")
-            starttime_step = tic;
-            save_path = fullfile(work_dir, string(join(['clustering_features',groups],'_')));
-            if options.suffix ~= ""
-                save_path = string(join([save_path suffix],'_'));
-            end
-            [SNAP_data.cluster_features_idx_PCA,SNAP_data.cluster_features_idx_tSNE] = cluster_features_hierarchical(feature_data, vars_sel,...
-                "save_path",fullfile(work_dir,save_path));
-            fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-        end
-    catch ME
-        handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
-        return
-    end
-    %% create graph of features related by correlation
-    try
-        if options.run_graph_features
-            fprintf("  Creating feature graph...\n")
-            starttime_step = tic;
-            interpret_features_graph(feature_data,"save_path",fullfile(work_dir,"feature_graph\n"));
-            fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-        end
-    catch ME
-        handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
-        return
-    end
-    
     %% plot radial
     try
         if options.run_plot_radial
             fprintf("  Plotting radial densities...\n")
             plot_ellipse_set_batch(feature_data_filtered,work_dir,groups,replicates);
-            close all
         end
     catch ME
         handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
@@ -582,20 +631,8 @@ function SNAP_data = run_SNAP_v2(root_dir,analysis_name,groups,replicates,option
             fprintf("  Running feature set enrichment analysis...\n")
             starttime_step = tic;
             calculate_feature_set_coverage(SNAP_data.feature_comparisons,work_dir,"plot",false,"feature_universe_names",options.feature_universe_names);
-            run_SNAP_MrFSEA(work_dir, feature_data, options.feature_universe_names, "FSEA_rank_type",options.FSEA_rank_type);
+            run_SNAP_MrFSEA(work_dir, feature_data_filtered, options.feature_universe_names, "FSEA_rank_type",options.FSEA_rank_type);
             fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-            close all
-        end
-    catch ME
-        handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
-        return
-    end
-    %% ripley K
-    try
-        if options.run_ripley_k
-            fprintf("  Plotting Ripley's K...\n")
-            ripley_k(work_dir,groups,replicates);
-            close all
         end
     catch ME
         handle_SNAP_error(ME,save_analysis_path,SNAP_data,"save",options.save_if_error);
@@ -626,7 +663,7 @@ end
     fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
     fclose('all');
     warning('on','all');
-    close all
+    set(findall(groot,'Type','Figure'),'visible','on');
     diary off
     return
 end

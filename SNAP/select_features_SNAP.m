@@ -1,4 +1,4 @@
-function [result,vars_selected] = select_features_SNAP_v2(scores,vars_names,options)
+function [result,vars_selected] = select_features_SNAP(scores,vars_names,options)
 arguments
     scores double
     vars_names cell
@@ -29,7 +29,7 @@ if n_batch > 1
         [scores_sort(:,i),sort_idx(:,i)] = sort(scores(:,i),'descend');
         scores_sort_diff(:,i) = diff(scores_sort(1:options.max_idx,i));
 
-        [~,knee_idx] = knee_pt(1:size(scores_sort,1),scores_sort(:,i));
+        [~,knee_idx] = knee_pt(scores_sort(1:options.max_idx,i));
         [pks,pks_idxs{i}] = findpeaks(abs(scores_sort_diff(:,i)));
         [~,m] = max(pks);
         % defines number of ranked vars to select 
@@ -65,7 +65,7 @@ if n_batch > 1
     scores_sorted_by_sum = scores(sort_sum_idx,:);
     scores_sum_sort_diff = diff(scores_sum_sort(1:options.max_idx));
 
-    [~,knee_idx] = knee_pt(1:numel(scores_sum_sort),abs(scores_sum_sort));
+    [~,knee_idx] = knee_pt(abs(scores_sum_sort(1:options.max_idx)));
     [pks,pks_sum_idx] = findpeaks(abs(scores_sum_sort_diff));
     [~,m] = max(pks);
     if pks_sum_idx(m) < options.max_idx
@@ -109,16 +109,18 @@ if n_batch > 1
                 hold on
                 % scatter(pks_idx{i},scores_sort(pks_idx{i},i),'filled','MarkerFaceColor','k');
                 % hold on
-                scatter(1:n_vars_selected(i),scores_sort(1:n_vars_selected(i),i),'filled','pentagram','SizeData',60,'MarkerFaceColor','yellow','MarkerEdgeColor','k');
+                scatter(1:n_vars_selected(i),scores_sort(1:n_vars_selected(i),i),'filled','pentagram','SizeData',300,'MarkerFaceColor','yellow','MarkerEdgeColor','k');
                 xticklabels(vars_names(sort_idx(1:options.max_idx,i)));
                 set(gca,"TickLabelInterpreter",'none')
                 set(gca,"FontSize",8)
                 ylabel(gca,"MRMR Score")
-                xlabel(gca,"Features","FontSize",14)
+                % xlabel(gca,"Features","FontSize",14)
                 title(sprintf("Batch %02.0f",i))
                 % legend({'MRMR score','\Delta score','\Delta score peaks','Selected features'})
                 legend({'MRMR score','\Delta score','Selected features'})
             end
+            axs=findobj(f_batch,'Type','axes');
+            linkaxes(axs,'xy');
             % sum
             f_sum=figure('visible','off','position',[1,50,800,600]);
             bar(scores_sorted_by_sum(1:options.max_idx,:),'stacked');
@@ -127,7 +129,7 @@ if n_batch > 1
             hold on
             % scatter(pks_sum_idx,scores_sum_sort(pks_sum_idx),'filled','MarkerFaceColor','k');
             % hold on
-            scatter(1:n_vars_selected_sum,scores_sum_sort(1:n_vars_selected_sum),'filled','pentagram','SizeData',60,'MarkerFaceColor','yellow','MarkerEdgeColor','k');
+            scatter(1:n_vars_selected_sum,scores_sum_sort(1:n_vars_selected_sum),'filled','pentagram','SizeData',300,'MarkerFaceColor','yellow','MarkerEdgeColor','k');
             xticklabels(vars_names(sort_sum_idx(1:options.max_idx)));
             set(gca,"TickLabelInterpreter",'none')
             set(gca,"FontSize",11)
@@ -178,7 +180,7 @@ else
             hold on
             scatter(pks_idxs,scores_sort(pks_idxs),'filled','MarkerFaceColor','k');
             hold on
-            scatter(1:n_vars_selected,scores_sort(1:n_vars_selected),'filled','pentagram','SizeData',60,'MarkerFaceColor','yellow','MarkerEdgeColor','k');
+            scatter(1:n_vars_selected,scores_sort(1:n_vars_selected),'filled','pentagram','SizeData',300,'MarkerFaceColor','yellow','MarkerEdgeColor','k');
             xticklabels(vars_names(sort_idx(1:options.max_idx)));
             set(gca,"TickLabelInterpreter",'none')
             set(gca,"FontSize",8)
