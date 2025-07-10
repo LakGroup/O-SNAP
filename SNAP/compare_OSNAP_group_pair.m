@@ -1,3 +1,43 @@
+% -------------------------------------------------------------------------
+% compare_OSNAP_group_pair.m
+% -------------------------------------------------------------------------
+% Performs the pair-wise comparison of O-SNAP features for two phenotypes,
+% calculating the fold changes and testing for signficance
+%
+% Example on how to use it:
+%   [result_all,result_filtered] = compare_OSNAP_group_pair(feature_data,
+%                                                           "Control","KO")
+% -------------------------------------------------------------------------
+% Input:
+%   feature_data: O-SNAP feature table
+%   group_1: String identifier for group 1
+%   group_2: String identifier for group 2
+% Output:
+%   feature_compare_data: A table containing all features and the values of
+%                         the means for each group, fold change, p-value, 
+%                         and adj. p-value
+%   feature_compare_data_filtered: A table with the same information as
+%                                  feature_compare data, but only for
+%                                  features that satisfy the thresholds for
+%                                  signficance
+% Options:
+%   alpha: Significance testing threshold
+%   p_adj_method: Identifier for the adjustment method for
+%                 multiple hypothesis testing
+%   fold_change_threshold: Signficant fold change threshold
+%   save_path: Name of file location to save to, excluding extension
+%   remove_outliers: Flag to consider or remove outliers when calculating
+%                    fold changes
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function [feature_compare_data,feature_compare_data_filtered] = compare_OSNAP_group_pair(feature_data,group_1,group_2,options)
     arguments
         feature_data table;
@@ -6,7 +46,6 @@ function [feature_compare_data,feature_compare_data_filtered] = compare_OSNAP_gr
         options.alpha double = 0.05;
         options.p_adj_method char = 'BH'
         options.fold_change_threshold double = 2;
-        options.plot_labels logical = true;
         options.save_path string = "";
         options.remove_outliers logical = false;
     end
@@ -71,7 +110,6 @@ function [feature_compare_data,feature_compare_data_filtered] = compare_OSNAP_gr
         plot_OSNAP_volcano(feature_compare_data,group_1,group_2,...
             "alpha",options.alpha,...
             "fold_change_threshold",options.fold_change_threshold,...
-            ..."plot_labels",options.plot_labels,...
             "save_path",options.save_path);
         writetable(sortrows(feature_compare_data,"log2_fold_change"),join([options.save_path,group_1,group_2],"_")+".csv");
         writetable(feature_compare_data_filtered,join([options.save_path,group_1,group_2,"filtered.csv"],"_"));

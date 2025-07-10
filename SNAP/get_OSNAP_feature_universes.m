@@ -1,3 +1,42 @@
+% -------------------------------------------------------------------------
+% get_OSNAP_feature_universes.m
+% -------------------------------------------------------------------------
+% 
+%
+% Example on how to use it:
+%   feature_universes = get_OSNAP_feature_universes() - Gives the default
+%                                                       feature universe
+%   feature_universes = get_OSNAP_feature_universes(["universe_1",...
+%                                                    "universe_2"]) 
+%                               - Gives a cell array where each cell  
+%                                 corresponds to each feature universe 
+% -------------------------------------------------------------------------
+% Input:
+%   feature_universe_names: Identifier for feature universes of interest
+% Output:
+%   feature_universes: A cell array where each cell contains a struct array
+%                      with information on each feature universe
+%               - name: Identifier for the feature universe
+%               - feature_set: Struct array where every field is a feature
+%                              set and contains a string array of the
+%                              feature members for that set
+%               - direction: A struct array where every field corresponds
+%                            to a feature set and contains an array of 
+%                            1 or -1 that indicate whether an increase in 
+%                            the corresponding feature value follows or
+%                            opposes the overall  trend described by the
+%                            feature family
+%
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function feature_universes = get_OSNAP_feature_universes(feature_universe_names)
 arguments
     feature_universe_names string = ["universe_1"];
@@ -195,3 +234,4 @@ universe.more_enrichment_at_periphery = {...
     "log_interior_dbscan_cluster_spacing_mean",1;...
     };
 end
+

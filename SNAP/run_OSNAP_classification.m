@@ -1,6 +1,82 @@
-function trained_classifier = run_OSNAP_classification(data,options)
+% -------------------------------------------------------------------------
+% run_OSNAP_classification.m
+% -------------------------------------------------------------------------
+% Creates a classification model trained on the feature_data. If feature
+% selection or PCA information is provided, the model will incorporate
+% them. If test data is provided, the classifier is also returned with
+% information on its performance classifying the test data, but otherwise,
+% cross-validation results are used instead.
+%
+% Example on how to use it:
+%   run_OSNAP_classification(feature_data)
+% -------------------------------------------------------------------------
+% Input:
+%   train_data: The feature data of the training set, where each row  
+%               represents a sample(nucleus). The first three columns 
+%               represent (1) Group/Phenotype, (2) replicate, and (3)  
+%               SampleIdentifier. Each subsequent column is  an O-SNAP 
+%               feature.
+% Output:
+%   classifier: A struct array of the trained classifier. Contains multiple
+%               fields related to the performance of the model instance
+%                 - PCACenters: Centers from PCA analysis
+%                 - PCACoefficients: Coefficients from PCA analysis
+%                 - RequiredVariables: The variables required by the
+%                                      classifier
+%                 - ModelType: Model architecture type
+%                 - ClassificationModel: MATLAB object of the classifier
+%                 - About: Brief string on classifier information
+%                 - HowToPredict: String instructions on how to perform
+%                                 function call with model for prediction
+%                 - predictFcn: The prediction function
+%                 - TestResponse: The true phenotype labels from test data,
+%                                 if provided
+%                 - TestScores: The prediction scores derived from applying
+%                               the model to test data, if provided
+%                 - TestPredictions: The predicted phenotype labels from 
+%                                    test data, if provided
+%                 - TestAccuracy: The accuracy of the classifier on test
+%                                 data, if provided
+%                 - ValidationPredictions: The predicted phenotype labels  
+%                                          from validation data, if test   
+%                                          data is not provided
+%                 - ValidationScores: The prediction scores from validation
+%                                     data, if test data is not provided
+%                 - ValidationResponse: The true phenotype labels from 
+%                                       validation data, if test data is 
+%                                       not provided
+%                 - ValidationAccuracy: The accuracy of the classifier on 
+%                                       validation data, if test data is 
+%                                       not provided
+%                 - PerformanceCurve: A cell array where each cell contains
+%                                     data on the ROC curve for each group
+%                       - group: The phenotype identifier
+%                       - x: The False Positive Rate (FPR) values
+%                       - y: The True Positive Rate (TPR) values
+%                       - threshold: Threshold values for the classifier
+%                       - AUC: Area under the curve for the ROC curve
+% Options:
+%   test_data: A set of O-SNAP feature data for test samples. If no test
+%              data is provided, the classifier will undergo
+%              cross-validation using feature_data
+%   pca_result: Info on PCA transformation
+%   vars_selected: Info on feature selection
+%   model_type: Desired model architecture type
+%   k: Number of folds
+%   verbose: Flag for output to print
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
+function classifier = run_OSNAP_classification(train_data,options)
 arguments
-    data table
+    train_data table
     options.test_data = []
     options.pca_result struct = []
     options.vars_selected cell = {}
@@ -23,65 +99,65 @@ assert(ismember(options.model_type,valid_model_types),...
     'SNAP:invalid_classification_model',...
     'Invalid model type: %s, choose from following valid models:\ntree_fine,tree_medium,tree_coarse,\ndiscriminant_linear,discriminant_quadratic,\nlogistic_regression_binary_glm,\nlogistic_regression_efficient,svm_efficient_linear,\nnaive_bayes_gaussian,naive_bayes_kernel,\nsvm_linear,svm_quadratic,\nsvm_gaussian_fine,svm_gaussian_medium,svm_gaussian_coarse,\nknn_fine,knn_medium,knn_coarse,knn_cosine,knn_cubic,knn_weighted,\nensemble_boosted_trees,ensemble_bagged_trees,ensemble_subspace_discriminant,ensemble_rus_boosted_trees,\nNN_narrow,NN_medium,NN_wide,NN_bilayered,NN_trilayered,\nkernel_svm,kernel_logistic_regression',options.model_type);
 
-trained_classifier = struct();
+classifier = struct();
 
-data = preprocess_OSNAP_feature_data(data,'normalize',false);
+train_data = preprocess_OSNAP_feature_data(train_data,'normalize',false);
 
 %% Get class names (groups) and predictors (preprocessed feature data)
 % Also adds information depending on if variable selection or PCA info is
 % passed to the function. Variable selection information from a PCA takes
 % precedence over ones passed into the function, if they are inconsistent.
 if ~isempty(options.pca_result)
-    [train_data,response] = preprocess_OSNAP_feature_data(data,'numeric_only',true);
+    [train_data,response] = preprocess_OSNAP_feature_data(train_data,'numeric_only',true);
     pca_result = options.pca_result;
     predictors = pca_result.pca_transformation_fcn(train_data);
-    trained_classifier.PCACenters = pca_result.pca_centers;
-    trained_classifier.PCACoefficients = pca_result.pca_coefficients;
-    trained_classifier.RequiredVariables = pca_result.vars_selected;
+    classifier.PCACenters = pca_result.pca_centers;
+    classifier.PCACoefficients = pca_result.pca_coefficients;
+    classifier.RequiredVariables = pca_result.vars_selected;
 elseif ~isempty(options.vars_selected)
-    [predictors,response] = preprocess_OSNAP_feature_data(data(:,['group' options.vars_selected]),'numeric_only',true);
-    trained_classifier.RequiredVariables = options.vars_selected;
+    [predictors,response] = preprocess_OSNAP_feature_data(train_data(:,['group' options.vars_selected]),'numeric_only',true);
+    classifier.RequiredVariables = options.vars_selected;
 else
-    [predictors,response] = preprocess_OSNAP_feature_data(data,'numeric_only',true);
-    trained_classifier.RequiredVariables = predictors.Properties.VariableNames;
+    [predictors,response] = preprocess_OSNAP_feature_data(train_data,'numeric_only',true);
+    classifier.RequiredVariables = predictors.Properties.VariableNames;
 end
 
 %% Train a classifier
 % This code specifies all the classifier options and trains the classifier.
 [classification_model, predict_fcn] = get_model(options.model_type,predictors,response);
 % Add additional fields to the result struct
-trained_classifier.ModelType = options.model_type;
-trained_classifier.ClassificationModel = classification_model;
-trained_classifier.About = 'This struct is a trained model exported from Classification Learner R2024b.';
-trained_classifier.HowToPredict = sprintf('To make predictions on a new table, T, use: \n  [yfit,scores] = c.predictFcn(T) \nreplace ''c'' with the name of the variable that is this struct, e.g. ''trainedModel''. \n \nThe table, T, must contain the variables returned by: \n  c.RequiredVariables \nVariable formats (e.g. matrix/vector, datatype) must match the original training data. \nAdditional variables are ignored. \n \nFor more information, see <a href="matlab:helpview(fullfile(docroot, ''stats'', ''stats.map''), ''appclassification_exportmodeltoworkspace'')">How to predict using an exported model</a>.');
+classifier.ModelType = options.model_type;
+classifier.ClassificationModel = classification_model;
+classifier.About = 'This struct is a trained model exported from R2024b using O-SNAP.';
+classifier.HowToPredict = sprintf('To make predictions on a new table, T, use: \n  [yfit,scores] = c.predictFcn(T) \nreplace ''c'' with the name of the variable that is this struct, e.g. ''trainedModel''. \n \nThe table, T, must contain the variables returned by: \n  c.RequiredVariables \nVariable formats (e.g. matrix/vector, datatype) must match the original training data. \nAdditional variables are ignored. \n \nFor more information, see <a href="matlab:helpview(fullfile(docroot, ''stats'', ''stats.map''), ''appclassification_exportmodeltoworkspace'')">How to predict using an exported model</a>.');
 % Create the result struct with predict function
 if ~isempty(options.pca_result)
-    trained_classifier.predictFcn = @(x) predict_fcn(pca_result.pca_transformation_fcn(x));
+    classifier.predictFcn = @(x) predict_fcn(pca_result.pca_transformation_fcn(x));
 else
-    predictor_extraction_fcn = @(t) normalize(t(~any(ismissing(t),2), trained_classifier.RequiredVariables));
-    trained_classifier.predictFcn = @(x) predict_fcn(predictor_extraction_fcn(x));
+    predictor_extraction_fcn = @(t) normalize(t(~any(ismissing(t),2), classifier.RequiredVariables));
+    classifier.predictFcn = @(x) predict_fcn(predictor_extraction_fcn(x));
 end
 
 %% Calculate accuracy on test data
 if ~isempty(options.test_data)
-    [test_data, trained_classifier.TestResponse] = preprocess_OSNAP_feature_data(options.test_data,'numeric_only',true);
-    [test_predictions, test_scores] = trained_classifier.predictFcn(test_data);
-    trained_classifier.TestScores = test_scores;
-    trained_classifier.TestPredictions = strtrim(test_predictions);
-    trained_classifier.TestResponse = strtrim(trained_classifier.TestResponse);
+    [test_data, classifier.TestResponse] = preprocess_OSNAP_feature_data(options.test_data,'numeric_only',true);
+    [test_predictions, test_scores] = classifier.predictFcn(test_data);
+    classifier.TestScores = test_scores;
+    classifier.TestPredictions = strtrim(test_predictions);
+    classifier.TestResponse = strtrim(classifier.TestResponse);
     correct_predictions = strcmp(...
-        trained_classifier.TestPredictions,...
-        trained_classifier.TestResponse);
-    trained_classifier.TestAccuracy = sum(correct_predictions)/numel(correct_predictions);
-    groups = unique(trained_classifier.TestResponse);
-    trained_classifier.PerformanceCurve = cell(numel(groups),1);
+        classifier.TestPredictions,...
+        classifier.TestResponse);
+    classifier.TestAccuracy = sum(correct_predictions)/numel(correct_predictions);
+    groups = unique(classifier.TestResponse);
+    classifier.PerformanceCurve = cell(numel(groups),1);
     for i=1:numel(groups)
-        trained_classifier.PerformanceCurve{i}.group = groups(i);
-        [trained_classifier.PerformanceCurve{i}.x,trained_classifier.PerformanceCurve{i}.y,trained_classifier.PerformanceCurve{i}.threshold,trained_classifier.PerformanceCurve{i}.AUC] = perfcurve(trained_classifier.TestResponse,trained_classifier.TestScores(:,i),groups(i));
+        classifier.PerformanceCurve{i}.group = groups(i);
+        [classifier.PerformanceCurve{i}.x,classifier.PerformanceCurve{i}.y,classifier.PerformanceCurve{i}.threshold,classifier.PerformanceCurve{i}.AUC] = perfcurve(classifier.TestResponse,classifier.TestScores(:,i),groups(i));
     end
     % Show results
     if options.verbose
-        fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,trained_classifier.TestAccuracy*100)
+        fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,classifier.TestAccuracy*100)
     end
 
 %% Calculate validation accuracy if no test data is given
@@ -90,13 +166,13 @@ else
     options.k = 5;
     cvp = cvpartition(response, 'KFold', options.k);
     % Initialize the predictions to the proper sizes
-    trained_classifier.ValidationPredictions = response;
+    classifier.ValidationPredictions = response;
     n_obs = size(predictors,1);
     n_groups = numel(unique(response));
-    trained_classifier.ValidationScores = NaN(n_obs,n_groups);
+    classifier.ValidationScores = NaN(n_obs,n_groups);
     for k = 1:options.k
         % split train from test
-        train_k = data(cvp.training(k),:);
+        train_k = train_data(cvp.training(k),:);
         % PCA on train data
         if ~isempty(options.pca_result)
             [train_k,response_k] = preprocess_OSNAP_feature_data(train_k,'numeric_only',true);
@@ -114,29 +190,29 @@ else
         if ~isempty(options.pca_result)
             predictFcn_k = @(x) predict_fcn_k(pca_result_k.pca_transformation_fcn(x));
         else
-            predictor_extraction_fcn_k = @(t) normalize(t(~any(ismissing(t),2), trained_classifier.RequiredVariables));
+            predictor_extraction_fcn_k = @(t) normalize(t(~any(ismissing(t),2), classifier.RequiredVariables));
             predictFcn_k = @(x) predict_fcn_k(predictor_extraction_fcn_k(x));
         end
         % Compute validation predictions
-        test_k = data(cvp.test(k),:);
+        test_k = train_data(cvp.test(k),:);
         [predictors_k, ~] = preprocess_OSNAP_feature_data(test_k,'numeric_only',true);
         [predictions_k, scores_k] = predictFcn_k(predictors_k);
         % Store predictions in the original order
-        trained_classifier.ValidationPredictions(cvp.test(k), :) = strtrim(predictions_k);
-        trained_classifier.ValidationScores(cvp.test(k),:) = scores_k;
+        classifier.ValidationPredictions(cvp.test(k), :) = strtrim(predictions_k);
+        classifier.ValidationScores(cvp.test(k),:) = scores_k;
     end
-    correct_predictions = strcmp(trained_classifier.ValidationPredictions,strtrim(response));
-    trained_classifier.ValidationResponse = strtrim(response);
-    trained_classifier.ValidationAccuracy = sum(correct_predictions)/numel(correct_predictions);
-    groups = unique(trained_classifier.ValidationResponse);
-    trained_classifier.PerformanceCurve = cell(numel(groups),1);
+    correct_predictions = strcmp(classifier.ValidationPredictions,strtrim(response));
+    classifier.ValidationResponse = strtrim(response);
+    classifier.ValidationAccuracy = sum(correct_predictions)/numel(correct_predictions);
+    groups = unique(classifier.ValidationResponse);
+    classifier.PerformanceCurve = cell(numel(groups),1);
     for i=1:numel(groups)
-        trained_classifier.PerformanceCurve{i}.group = groups(i);
-        [trained_classifier.PerformanceCurve{i}.x,trained_classifier.PerformanceCurve{i}.y,trained_classifier.PerformanceCurve{i}.threshold,trained_classifier.PerformanceCurve{i}.AUC] = perfcurve(trained_classifier.ValidationResponse,trained_classifier.ValidationScores(:,i),groups(i));
+        classifier.PerformanceCurve{i}.group = groups(i);
+        [classifier.PerformanceCurve{i}.x,classifier.PerformanceCurve{i}.y,classifier.PerformanceCurve{i}.threshold,classifier.PerformanceCurve{i}.AUC] = perfcurve(classifier.ValidationResponse,classifier.ValidationScores(:,i),groups(i));
     end
     % Show results
     if options.verbose
-        fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,trained_classifier.ValidationAccuracy*100)
+        fprintf('Model: %s\n  Acc: %5.2f\n',options.model_type,classifier.ValidationAccuracy*100)
     end
 end
 
@@ -607,7 +683,7 @@ switch model_type
         predict_fcn = @(x) predict(classification_model, x);
     otherwise
         ME = MException('SNAP:invalid_classification_model', ...
-                'Invalid model type: %s, choose from following valid models:\ntree_fine,tree_medium,tree_coarse,\ndiscriminant_linear,discriminant_quadratic,\nlogistic_regression_binary_glm,\nlogistic_regression_efficient,svm_efficient_linear,\nnaive_bayes_gaussian,naive_bayes_kernel,\nsvm_linear,svm_quadratic,\nsvm_gaussian_fine,svm_gaussian_medium,svm_gaussian_coarse,\nknn_fine,knn_medium,knn_coarse,knn_cosine,knn_cubic,knn_weighted,\nensemble_boosted_trees,ensemble_bagged_trees,ensemble_subspace_discriminant,ensemble_rus_boosted_trees,\nNN_narrow,NN_medium,NN_wide,NN_bilayered,NN_trilayered,\nkernel_svm,kernel_logistic_regression',options.model_type);
+                'Invalid model type: %s, choose from following valid models:\ntree_fine,tree_medium,tree_coarse,\ndiscriminant_linear,discriminant_quadratic,\nlogistic_regression_binary_glm,\nlogistic_regression_efficient,svm_efficient_linear,\nnaive_bayes_gaussian,naive_bayes_kernel,\nsvm_linear,svm_quadratic,\nsvm_gaussian_fine,svm_gaussian_medium,svm_gaussian_coarse,\nknn_fine,knn_medium,knn_coarse,knn_cosine,knn_cubic,knn_weighted,\nensemble_boosted_trees,ensemble_bagged_trees,ensemble_subspace_discriminant,ensemble_rus_boosted_trees,\nNN_narrow,NN_medium,NN_wide,NN_bilayered,NN_trilayered,\nkernel_svm,kernel_logistic_regression',model_type);
         throw(ME)
 end
 end

@@ -1,3 +1,36 @@
+% -------------------------------------------------------------------------
+% plot_OSNAP_ellipses_locs_and_clusters.m
+% -------------------------------------------------------------------------
+% For a given sample, plot both the radial analysis with respect to locs
+% and DBScan clusters
+%
+% Example on how to use it:
+%   plot_OSNAP_ellipses_locs_and_clusters(...
+%                               "D:\Analysis\ExperimentA\Rep1\sample_KO_1.mat",...
+%                               max_radial_loc_density,...
+%                               max_radial_dbscan_cluster_density)
+% -------------------------------------------------------------------------
+% Input:
+%   file_path: File path to specific sample (nucleus) to analyze.
+%   max_radial_loc_density: Maximum density cutoff (across all samples 
+%                           being plotted) to scale colors comparably 
+%                           across samples for localizations
+%   max_radial_dbscan_cluster_density: Maximum density cutoff (across all  
+%                           samples being plotted) to scale colors  
+%                           comparably across samples for localizations
+%                           for clusters
+% Options:
+%   overwrite: Flag on whether to ask user before overwriting data
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function plot_OSNAP_ellipses_locs_and_clusters(file_path, max_radial_loc_density, max_radial_dbscan_cluster_density,options)
 arguments
     file_path string
@@ -38,4 +71,5 @@ function points_norm = normalize_points(points,components,boundary)
     rotated_boundary = boundary*components;
     points_norm = points*components - min(rotated_boundary) - range(rotated_boundary)/2;
 end
+
 

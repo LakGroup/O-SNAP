@@ -1,3 +1,39 @@
+% -------------------------------------------------------------------------
+% filter_OSNAP_feature_data.m
+% -------------------------------------------------------------------------
+% Filters an O-SNAP feature data table based on the specified phenotypes
+% and replicates. Useful if certain groups or replicates need to be
+% excluded for an analysis.
+%
+% Example on how to use it:
+%   feature_data_filtered = filter_OSNAP_feature_data(feature_data,...
+%                                      {'Control','KO'},...
+%                                      {'20250101'})
+% -------------------------------------------------------------------------
+% Input:
+%   feature_data: The feature data output table, where each row represents 
+%      a sample (nucleus). The first three columns represent (1) 
+%      Group/Phenotype, (2) replicate, and (3) Sample Identifier. Each 
+%      subsequent column is an O-SNAP feature. 
+%   groups: Cell array containing char array of the identifiers of the 
+%           phenotypes/cell states
+%           *ENSURE THAT EACH SAMPLE FILENAME CONTAINS EXACTLY ONE 
+%            IDENTIFIER FROM groups*
+%   replicates: Cell array containing char array of the identifiers of the 
+%               replicates.
+% Output:
+%   feature_data_filtered: The filtered feature data based on requested
+%                          phenotypes and replicates
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function feature_data_filtered = filter_OSNAP_feature_data(feature_data,groups,replicates)
 arguments
     feature_data table

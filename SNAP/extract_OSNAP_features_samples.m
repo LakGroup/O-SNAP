@@ -1,39 +1,56 @@
 % -------------------------------------------------------------------------
-% extract_OSNAP_feature_data.m
+% extract_OSNAP_features_samples.m
 % -------------------------------------------------------------------------
-% <FILL>
+% Obtains the O-SNAP features for every sample under the specified
+% phenotype (groups) and replicates. The feature information is stored in
+% the file that corresponds to the samples of the given groups and
+% replicates.
 %
 % Example on how to use it:
-%   results = run_SNAP("C:\Users\JohnSmith\Documents\O-SNAP_Analysis\,...
-%                      "SmithJohn_HeLa_ProteinKO_H2BHistone",...
-%                      {'Control','KO'},...
-%                      {'20250101','20250108','20250201'},...
-%                      "run_generate_features",1,
-%                      "run_generate_table",1,...
-%                      "run_comparison",1,...
-%                      "run_generate_batches",1,
-%                      "run_feature_selection",1,
-%                      "run_PCA",1, ...
-%                      "run_classification_batch",1, ...
-%                      "run_plot_violin",1,...
-%                      "run_plot_radial",1,...
-%                      "run_FSEA",1,...
-%                      "save",1);
+%   extract_OSNAP_features_samples("D:\Analysis\ExperimentA",...
+%                                 {'Control','KO'},...
+%                                 {'20250101','20250108','20250201'})
 % -------------------------------------------------------------------------
 % Input:
-%   work_dir:  The parent directory that contains the directory where the
-%              analysis results are saved
-%   analysis_name: Analysis identifier string
+%   work_dir: O-SNAP analysis directory. Should contain one or more folders
+%             with the MAT O_SNAP feature files for each sample (nucleus),
+%             divided by replicates with each folder prefixed by "Rep"
 %   groups: Cell array containing char array of the identifiers of the 
-%           phenotypes/cell states *ENSURE THAT EACH SAMPLE FILENAME 
-%           CONTAINS EXACTLY ONE IDENTIFIER FROM groups*
+%           phenotypes/cell states
+%           *ENSURE THAT EACH SAMPLE FILENAME CONTAINS EXACTLY ONE 
+%            IDENTIFIER FROM groups*
 %   replicates: Cell array containing char array of the identifiers of the 
-%               replicates. *ENSURE THAT EACH REPLCIATE IS STORED IN A
-%               SEPARATE FOLDER PREFIXED BY "Rep"*
+%               replicates.
+%               *ENSURE THAT EACH REPLCIATE IS STORED IN A SEPARATE FOLDER 
+%                PREFIXED BY "Rep"*
 % Options:
-%   n_processes:  
-%   min_log_vor_density:  
-%   max_log_vor_density:  
+%   n_processes: Number of cores to run parallel processes on
+%   min_log_vor_density: Lower bound for filtering and visualizing voronoi
+%                        density values
+%   max_log_vor_density: Upper bound for filtering and visualizing voronoi
+%                        density values
+%   dbscan_thresh: Lower percentile cutoff for localizations to include in
+%                  the DBSCAN clustering analysis for heterochromatin-
+%                  associated domains
+%   eps: The search radius of the DBSCAN clustering algorithm
+%   min_num: The minimum number of localizations to include in a DBSCAN
+%            domain
+%   ellipse_inc: For radial analysis of localization/cluster density.
+%                Percentage of the major/minor axis length to subdivide the
+%                ellipses that define the bounds of the rings. The number 
+%                of rings is N_r = floor(1/inc)
+%   periphery_thresh: Cutoff for what percentage of the polygon to consider
+%                     as the periphery. Ex. 0.15 results in a periphery
+%                     region with an area equivalent to 15% of the original
+%                     polygon shape
+%   area_threshold_arr: Area thresholds for multi-scale Voronoi clustering.
+%                       Act as upper bound for Voronoi cell areas. Locs
+%                       with areas under this value are filtered.
+%   min_number_of_localizations: The minimum number of locs in a Voronoi 
+%                                cluster. Clusters with fewer locs are
+%                                filtered.
+%   plot: Flag to plot results
+%   overwrite: Flag on whether to ask user before overwriting data
 % -------------------------------------------------------------------------
 % Code written by:
 %   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
@@ -43,7 +60,7 @@
 % If used, please cite:
 %   ....
 % -------------------------------------------------------------------------
-function extract_OSNAP_feature_data(work_dir, groups, replicates, options)
+function extract_OSNAP_features_samples(work_dir, groups, replicates, options)
 arguments
     work_dir string
     groups cell
@@ -59,7 +76,6 @@ arguments
     options.area_threshold_arr double = 10.^(1.25:0.25:2);
     options.min_number_of_localizations double = 5;
     options.plot logical = true;
-    options.logID = [];
     options.overwrite logical = false;
 end
 min_log_vor_density = options.min_log_vor_density;
@@ -73,8 +89,8 @@ warning('off','all')
 %% load data and split for processing 
 % smaller n_processes for voronoi density due to high memory demand
 n_processes = ceil(options.n_processes/3);
-SNAP_nucleus_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'});
-[split_file_list, n_processes] = split_data_to_n_OSNAP(SNAP_nucleus_file_list,n_processes);
+OSNAP_nucleus_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'});
+[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_nucleus_file_list,n_processes);
 
 %% calculate voronoi density
 data_vars = {...
@@ -111,8 +127,8 @@ end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 
 %% load data and split for processing 
-SNAP_nucleus_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'});
-[split_file_list, n_processes] = split_data_to_n_OSNAP(SNAP_nucleus_file_list,options.n_processes);
+OSNAP_nucleus_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'});
+[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_nucleus_file_list,options.n_processes);
 %% perform morphometric, dbscan clustering, and radial analysis
 data_vars = {'nucleus_radius',...
             'locs_number',...
@@ -154,7 +170,7 @@ data_vars = {'nucleus_radius',...
             'interior_cluster_density',...
             'periphery_cluster_density'};
 %% calculate density threshold
-if ~all(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0),SNAP_nucleus_file_list{:,'filepath'},'uni',1))
+if ~all(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0),OSNAP_nucleus_file_list{:,'filepath'},'uni',1))
     eps = options.eps;
     min_num = options.min_num;
     ellipse_inc = options.ellipse_inc;
@@ -245,4 +261,5 @@ fprintf("  RUN END: %s\n",datetime);
 fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
 warning('on','all')
 end
+
 

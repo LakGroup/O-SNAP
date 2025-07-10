@@ -1,4 +1,34 @@
-% setup for MrFSEA analysis
+% -------------------------------------------------------------------------
+% .m
+% -------------------------------------------------------------------------
+% 
+%
+% Example on how to use it:
+%   
+% -------------------------------------------------------------------------
+% Input:
+%   : 
+%   : 
+%   : 
+%   : 
+% Output:
+%   : 
+% Options:
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%% setup for MrFSEA analysis
 function run_OSNAP_FSEA(work_dir, T, feature_universe_names, options)
 arguments
     work_dir string
@@ -40,7 +70,7 @@ for g=1:size(group_pairs,1)
         feature_universe = get_OSNAP_feature_universes(feature_universe_names(i));
         file_path_feature_set = feature_universe_name;
         % if ~exist(file_path_feature_set+ ".xlsx","file")
-            generate_OSNAP_feature_set(feature_IDs',feature_universe{i})
+        generate_OSNAP_feature_set(feature_IDs',feature_universe{i})
         % end
         %% set options
         opts = default_FSEA_opts();

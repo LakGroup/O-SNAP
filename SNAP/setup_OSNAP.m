@@ -1,3 +1,21 @@
+% -------------------------------------------------------------------------
+% setup_OSNAP.m
+% -------------------------------------------------------------------------
+% Sets up environment for utilities that OSNAP depends on. Ideally, only
+% needs to be run once.
+%
+% Example on how to use it:
+%   setup_OSNAP
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function setup_OSNAP()
 try
     % TODO: add instructions directing user to all relevant installations

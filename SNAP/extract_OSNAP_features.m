@@ -1,4 +1,36 @@
-function T = extract_OSNAP_features_sample(SNAP_nucleus_file_list)
+% -------------------------------------------------------------------------
+% extract_OSNAP_features.m
+% -------------------------------------------------------------------------
+% Creates a table of feature_data where each row represents a sample 
+% (nucleus) and the columns are identifier and feature information for the
+% sample. The samples analyzed are based on those included in the file list
+% list provided, where the code pulls from the saved analysis files on each
+% nucleus (stored in the OSNAP_nucleus_data directories).
+%
+% Example on how to use it:
+%   feature_data = extract_OSNAP_features(SNAP_nucleus_file_list)
+% -------------------------------------------------------------------------
+% Input:
+%   SNAP_nucleus_file_list: Table with details on the samples of interest
+%                           to extract feature information from, including 
+%                           the file path, replicate, phenotype, and sample
+%                           identifier
+% Output:
+%   T: The feature data output table, where each row represents a sample
+%      (nucleus). The first three columns represent (1) Group/Phenotype, 
+%      (2) replicate, and (3) Sample Identifier. Each subsequent column is  
+%      an O-SNAP feature. 
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
+function T = extract_OSNAP_features(SNAP_nucleus_file_list)
     %% parameters
     percentile_thresh = [40 70];
     %% define variables of interest
@@ -77,7 +109,7 @@ function T = extract_OSNAP_features_sample(SNAP_nucleus_file_list)
         "radial_loc_density_ring_gradient_minor_axis",...
         "radial_dbscan_cluster_density_ring_gradient_major_axis",...
         "radial_dbscan_cluster_density_ring_gradient_minor_axis"];
-    %% CHANGE
+    %% TODO
     % load(SNAP_nucleus_file_list{1,"filepath"},'area_thresholds');
     area_thresholds = 10.^(1.25:0.25:2);
     %%
@@ -255,3 +287,4 @@ function T = extract_OSNAP_features_sample(SNAP_nucleus_file_list)
         end
     end
 end
+

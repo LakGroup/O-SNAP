@@ -1,3 +1,33 @@
+% -------------------------------------------------------------------------
+% plot_OSNAP_venn.m
+% -------------------------------------------------------------------------
+% 
+%
+% Example on how to use it:
+%   plot_OSNAP_venn(feature_comparisons)
+% -------------------------------------------------------------------------
+% Input:
+%   feature_comparisons: A cell array where every cell isa pair-wise 
+%                        combination of the fold-change analysis used in 
+%                        the volcano plots%   : 
+% Output:
+%   venn_data: A cell array containing information on the features that
+%              comprise each set of comparisons present in the venn diagram
+% Options:
+%   plot: Flag to plot results
+%   alpha: Significance testing threshold
+%   fold_change_threshold: Signficant fold change threshold 
+%   save_path: Name of file location to save to, excluding extension
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function venn_data = plot_OSNAP_venn(feature_comparisons,options)
 arguments
     feature_comparisons cell
@@ -275,3 +305,4 @@ function v = feature_intersection_4(v1, v2, v3, v4)
         v = [];
     end
 end
+

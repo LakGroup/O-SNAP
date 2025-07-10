@@ -1,6 +1,36 @@
-function plot_OSNAP_violin(T,work_dir,options)
+% -------------------------------------------------------------------------
+% plot_OSNAP_violin.m
+% -------------------------------------------------------------------------
+% Creates a violin plot for each O-SNAP feature across each phenotype
+% present in the feature data.
+%
+% Example on how to use it:
+%   plot_OSNAP_violin(feature_data,...
+%                     "D:\Analysis\ExperimentA")
+% 
+% -------------------------------------------------------------------------
+% Input:
+%   feature_data: The feature data output table, where each row represents 
+%                 a sample(nucleus). The first three columns represent (1) 
+%                 Group/Phenotype, (2) replicate, and (3) Sample 
+%                 Identifier. Each subsequent column is  an O-SNAP feature.
+%   work_dir: O-SNAP analysis directory where resulting figures will be 
+%             saved in a sub-directory called "violin_plots"
+% Options:
+%   n_processes: Number of cores to run parallel processes on 
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
+function plot_OSNAP_violin(feature_data,work_dir,options)
 arguments
-    T table
+    feature_data table
     work_dir string
     options.n_processes double = 12
 end
@@ -14,14 +44,14 @@ else
 end
 
 % get info on groups
-group_cat_split = repelem({categorical(replace(T.group,"_"," "))},options.n_processes);
-[groups,~,group_idx] = unique(T.group);
+group_cat_split = repelem({categorical(replace(feature_data.group,"_"," "))},options.n_processes);
+[groups,~,group_idx] = unique(feature_data.group);
 n_groups = length(groups);
 
 % split for parallel
-feature_idx = split_data_to_n_OSNAP(num2cell(4:(size(T,2))),options.n_processes);
-T_split = cellfun(@(x) T{:,cell2mat(x)},feature_idx,'uni',0);
-feature_split = cellfun(@(x) T.Properties.VariableNames(cell2mat(x)),feature_idx,'uni',0);
+feature_idx = split_data_to_n_OSNAP(num2cell(4:(size(feature_data,2))),options.n_processes);
+T_split = cellfun(@(x) feature_data{:,cell2mat(x)},feature_idx,'uni',0);
+feature_split = cellfun(@(x) feature_data.Properties.VariableNames(cell2mat(x)),feature_idx,'uni',0);
 
 % create violinplots
 parfor p=1:options.n_processes

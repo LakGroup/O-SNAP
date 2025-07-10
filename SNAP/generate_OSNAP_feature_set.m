@@ -1,3 +1,27 @@
+% -------------------------------------------------------------------------
+% generate_OSNAP_feature_set.m
+% -------------------------------------------------------------------------
+% Exports information on a feature universe from a struct to an XLSX file
+% that is subsequently loaded during FSEA.
+%
+% Example on how to use it:
+%   generate_OSNAP_feature_set(feature_IDs,feature_universe)
+% -------------------------------------------------------------------------
+% Input:
+%   feature_IDs: String array of the feature identifiers (O-SNAP feature 
+%                names)
+%   feature_universes: A struct array with information on each feature 
+%                      universe
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function generate_OSNAP_feature_set(feature_IDs,feature_universe)
 arguments
     feature_IDs cell
@@ -23,3 +47,4 @@ end
     writetable(data_feature_set,filepath,"WriteVariableNames",false,"WriteMode","overwritesheet");
     update_FS(char(filepath))
 end
+

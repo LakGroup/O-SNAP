@@ -1,4 +1,46 @@
-% This code works as a standard code for the params extraction of 
+% -------------------------------------------------------------------------
+% extract_OSNAP_morphometrics_dbscan_cluster_radial_features.m
+% -------------------------------------------------------------------------
+% Calculates features related to morphometrics, DBSCAN heterochromatin-
+% associated localization clustering, and radial features for a given
+% sample (nucleus). Saves information to the MAT analysis file specific to 
+% that sample.
+%
+% Example on how to use it:
+%   extract_OSNAP_morphometrics_dbscan_cluster_radial_features(...
+%                   "D:\Analysis\ExperimentA\Rep1\sample_KO_1.mat",...
+%                   70)
+% -------------------------------------------------------------------------
+% Input:
+%   filepath: File path to specific sample (nucleus) to analyze.
+%   density_threshold: Lower percentile cutoff for localizations to include in
+%                      the DBSCAN clustering analysis for heterochromatin-
+%                      associated domains
+% Options:
+%   eps: The search radius of the DBSCAN clustering algorithm
+%   min_num: The minimum number of localizations to include in a DBSCAN
+%            domain
+%   ellipse_inc: For radial analysis of localization/cluster density.
+%                Percentage of the major/minor axis length to subdivide the
+%                ellipses that define the bounds of the rings. The number 
+%                of rings is N_r = floor(1/inc)
+%   periphery_thresh: Cutoff for what percentage of the polygon to consider
+%                     as the periphery. Ex. 0.15 results in a periphery
+%                     region with an area equivalent to 15% of the original
+%                     polygon shape
+%   plot: Flag to plot results
+%   overwrite: Flag on whether to ask user before overwriting data
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%
+%% This code works as a standard code for the params extraction of 
 % STORM images (@Shenoy_lab) Version 4.0 (last update April 5, 2024)
 
 % Notes: This file is used to extract key params of nucleus as follows:
@@ -6,19 +48,6 @@
 % All variables are saved into a cell 'data', which is written to the
 % system
 
-% CHANGELOG (for v4)
-% Saving the boundary of domains into the data class
-% Option to overwrite the global threshold for individual nuclei
-% Made to run in parallel from loading voronoi analysis data
-
-% density storage
-% TSA: 0.017972
-% GSK dss: 1 threshold: 0.030912 --> 0.4
-% Stiffness dss: 1 threshold: 0.021197
-% teno stiffness
-% If density threshold has been previously calculated, in the next line it can be used directly to save time%
-% density_threshold = 0.014431999613957;
-% OWflag = false;          % if true overwrites the density threshold for each nuclei <NOT RECOMMENDED>
 
 function extract_OSNAP_morphometrics_dbscan_cluster_radial_features(filepath, density_threshold, options)
 arguments
@@ -401,7 +430,7 @@ save_OSNAP_sample(filepath, data);
 
 if options.plot
     [dir_name,name,~] = fileparts(filepath);
-    map_dir = replace(dir_name,"SNAP_nucleus_data","SNAP_nucleus_images");
+    map_dir = replace(dir_name,"_nucleus_data","_nucleus_images");
     if ~exist(map_dir, 'dir')
         mkdir(map_dir)
     end
@@ -439,4 +468,5 @@ function points_norm = normalize_points(points,components,boundary)
     rotated_boundary = boundary*components;
     points_norm = points*components - min(boundary*components) - range(rotated_boundary)/2;
 end
+
 

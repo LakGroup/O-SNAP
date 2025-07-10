@@ -1,3 +1,27 @@
+% -------------------------------------------------------------------------
+% display_FSEA_results.m
+% -------------------------------------------------------------------------
+% Prints the results from FSEA analysis for a given pair of phenotypes
+%
+% Example on how to use it:
+%   display_FSEA_results(T_FSEA, group_pair, options)
+% -------------------------------------------------------------------------
+% Input:
+%   T_FSEA: The output from FSEA with information on feature family ES,
+%           NES, and statistics
+%   group_pair: [1x2] array containing group identifiers
+% Options:
+%   alpha: Significance testing threshold
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function display_FSEA_results(T_FSEA, group_pair, options)
 arguments
     T_FSEA table
@@ -15,4 +39,5 @@ end
         disp("- - - - - - - - - - - - - - - - -")
     end
 end
+
 

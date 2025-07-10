@@ -1,3 +1,33 @@
+% -------------------------------------------------------------------------
+% evaluate_OSNAP_classifiers.m
+% -------------------------------------------------------------------------
+% Evaluates and summarizes the performance of a set of classifiers trained
+% on the same set of O-SNAP feature data. Produces ROC curves, confusion
+% matrices, and a summary table of the overall classification performances
+% of the models.
+%
+% Example on how to use it:
+%   classification_summary = evaluate_OSNAP_classifiers(classifiers)
+% -------------------------------------------------------------------------
+% Input:
+%   classifiers: A cell array where each cell stores a single instance of a
+%                model trained on the O-SNAP feature data
+% Output:
+%   classification_summary: A table with the overall classification
+%                           accuracies for all model types present in the
+%                           classifier variable
+% Options:
+%   save_path: Name of file location to save to, excluding extension
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function classification_summary = evaluate_OSNAP_classifiers(classifiers,options)
 arguments
     classifiers cell = {}
@@ -70,4 +100,5 @@ else
 end
 
 end
+
 

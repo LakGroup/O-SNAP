@@ -1,13 +1,47 @@
+% -------------------------------------------------------------------------
+% plot_OSNAP_PCA.m
+% -------------------------------------------------------------------------
+% Creates a scatter plot from PCA-transformed data. If more than three
+% components are provided, only the top three are plotted.
+%
+% Example on how to use it:
+%   plot_OSNAP_PCA(coeff,score,explained)
+% -------------------------------------------------------------------------
+% Input:
+%   coeff: An array of PCA coefficients
+%   score: An array of PCA scores of data to plot
+%   explained: An array of the variance explained by each PCA component
+% Options:
+%   save_path: Name of file location to save to, excluding extension
+%   reps_info: A [Nx1] string array where each row contains the replicate
+%              identifier for each sample
+%   groups_info: A [Nx1] string array where each row contains the phenotype
+%              identifier for each sample
+%   color_by_group: Flag on whether to color code markers based on
+%                   phenotype
+%   show_reps: Flag on whether to indicate different replicates through
+%              marker shapes
+%   marker_size: Size of markers
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function plot_OSNAP_PCA(coeff,score,explained,options)
 arguments
     coeff double
     score double
     explained double
     options.save_path string = ""
-    options.bio_reps_info string = []
+    options.reps_info string = []
     options.groups_info string = []
     options.color_by_group logical = true
-    options.show_bio_reps logical = true
+    options.show_reps logical = true
     options.marker_size = 40
 end
     n_comps = size(coeff,2);
@@ -24,11 +58,11 @@ end
     if ~isempty(options.groups_info)
         [groups,~,groups_idx] = unique(options.groups_info);
     end
-    if options.show_bio_reps && ~isempty(options.bio_reps_info)
-        [bio_reps,~,bio_reps_idx] = unique(options.bio_reps_info);
+    if options.show_reps && ~isempty(options.reps_info)
+        [reps,~,reps_idx] = unique(options.reps_info);
     end
-    if ~options.color_by_group && exist(bio_reps,"var")
-        s_face_colors = lines(length(bio_reps));
+    if ~options.color_by_group && exist(reps,"var")
+        s_face_colors = lines(length(reps));
     elseif ~isempty(options.groups_info)
         s_face_colors = lines(length(groups));
     else
@@ -47,7 +81,7 @@ end
     score = (max_coef_len.*(score ./ max(abs(score(:))))).*colsign;
     figure('visible','off','Position', [10 10 1210 910]);
     % only group information is availble
-    if ~exist("bio_reps","var") && ~isempty(groups)
+    if ~exist("reps","var") && ~isempty(groups)
         for g=1:length(groups)
             idx = groups_idx == g;
             if n_comps>=3
@@ -63,9 +97,9 @@ end
         legend(groups,'Location','best','Interpreter','none','FontSize',14)
     % color = groups; marker type = replicate
     elseif options.color_by_group && ~isempty(groups)
-        for b=1:length(bio_reps)
+        for b=1:length(reps)
             for g=1:length(groups)
-                idx = all([(groups_idx == g) (bio_reps_idx == b)],2);
+                idx = all([(groups_idx == g) (reps_idx == b)],2);
                 if n_comps >=3
                     s = scatter3(score(idx,1),score(idx,2),score(idx,3),'filled');
                 elseif n_comps ==2
@@ -86,9 +120,9 @@ end
         legend(groups,'Location','southoutside','Interpreter','none')
     % color = replicate; marker type = color
     elseif ~isempty(groups)
-        for b=1:length(bio_reps)
+        for b=1:length(reps)
             for g=1:length(groups)
-                idx = all([(groups_idx == g) (bio_reps_idx == b)],2);
+                idx = all([(groups_idx == g) (reps_idx == b)],2);
                 if n_comps >=3
                     s = scatter3(score(idx,1),score(idx,2),score(idx,3),'filled');
                 elseif n_comps ==2
@@ -106,7 +140,7 @@ end
                 hold on
             end
         end
-        legend(bio_reps,'Location','southoutside','Interpreter','none','FontSize',18)
+        legend(reps,'Location','southoutside','Interpreter','none','FontSize',18)
     else 
         if n_comps >=3
             scatter3(score(:,1),score(:,2),score(:,3),'filled');

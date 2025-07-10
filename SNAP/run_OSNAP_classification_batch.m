@@ -1,3 +1,44 @@
+% -------------------------------------------------------------------------
+% run_OSNAP_classification_batch.m
+% -------------------------------------------------------------------------
+% Trains multiple sets of classifiers across folds and, if specified,
+% multiple instances of models with the same architecture. Implements
+% parallel processing for improved runtime.
+%
+% Example on how to use it:
+%   run_OSNAP_classification_batch(feature_data)
+% -------------------------------------------------------------------------
+% Input:
+%   train_data: The feature data of the training set, where each row  
+%               represents a sample(nucleus). The first three columns 
+%               represent (1) Group/Phenotype, (2) replicate, and (3)  
+%               SampleIdentifier. Each subsequent column is  an O-SNAP 
+%               feature.
+% Output:
+%   classifiers: A cell array where each cell stores a single instance of a
+%                model trained on the O-SNAP feature data
+% Options:
+%   test_data: A set of O-SNAP feature data for test samples. If no test
+%              data is provided, the classifier will undergo
+%              cross-validation using feature_data
+%   pca_result: A struct array containing info on PCA transformation
+%   vars_selected: Cell array of selected features
+%   n_models_per_type: Number of model instances to train within each fold
+%                      for a given model architecture. Incorporated to
+%                      evaluate the stability of a model architecture
+%                      trained on the same data.
+%   n_processes: Number of cores to run parallel processes on 
+%   verbose: Flag for output to print
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%
 function classifiers = run_OSNAP_classification_batch(train_data,options)
 arguments
     train_data table

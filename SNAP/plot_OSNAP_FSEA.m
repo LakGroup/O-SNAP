@@ -1,3 +1,32 @@
+% -------------------------------------------------------------------------
+% plot_OSNAP_FSEA.m
+% -------------------------------------------------------------------------
+% Produces a summary plot for the FSEA of a feature universe, displaying
+% NES, adjusted q-values, and feature set sizes
+%
+% Example on how to use it:
+%   plot_OSNAP_FSEA(T_FSEA,"Control","KO",save_path,options)
+% -------------------------------------------------------------------------
+% Input:
+%   T_FSEA: The output from FSEA with information on feature family ES,
+%           NES, and statistics
+%   group_ctrl: String identifier for control phenotype
+%   group_case: String identifier for case phenotype
+%   save_path: Name of file location to save to, excluding extension
+% Options:
+%   alpha: Significance testing threshold
+%   p_show: Upper bound for feature significance for a feature set to be
+%           displayed
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function plot_OSNAP_FSEA(T_FSEA,group_ctrl,group_case,save_path,options)
 arguments
     T_FSEA table
@@ -5,10 +34,10 @@ arguments
     group_case string
     save_path string
     options.alpha double = 0.05;
-    options.p_show double =  0.5
+    options.q_show double =  0.5
 end
-up_flag = any(all([T_FSEA.ES > 0, T_FSEA.("NES_q-val") < options.p_show],2));
-down_flag = any(all([T_FSEA.ES < 0, T_FSEA.("NES_q-val") < options.p_show],2));
+up_flag = any(all([T_FSEA.ES > 0, T_FSEA.("NES_q-val") < options.q_show],2));
+down_flag = any(all([T_FSEA.ES < 0, T_FSEA.("NES_q-val") < options.q_show],2));
 if up_flag && down_flag
     figure('Position',[10 10 1210 300],'visible','off');
     %% feature value increase
@@ -102,3 +131,4 @@ leg.Position(4) = leg.Position(4) * 1.4;
 leg.Position(2) = leg.Position(2) + n_feature_families*0.005;
 
 end
+

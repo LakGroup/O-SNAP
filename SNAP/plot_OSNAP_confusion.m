@@ -1,4 +1,32 @@
-%% plot confusion matrix
+% -------------------------------------------------------------------------
+% plot_OSNAP_confusion.m
+% -------------------------------------------------------------------------
+% Create confusion matrix plot, and averages result if the result from
+% multiple models are provided
+%
+% Example on how to use it:
+%   plot_OSNAP_confusion(gca(),["Control","KO"],[4,5;7,3])
+% -------------------------------------------------------------------------
+% Input:
+%   ax: Axes to plot confusion matrix on
+%   groups: String array of phenotype identifiers
+%   confusion_counts: [NxNxM] matrix where N is the number of phenotypes
+%                     and M is the number of folds. Each NxN represents the
+%                     confusion results for a single model where the rows
+%                     correspond to true labels and columns to the model
+%                     predicted labels
+% Options:
+%   model_type_name: The model architecture type
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function plot_OSNAP_confusion(ax,groups,confusion_counts,options)
 arguments
     ax

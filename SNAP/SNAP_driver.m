@@ -1,4 +1,34 @@
-% %% prepare compiler for faster run
+% -------------------------------------------------------------------------
+% .m
+% -------------------------------------------------------------------------
+% 
+%
+% Example on how to use it:
+%   
+% -------------------------------------------------------------------------
+% Input:
+%   : 
+%   : 
+%   : 
+%   : 
+% Output:
+%   : 
+% Options:
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%% %% prepare compiler for faster run
 % if ~exist('first_run','var')
 %     setup_SNAP
 %     first_run = true;

@@ -1,4 +1,34 @@
-%% generate volcano plot
+% -------------------------------------------------------------------------
+% .m
+% -------------------------------------------------------------------------
+% 
+%
+% Example on how to use it:
+%   
+% -------------------------------------------------------------------------
+% Input:
+%   : 
+%   : 
+%   : 
+%   : 
+% Output:
+%   : 
+% Options:
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%%% generate volcano plot
 function plot_OSNAP_volcano(feature_compare_data,group_1,group_2,options)
     arguments
         feature_compare_data table;
@@ -37,3 +67,4 @@ function plot_OSNAP_volcano(feature_compare_data,group_1,group_2,options)
         saveas(v_fig,save_path+".png");
     end
 end
+

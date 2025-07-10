@@ -1,3 +1,32 @@
+% -------------------------------------------------------------------------
+% generate_OSNAP_ellipses.m
+% -------------------------------------------------------------------------
+% Creates the elliptical polyshapes that are used to visualize and
+% facilitate radial modeling and analyis of samples (nucleus boundaries) as
+% concentric ellipses.
+%
+% Example on how to use it:
+%   p = generate_OSNAP_ellipses(1.6E4,1.8E2,0.1)
+% -------------------------------------------------------------------------
+% Input:
+%   major_axis: Length of major axis of polygon [nm]
+%   minor_axis: Length of minor axis of polygon [nm]
+%   inc: Percentage of the major/minor axis length to subdivide the
+%        ellipses that define the bounds of the rings. The number of rings
+%        is N_r = floor(1/inc)
+% Output:
+%   p: Series of polyshapes that approximate ellipses, acting as boundaries
+%      for subsequent radial anaylsis
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function p = generate_OSNAP_ellipses(major_axis, minor_axis, inc)
     inc_t = 30;
     t = 2*pi/inc_t:2*pi/inc_t:2*pi; % parametric variable for ellipse
@@ -20,4 +49,5 @@ function p = generate_OSNAP_ellipses(major_axis, minor_axis, inc)
         end
     end
 end
+
 

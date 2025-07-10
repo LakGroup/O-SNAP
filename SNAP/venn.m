@@ -1,4 +1,3 @@
-function vennfig = venn(n,varargin)
 %% Draw venn diagram with two to four sets with optional text labels.
 % User can specify the number of sets to draw (maximum four) and label each
 % set and the intersectional regions between sets.
@@ -37,7 +36,7 @@ function vennfig = venn(n,varargin)
 % Output : A Veenn diagram will be drawn on a new figure.
 %          vennfig (optional): A handle to the figure.
 %
-% Examples: see README.md
+function vennfig = venn(n,varargin)
 
 % default set names
 s = repmat(" ",4,1);   % white space as spaceholder
@@ -269,5 +268,6 @@ rectangle('Position',[x y d d],'Curvature',1,'FaceColor',faceC,'FaceAlpha',alpha
 end
 
 end
+
 
 

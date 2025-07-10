@@ -1,9 +1,46 @@
+% -------------------------------------------------------------------------
+% generate_OSNAP_train_test_sets.m
+% -------------------------------------------------------------------------
+% Creates cell arrays of indices assigning samples to either training or
+% test data for multiple folds.
+%
+% Example on how to use it:
+%   [train_idx, test_idx, split_method] = generate_OSNAP_train_test_sets(feature_data)
+% -------------------------------------------------------------------------
+% Input:
+%   feature_data: The O-SBAP feature data table, where each row represents 
+%                 a sample (nucleus). The first three columns represent (1) 
+%                 Group/Phenotype, (2) replicate, and (3) Sample 
+%                 Identifier. Each subsequent column is an O-SNAP feature. 
+% Output:
+%   train_idx: A cell array where each contains an [Nx1] array of logicals
+%              indicating which samples to include for the training data
+%   test_idx: A cell array where each contains an [Nx1] array of logicals
+%             indicating which samples to include for the test data
+%   split_method: Method to split data; returned in event that the desired
+%                 split method is not feasible and an alternative is used
+%                 (e.g. for "replicate" - if not enough replicates,
+%                 "k-fold" is used instead")
+% Options:
+%   split_method: Method to split the data
+%   k: Number of folds
+%   proportion: Ratio of test:train sample count
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function [train_idx, test_idx, split_method] = generate_OSNAP_train_test_sets(feature_data,options)
 arguments
     feature_data table
-    options.split_method string = "replicate"
+    options.split_method string = "k-fold"
     options.k double = 5
-    options.proportion double = 0.2 % ratio of test:train
+    options.proportion double = 0.2 
 end
     switch options.split_method
         case "replicate"

@@ -1,4 +1,34 @@
-%% https://www.mathworks.com/matlabcentral/fileexchange/55142-fakenmc-pval_adjust
+% -------------------------------------------------------------------------
+% .m
+% -------------------------------------------------------------------------
+% 
+%
+% Example on how to use it:
+%   
+% -------------------------------------------------------------------------
+% Input:
+%   : 
+%   : 
+%   : 
+%   : 
+% Output:
+%   : 
+% Options:
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%%% https://www.mathworks.com/matlabcentral/fileexchange/55142-fakenmc-pval_adjust
 % This is an implementation of the p.adjust R function, the documentation of which can be found at http://www.inside-r.org/r-doc/stats/p.adjust. Contrary to the R function, this function does not handle missing values, and adds one additional correction method, 'sidak', as described in https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction.
 
 
@@ -198,5 +228,6 @@ for i = 2:numel(p)
         p(i) = p(i - 1);
     end
 end
+
 
 

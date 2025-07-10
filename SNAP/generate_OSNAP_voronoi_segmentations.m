@@ -1,3 +1,51 @@
+% -------------------------------------------------------------------------
+% generate_OSNAP_voronoi_segmentations.m
+% -------------------------------------------------------------------------
+% Performs Voronoi segmentation on a sample of interest and optionally
+% plots the Voronoi density map. Saves information to the MAT analysis file
+% specific to that sample.
+%
+% Example on how to use it:
+%   generate_OSNAP_voronoi_segmentations(...
+%                       "D:\Analysis\ExperimentA\Rep1\sample_KO_1.mat")
+% -------------------------------------------------------------------------
+% Input:
+%   filepath: File path to specific sample (nucleus) to analyze.
+% Output:
+%   data: A struct array with information on the Voronoi data for a sample
+%       - x: x-coordinates of localiations [nm]
+%       - y: y-coordinates of localiations [nm]
+%       - voronoi_areas_all: All initially calculated Voronoi polygon areas
+%                           following Voronoi segmentation of localizations
+%       - voronoi_areas: Voronoi polygon areas, filtered for NaN values and
+%                        areas associated with the boundary localixations,
+%                        which tend to demonstrate large outlier values
+%       - voronoi_neighbors: A list of indices that store information on
+%                            the relationship between the locs/Voronoi 
+%                            cells that neighbor each other
+%       - reduced_log_voronoi_density: The reduced log10 Voronoi density,
+%                                      calculated from the filtered 
+%                                      voronoi_areas
+%       - faces: Information on how the vertices of the Voronoi cells
+%                should connect to each other
+%       - vertices: Information on the vertex values of the Voronoi cells
+% Options:
+%   min_log_vor_density: Lower bound for filtering and visualizing voronoi
+%                        density values
+%   max_log_vor_density: Upper bound for filtering and visualizing voronoi
+%                        density values
+%   plot: Flag to plot results
+%   overwrite: Flag on whether to ask user before overwriting data
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function data = generate_OSNAP_voronoi_segmentations(filepath, options)
 arguments
     filepath string
@@ -61,7 +109,7 @@ if options.plot
         data = load(filepath);
     end
     [dir_name,name,~] = fileparts(filepath);
-    map_dir = replace(dir_name,"SNAP_nucleus_data","SNAP_nucleus_images");
+    map_dir = replace(dir_name,"_nucleus_data","_nucleus_images");
     if ~exist(map_dir, 'dir')
         mkdir(map_dir)
     end
@@ -137,3 +185,4 @@ function arr_new = uneven_cell2mat(arr)
         arr_new(1:numel(value),i) = value;
     end
 end
+

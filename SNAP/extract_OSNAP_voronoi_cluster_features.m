@@ -1,3 +1,35 @@
+% -------------------------------------------------------------------------
+% extract_OSNAP_voronoi_cluster_features.m
+% -------------------------------------------------------------------------
+% Calculates features related to multi-scale Voronoi clustering for a given
+% sample (nucleus). Saves information to the MAT analysis file specific to 
+% that sample.
+%
+% Example on how to use it:
+%   extract_OSNAP_voronoi_cluster_features("D:\Analysis\ExperimentA\Rep1\sample_KO_1.mat",...
+%                   [17.78   31.62   56.23  100.0],...
+%                   [5])
+% -------------------------------------------------------------------------
+% Input:
+%   filepath: File path to specific sample (nucleus) to analyze.
+%   area_threshold_arr: Area thresholds for multi-scale Voronoi clustering.
+%                       Act as upper bound for Voronoi cell areas. Locs
+%                       with areas under this value are filtered.
+%   min_number_of_localizations: The minimum number of locs in a Voronoi 
+%                                cluster. Clusters with fewer locs are
+%                                filtered.
+% Options:
+%   overwrite: Flag on whether to ask user before overwriting data
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function extract_OSNAP_voronoi_cluster_features(filepath,area_threshold_arr,min_number_of_localizations,options)
 arguments
     filepath string
@@ -91,6 +123,7 @@ end
 save_OSNAP_sample(filepath, data);
 
 end
+
 
 
 

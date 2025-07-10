@@ -1,3 +1,32 @@
+% -------------------------------------------------------------------------
+% plot_OSNAP_ellipses.m
+% -------------------------------------------------------------------------
+% Renders the ellipses and color codes them based on the density. Also
+% provides a plot of the original localization/cluster coordinates above
+% the ellipse plot.
+% -------------------------------------------------------------------------
+% Input:
+%   radial_density: [1xn_r] array of the calculated localization density
+%                   corresponding to each ring of the radial analysis
+%   points: [Nx2] array of 2D coordinate positions to plot
+%   voronoi_areas: Voronoi areas to color-code localizations
+%   x_length: Major axis length of respective nucleus [nm]
+%   y_length: Minor axis length of respective nucleus [nm]
+%   max_density: Maximum density cutoff (across all samples being plotted)
+%                to scale colors comparably across samples
+%   is_cluster: Flag to indicate whether points variable represents locs
+%               (to color-code) or clusters
+%   save_name: The file path to save to
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function plot_OSNAP_ellipses(radial_density, points, voronoi_areas, x_length, y_length, max_density, is_cluster, save_name)
     %% options
     min_area = 0.5;
@@ -91,4 +120,5 @@ function plot_OSNAP_ellipses(radial_density, points, voronoi_areas, x_length, y_
         close(f);
     end
 end
+
 

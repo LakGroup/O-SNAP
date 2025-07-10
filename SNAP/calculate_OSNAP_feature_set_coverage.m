@@ -1,7 +1,52 @@
+% -------------------------------------------------------------------------
+% calculate_OSNAP_feature_set_coverage.m
+% -------------------------------------------------------------------------
+% Calculates feature set coverage based on pair-wise feature comparison
+% between all datasets
+%
+% Example on how to use it:
+%   data = calculate_OSNAP_feature_set_coverage(feature_comparisons, 
+%                                               "D:\Results\")
+% -------------------------------------------------------------------------
+% Input:
+%   feature_comparisons: A cell array where every cell isa pair-wise 
+%                        combination of the fold-change analysis used in 
+%                        the volcano plots
+%   save_dir: Save directory
+% Output:
+%   data: A struct array with information on the coverage results
+%           - (group1__vs__group2__featureUniverse): Table containing the 
+%                                                     feature comparison
+%                                                     data for group1 vs
+%                                                     group2 when
+%                                                     considering a given
+%                                                     feature universe,
+%                                                     with all info from
+%                                                     the feature
+%                                                     comparisons as well
+%                                                     as data on the
+%                                                     feature set and
+%                                                     BGratio and feature
+%                                                     ratio
+% Options:
+%   plot: Flag to plot results
+%   alpha: Significance testing threshold
+%   fold_change_threshold: Signficant fold change threshold
+%   feature_universe_names: Identifier for feature universes of interest
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%
 function data = calculate_OSNAP_feature_set_coverage(feature_comparisons,save_dir,options)
 arguments
     feature_comparisons cell
-    save_dir string
+    save_dir string = "";
     options.plot = true;
     options.alpha double = 0.05;
     options.fold_change_threshold double = 2;
@@ -14,10 +59,11 @@ for i=1:numel(feature_comparisons)
     group_ctrl = feature_comparisons{i}.groups(1);
     group_case = feature_comparisons{i}.groups(2);
     group_pair_string = replace(group_ctrl + "__vs__" + group_case,"-","_");
-    data.(group_pair_string) = sortrows(feature_comparisons{i}.feature_table,"adj_p_value");
+    S = sortrows(feature_comparisons{i}.feature_table,"adj_p_value");
     %% run loop on all universes
     for f = 1:size(feature_universes,2)
-        data.(group_pair_string) = analyze_feature_family(data.(group_pair_string),[group_ctrl group_case],feature_universes{f},save_dir,options);
+        set_name = group_pair_string+"__"+feature_universes{f}.name;
+        data.(set_name) = analyze_feature_family(S,[group_ctrl group_case],feature_universes{f},save_dir,options);
     end
 end
 end
@@ -28,6 +74,8 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
     feature_universe = feature_universe_info.feature_set;
     %% get feature families (defined in functions below)
     S = sort_features(S,feature_universe,feature_universe_name);
+    % filter out features that do not belong in a set
+    S = S(~ismissing(S.(feature_universe_name)),:);
     S_universe = groupcounts(S,feature_universe_name);
     idx_sig = all([abs(S.log2_fold_change) > log2(options.fold_change_threshold) S.adj_p_value < options.alpha],2);
     S_diff = S(idx_sig,:);
@@ -69,7 +117,11 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
     end
     %% plot
     if options.plot
-        figure('Position',[10 10 910 10+300*n_rows]);
+        if save_dir ~= ""
+            figure('visible','off','Position',[10 10 910 10+300*n_rows]);
+        else
+            figure('Position',[10 10 910 10+300*n_rows]);
+        end
         sgtitle(group_pair(1) + " vs " + group_pair(2))
         tiledlayout(n_rows,2);
         if n_rows == 3
@@ -147,8 +199,10 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
             title({"Features increased for " + group_pair(2),"Coverage"},"Interpreter","none")
         end
         sgtitle({replace(feature_universe_name,"_"," "),join(group_pair(:),' vs ')});
-        savefig(fullfile(save_dir, "feature_set_coverage_"+join(group_pair(:),'_')+"_"+ feature_universe_name + ".fig"));
-        saveas(gcf,fullfile(save_dir, "feature_set_coverage_"+join(group_pair(:),'_')+"_"+ feature_universe_name +".png"));
+        if save_dir ~= ""
+            savefig(fullfile(save_dir, "feature_set_coverage_"+join(group_pair(:),'_')+"_"+ feature_universe_name + ".fig"));
+            saveas(gcf,fullfile(save_dir, "feature_set_coverage_"+join(group_pair(:),'_')+"_"+ feature_universe_name +".png"));
+        end
     end
 end
 
@@ -170,5 +224,6 @@ function S = sort_features(S,feature_universe,feature_universe_name)
         throw(ME)
     end
 end
+
 
 

@@ -1,4 +1,28 @@
-%% plot ROC matrix
+% -------------------------------------------------------------------------
+% plot_OSNAP_ROC.m
+% -------------------------------------------------------------------------
+% Plot the ROC curve for a model. If data from multiple models is provided,
+% then the average curve with a standard deviation interval is plotted.
+%
+% Example on how to use it:
+%    plot_OSNAP_ROC(gca(),["Control","KO"],ROC_data)
+% -------------------------------------------------------------------------
+% Input:
+%   ax: Axes to plot confusion matrix on
+%   groups: String array of phenotype identifiers
+%   ROC_data: Cell array where folds are along the columns and replicates
+%             of model instances are along rows. The ROC data is obtained
+%             from the PerformanceCurve field of each classifier struct.
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%%% plot ROC matrix
 function plot_OSNAP_ROC(ax,groups,ROC_data)
     n_groups = numel(groups);
     n_batch = size(ROC_data,2);
