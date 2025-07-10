@@ -1,54 +1,54 @@
-function plot_GSEA(work_dir,T_GSEA,feature_universe_name,options)
+function plot_FSEA(save_dir,T_FSEA,feature_universe_name,options)
 arguments
-    work_dir string
-    T_GSEA table
+    save_dir string
+    T_FSEA table
     feature_universe_name string
     options.alpha double = 0.05;
 end
-up_or_down = any([T_GSEA.ES > 0 T_GSEA.ES < 0]);
+up_or_down = any([T_FSEA.ES > 0 T_FSEA.ES < 0]);
 if all(up_or_down)
-    figure('Position',[10 10 1210 910]);
-    %% upregulation
+    figure('Position',[10 10 1210 910],'visible','off');
+    %% feature value increase
     subplot(1,2,1)
-    plot_GSEA_axis(T_GSEA,"dir","up","alpha",options.alpha);
-    %% downregulation
+    plot_FSEA_axis(T_FSEA,"dir","increase","alpha",options.alpha);
+    %% feature value decrease
     subplot(1,2,2)
-    plot_GSEA_axis(T_GSEA,"dir","down","alpha",options.alpha);
+    plot_FSEA_axis(T_FSEA,"dir","decrease","alpha",options.alpha);
 elseif up_or_down(1)
     figure('Position',[10 10 610 910]);
-    plot_GSEA_axis(T_GSEA,"dir","up","alpha",options.alpha);
+    plot_FSEA_axis(T_FSEA,"dir","increase","alpha",options.alpha);
 else
     figure('Position',[10 10 610 910]);
-    plot_GSEA_axis(T_GSEA,"dir","down","alpha",options.alpha);
+    plot_FSEA_axis(T_FSEA,"dir","decrease","alpha",options.alpha);
 end
 sgtitle(replace(feature_universe_name,"_"," "))
 %% save
-savefig(fullfile(work_dir,"GSEA_plots","GSEA_plots_"+feature_universe_name +".fig"));
-saveas(gcf,fullfile(work_dir,"GSEA_plots","GSEA_plots_"+feature_universe_name +".png"));
+savefig(fullfile(save_dir,"FSEA_plots_"+feature_universe_name +".fig"));
+saveas(gcf,fullfile(save_dir,"FSEA_plots_"+feature_universe_name +".png"));
 end
 
-function plot_GSEA_axis(T_GSEA,options)
+function plot_FSEA_axis(T_FSEA,options)
 arguments
-    T_GSEA table
-    options.dir string = "up";
+    T_FSEA table
+    options.dir string = "increase";
     options.alpha double = 0.05;
 end
 switch options.dir 
-    case "up"
-        T_GSEA_filt = T_GSEA(T_GSEA.ES > 0,:);
-        T_GSEA_filt = sortrows(T_GSEA_filt,"NES","descend");
-    case "down"
-        T_GSEA_filt = T_GSEA(T_GSEA.ES < 0,:);
-        T_GSEA_filt = sortrows(T_GSEA_filt,"NES","ascend");
+    case "increase"
+        T_FSEA_filt = T_FSEA(T_FSEA.ES > 0,:);
+        T_FSEA_filt = sortrows(T_FSEA_filt,"NES","descend");
+    case "decrease"
+        T_FSEA_filt = T_FSEA(T_FSEA.ES < 0,:);
+        T_FSEA_filt = sortrows(T_FSEA_filt,"NES","ascend");
     otherwise
         return
 end
-n_feature_families = size(T_GSEA_filt,1);
+n_feature_families = size(T_FSEA_filt,1);
 x = flip(1:n_feature_families);
-y = abs(T_GSEA_filt.NES)';
-[feature_family_size,center,scale] = normalize(T_GSEA_filt.("GS size"),'range');
+y = abs(T_FSEA_filt.NES)';
+[feature_family_size,center,scale] = normalize(T_FSEA_filt.("FS size"),'range');
 s = feature_family_size'*200+50;
-c = T_GSEA_filt.("NES_q-val");
+c = T_FSEA_filt.("NES_q-val");
 colormap(flipud(jet))
 for i=1:n_feature_families
     l = plot([0,y(i)],[x(i) x(i)],"--k");
@@ -61,16 +61,16 @@ scatter(y,x,s,c,'filled');
 hold on
 cbar = colorbar();
 yticks(1:n_feature_families);
-yticklabels(flip(replace(T_GSEA_filt.("GS.NAME"),"_"," ")));
+yticklabels(flip(replace(T_FSEA_filt.("FS.NAME"),"_"," ")));
 ytickangle(30)
 xlabel("Normalized Enrichment Score")
 ylim([0.5,n_feature_families+0.5])
-title(upper(options.dir)+"-REGULATION")
+title("Feature value: "+upper(options.dir))
 cbar.Label.String = "adjusted p-value";
 clim([0, max(c)]);
 cbar.Direction = 'reverse';
 cbar.TickLabels = compose("%0.1e",cbar.Ticks);
-marker_refs = 5*unique(round(T_GSEA_filt.("GS size")/5),'sorted');
+marker_refs = 5*unique(round(T_FSEA_filt.("FS size")/5),'sorted');
 if marker_refs(1) == 0
     marker_refs(1) = 5;
 end

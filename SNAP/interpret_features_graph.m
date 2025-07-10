@@ -1,27 +1,27 @@
-function interpret_features_graph(T, save_dir, options)
+function interpret_features_graph(T, options)
 arguments
     T table
-    save_dir string
     options.thresh double = 0.8
     options.connected_only logical = true;
+    options.save_path string = ""
 end
 if length(unique(T.group)) < 2
     return
 end
 % get table information
-T_norm = prepare_voronoi_table_data(T,"numeric_only",true);
+[T_norm, group_idx] = prepare_voronoi_table_data(T,"numeric_only",true);
 vars = replace(T_norm.Properties.VariableNames,'_',' ');
 % create correlation matrix
 T_corr = abs(corrcoef(table2array(T_norm)));
-% remove nans
-nan_idx = all(isnan(T_corr));
-T_corr = T_corr(~nan_idx,~nan_idx);
-vars = vars(~nan_idx);
+% % remove nans
+% nan_idx = all(isnan(T_corr));
+% T_corr = T_corr(~nan_idx,~nan_idx);
+% vars = vars(~nan_idx);
 % create correlation matrix
 n_features = length(vars);
 T_corr(T_corr < options.thresh) = 0;
 % identify notable features
-[feature_rank,score] = fscmrmr(T_norm,T.group);
+[feature_rank,score] = fscmrmr(T_norm,group_idx);
 n_features_selected = length(unique(T.group))+1;
 feature_idx = feature_rank(1:n_features_selected);
 if all(score == 0)
@@ -59,6 +59,8 @@ plot(G,...
     "NodeLabelMode","auto")
     %,'EdgeLabel',compose("%.2f",G.Edges.Weight))
 title(join(unique(T.group), ", "))
-savefig(fullfile(save_dir, "features_graph.fig"));
-saveas(gcf,fullfile(save_dir, "features_graph.png"));
+if options.save_path ~= ""
+    savefig(options.save_path+".fig");
+    saveas(gcf,options.save_path+".png");
+end
 end

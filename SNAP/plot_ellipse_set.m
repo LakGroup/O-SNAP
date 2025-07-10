@@ -1,4 +1,4 @@
-function plot_radial_density(radial_density, points, voronoi_areas, x_length, y_length, max_density, point_size, save_name)
+function plot_ellipse_set(radial_density, points, voronoi_areas, x_length, y_length, max_density, is_heterochromatin, save_name)
     %% plot rings
     c = jet;
     n_r = size(radial_density,1);
@@ -13,13 +13,16 @@ function plot_radial_density(radial_density, points, voronoi_areas, x_length, y_
     end
     hold on
     %% plot voronoi densities
-    colormap jet;
-    % remove Na_ns
-    idx = ~isnan(voronoi_areas);
-    points = points(idx,:);
-    reduced_voronoi_density = log10(1./voronoi_areas(idx));
-    % downsample when plotting
-    scatter(points(1:10:end,1),points(1:10:end,2)+y_length,point_size,reduced_voronoi_density(1:10:end),'filled','Marker_edgeColor','none');
+    if is_heterochromatin
+        scatter(points(:,1),points(:,2)+y_length,5,'k','filled','MarkerEdgeColor','none');
+    else
+        colormap jet;
+        idx = ~isnan(voronoi_areas);
+        points = points(idx,:);
+        reduced_voronoi_density = log10(1./voronoi_areas(idx));
+        % downsample when plotting
+        scatter(points(1:10:end,1),points(1:10:end,2)+y_length,1,reduced_voronoi_density(1:10:end),'filled','MarkerEdgeColor','none');
+    end
     %%
     xlim([-x_length/2 x_length/2])
     ylim([-y_length/2 3*y_length/2])

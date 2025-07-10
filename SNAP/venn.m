@@ -126,7 +126,7 @@ switch n
 end
 
 % figure settings
-vennfig = figure('Position',[20 20 800 450],'Color','w');
+vennfig = figure('Position',[20 20 800 450],'Color','w','visible','off');
 axis off
 daspect([1,1,1])
 
@@ -228,7 +228,7 @@ end
 h=vennfig.findobj('Type','text');
 
 % Configure texts
-set(h,'fontsize',11,'FontWeight','bold');
+set(h,'fontsize',24,'FontWeight','bold');
 for i = 1:length(h)
     if ismember(h(i).String,sets)
         h(i).FontSize = 14;
@@ -265,8 +265,7 @@ function circle(cX,cY,r,faceC,alpha)
 x = cX-r;
 y = cY-r;
 d = 2*r;
-fC = [faceC alpha];
-rectangle('Position',[x y d d],'Curvature',1,'FaceColor',fC,'LineStyle','none');
+rectangle('Position',[x y d d],'Curvature',1,'FaceColor',faceC,'FaceAlpha',alpha,'LineStyle','none'); % 10/16/2024: Modified by Hannah Kim for compatibility with MATLAB v.R2024b
 end
 
 end
