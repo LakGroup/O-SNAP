@@ -1,4 +1,34 @@
-%% https://www.mathworks.com/matlabcentral/fileexchange/55142-fakenmc-pval_adjust
+% -------------------------------------------------------------------------
+% .m
+% -------------------------------------------------------------------------
+% 
+%
+% Example on how to use it:
+%   
+% -------------------------------------------------------------------------
+% Input:
+%   : 
+%   : 
+%   : 
+%   : 
+% Output:
+%   : 
+% Options:
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+% -------------------------------------------------------------------------
+% Code written by:
+%   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
+% Contact:
+%   hannah.kim3@pennmedicine.upenn.edu
+%   melike.lakadamyali@pennmedicine.upenn.edu
+% If used, please cite:
+%   ....
+% -------------------------------------------------------------------------
+%%%% https://www.mathworks.com/matlabcentral/fileexchange/55142-fakenmc-pval_adjust
 % This is an implementation of the p.adjust R function, the documentation of which can be found at http://www.inside-r.org/r-doc/stats/p.adjust. Contrary to the R function, this function does not handle missing values, and adds one additional correction method, 'sidak', as described in https://en.wikipedia.org/wiki/%C5%A0id%C3%A1k_correction.
 
 
@@ -46,7 +76,7 @@ p = reshape(p, 1, np);
 % Method 'hommel' is equivalent to 'hochberg' of np == 2
 if (np == 2) &&  strcmp(method, 'hommel')
     method = 'hochberg';
-end;
+end
 
 % Just one p-value? Return it as given.
 if np <= 1
@@ -106,7 +136,7 @@ elseif strcmp(method, 'hommel')
         q(i1) = min(i * pc(i1), q1);
         q(i2) = q(np - i + 1);
         pa = max(pa, q);
-    end;
+    end
     
     % Finalize result
     pa = max(pa, pc);
@@ -173,7 +203,7 @@ else
     % Unknown method
     error('Unknown p-value adjustment method');
     
-end;
+end
 
 % Can't have p-values larger than one
 pc(pc > 1) = 1;    
@@ -187,8 +217,8 @@ function p = cmax(p)
 for i = 2:numel(p)
     if p(i) < p(i - 1)
         p(i) = p(i - 1);
-    end;
-end;
+    end
+end
 
 % Helper function to determine the cumulative minimum
 function p = cmin(p)
@@ -196,7 +226,8 @@ function p = cmin(p)
 for i = 2:numel(p)
     if p(i) > p(i - 1)
         p(i) = p(i - 1);
-    end;
-end;
+    end
+end
+
 
 

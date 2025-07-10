@@ -1,6 +1,6 @@
-function L = shuffle_label(L,r)
-
-% shufflelabel randomly relabels a label matrix
+% Author: Wolfgang Schwanghart (w.schwanghart[at]unibas.ch)
+% Date: 15/9/2009
+% % shufflelabel randomly relabels a label matrix
 %
 % Syntax
 %
@@ -49,10 +49,7 @@ function L = shuffle_label(L,r)
 %
 % See also: RANDPERM, BWLABEL, LABELMATRIX
 %
-% Author: Wolfgang Schwanghart (w.schwanghart[at]unibas.ch)
-% Date: 15/9/2009
-
-
+function L = shuffle_label(L,r)
 
 % essentially, error checking is not necessary
 error(nargchk(1,2,nargin));
@@ -61,7 +58,7 @@ error(nargchk(1,2,nargin));
 inum = isnumeric(L);
 
 % reset labeling?
-if nargin == 1;
+if nargin == 1
     % by default no.
     r = false;
 else
@@ -98,6 +95,7 @@ L(I) = unique_LS(ix);
 
 % finally reshape back to original size
 L = reshape(L,siz);
+
 
 
 
