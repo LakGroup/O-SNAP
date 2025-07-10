@@ -9,9 +9,6 @@
 %                                               "D:\Results\")
 % -------------------------------------------------------------------------
 % Input:
-%   feature_comparisons: A cell array where every cell isa pair-wise 
-%                        combination of the fold-change analysis used in 
-%                        the volcano plots
 %   save_dir: Save directory
 % Output:
 %   data: A struct array with information on the coverage results
@@ -43,9 +40,8 @@
 %   ....
 % -------------------------------------------------------------------------
 %%
-function data = calculate_OSNAP_feature_set_coverage(feature_comparisons,save_dir,options)
+function data = calculate_OSNAP_feature_set_coverage(save_dir,options)
 arguments
-    feature_comparisons cell
     save_dir string = "";
     options.plot = true;
     options.alpha double = 0.05;
@@ -53,13 +49,23 @@ arguments
     options.feature_universe_names = ["universe_1"];
 end
 %% define feature_universes
-feature_universes = get_OSNAP_feature_universes(options.feature_universe_names);
-
-for i=1:numel(feature_comparisons)
-    group_ctrl = feature_comparisons{i}.groups(1);
-    group_case = feature_comparisons{i}.groups(2);
-    group_pair_string = replace(group_ctrl + "__vs__" + group_case,"-","_");
-    S = sortrows(feature_comparisons{i}.feature_table,"adj_p_value");
+feature_universes = get_feature_universes(options.feature_universe_names);
+groups = unique(T.group);
+for g=1:size(groups,1)
+    groups_is_alpha = isstrprop(groups(g),'alpha');
+    if ~groups_is_alpha(1)
+        groups(g) = "t" + groups(g);
+    end
+end
+group_pairs = nchoosek(groups,2);
+for g=1:size(group_pairs,1)
+    group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
+    %% calculate adjusted p-values, fold changes
+    S = compare_groups(T,group_pairs(g,1),group_pairs(g,2),...
+        "alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,...
+        "plot",options.plot,"save_path",fullfile(save_dir, "features_diff_"+join(group_pairs(g,:),'_')+".csv"));
+    
+    data.(group_pair_string) = sortrows(S,"adj_p_value");
     %% run loop on all universes
     for f = 1:size(feature_universes,2)
         set_name = group_pair_string+"__"+feature_universes{f}.name;
