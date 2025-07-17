@@ -46,15 +46,15 @@ arguments
     options.n_processes double= 12;
 end
 %% get data
-data_info_table = get_valid_OSNAP_samples(work_dir,groups,replicates,{'radial_loc_density','radial_dbscan_cluster_density'});
+OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'radial_loc_density','radial_dbscan_cluster_density'});
 %% split data for parallel processing
-[split_data, n_processes] = split_data_to_n_OSNAP(data_info_table,options.n_processes,"shuffle",true);
+[split_data, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list,options.n_processes,"shuffle",true);
 %% plot
 max_radial_density = max(table2array(feature_data(:,contains(feature_data.Properties.VariableNames, 'radial_loc_density'))),[],'all');
 max_radial_hetero_density = max(table2array(feature_data(:,contains(feature_data.Properties.VariableNames, 'radial_dbscan_cluster_density'))),[],'all');
 parfor p=1:n_processes
-    data_info_table_p = split_data{p};
-    filepaths = data_info_table_p{:,'filepath'};
+    OSNAP_sample_file_list_p = split_data{p};
+    filepaths = OSNAP_sample_file_list_p{:,'filepath'};
     for s=1:length(filepaths)
         filepath = filepaths(s);
         try

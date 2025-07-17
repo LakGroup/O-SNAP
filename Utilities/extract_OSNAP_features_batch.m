@@ -51,14 +51,14 @@ end
 
     %% organize into tables
     % get data
-    data_info_table = get_valid_OSNAP_samples(work_dir,groups,replicates,{'voronoi_cluster_radius'});
+    OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'voronoi_cluster_radius'});
     % split data for parallel processing
-    [split_file_list, options.n_processes] = split_data_to_n_OSNAP(data_info_table, options.n_processes);
+    [split_file_list, options.n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list, options.n_processes);
     T_cell = cell(1,options.n_processes);
     % run analysis
     parfor p=1:options.n_processes
-        data_info_table_p = split_file_list{p};
-        T_cell{p} = extract_OSNAP_features(data_info_table_p);
+        OSNAP_sample_file_list_p = split_file_list{p};
+        T_cell{p} = extract_OSNAP_features(OSNAP_sample_file_list_p);
     end
     T = sortrows(vertcat(T_cell{:}),vars_string);
 end

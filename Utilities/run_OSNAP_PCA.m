@@ -87,7 +87,7 @@ if options.save_path ~= ""
         if exist(options.save_path,'file')
             delete(options.save_path)
         end
-        plot_OSNAP_PCA(pca_result.pca_coefficients,pca_result.pca_scores,pca_result.explained,"groups_info",feature_data.group,"bio_reps_info",feature_data.biological_replicate,"save_path",options.save_path);
+        plot_OSNAP_PCA(pca_result.pca_coefficients,pca_result.pca_scores,pca_result.explained,"groups_info",feature_data.group,"reps_info",feature_data.biological_replicate,"save_path",options.save_path);
     catch ME
         disp(getReport(ME))
     end

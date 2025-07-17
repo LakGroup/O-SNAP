@@ -8,10 +8,10 @@
 % nucleus (stored in the OSNAP_nucleus_data directories).
 %
 % Example on how to use it:
-%   feature_data = extract_OSNAP_features(SNAP_nucleus_file_list)
+%   feature_data = extract_OSNAP_features(OSNAP_sample_file_list)
 % -------------------------------------------------------------------------
 % Input:
-%   SNAP_nucleus_file_list: Table with details on the samples of interest
+%   OSNAP_sample_file_list: Table with details on the samples of interest
 %                           to extract feature information from, including 
 %                           the file path, replicate, phenotype, and sample
 %                           identifier
@@ -30,7 +30,7 @@
 %   ....
 % -------------------------------------------------------------------------
 %%
-function T = extract_OSNAP_features(SNAP_nucleus_file_list)
+function T = extract_OSNAP_features(OSNAP_sample_file_list)
     %% parameters
     percentile_thresh = [40 70];
     %% define variables of interest
@@ -110,7 +110,7 @@ function T = extract_OSNAP_features(SNAP_nucleus_file_list)
         "radial_dbscan_cluster_density_ring_gradient_major_axis",...
         "radial_dbscan_cluster_density_ring_gradient_minor_axis"];
     %% TODO
-    % load(SNAP_nucleus_file_list{1,"filepath"},'area_thresholds');
+    % load(OSNAP_sample_file_list{1,"filepath"},'area_thresholds');
     area_thresholds = 10.^(1.25:0.25:2);
     %%
     vars_voronoi_cluster = reshape("voronoi_cluster"+compose("_%03.0fnm^2_",area_thresholds)+"log_"+["radius";"density";"gyration_radius"]+"_",1,[]);
@@ -147,19 +147,19 @@ function T = extract_OSNAP_features(SNAP_nucleus_file_list)
         "voronoi_cluster_n_locs"]]);
     vars_to_load = setdiff(vars_to_load,'log_voronoi_density');
     % group voronoi data
-    n_samp = size(SNAP_nucleus_file_list,1);
+    n_samp = size(OSNAP_sample_file_list,1);
     T = table('Size',[n_samp numel(vars)], ...
         'VariableTypes',[repmat("string",numel(vars_string),1); ...
                          repmat("double",numel(vars)-numel(vars_string),1)]',...
         'VariableNames',vars);
     for s=1:n_samp
         %% string variables
-        T{s,"group"} = SNAP_nucleus_file_list{s,"group"};
-        T{s,"biological_replicate"} = SNAP_nucleus_file_list{s,"rep"};
-        [~,a]= regexp(SNAP_nucleus_file_list{s,"name"}, ".*-([x0-9]+).*","split","tokens");
+        T{s,"group"} = OSNAP_sample_file_list{s,"group"};
+        T{s,"biological_replicate"} = OSNAP_sample_file_list{s,"replicate"};
+        [~,a]= regexp(OSNAP_sample_file_list{s,"name"}, ".*-([x0-9]+).*","split","tokens");
         T{s,"name"} = a{1};
         try
-            data = load_variables_OSNAP(SNAP_nucleus_file_list{s,"filepath"},vars_to_load);
+            data = load_variables_OSNAP(OSNAP_sample_file_list{s,"filepath"},vars_to_load);
             data.log_voronoi_density = log10(1./(data.voronoi_areas));
             %% value variables
             for j=1:numel(vars_value)
@@ -281,7 +281,7 @@ function T = extract_OSNAP_features(SNAP_nucleus_file_list)
             end
             clearvars voronoi_data
         catch ME
-            disp(SNAP_nucleus_file_list{s,"filepath"})
+            disp(OSNAP_sample_file_list{s,"filepath"})
             disp(getReport(ME))
             T{s,4:end} = NaN(1,size(T,2)-3);
         end

@@ -32,17 +32,17 @@
 %   ....
 % -------------------------------------------------------------------------
 %%
-function valid_idx = find_contains_variable_OSNAP(SNAP_nucleus_file_list,vars_to_load)
-    filepaths = SNAP_nucleus_file_list{:,'filepath'};
-    valid_idx = ones(size(SNAP_nucleus_file_list,1),1);
+function valid_idx = find_contains_variable_OSNAP(OSNAP_sample_file_list,vars_to_load)
+    filepaths = OSNAP_sample_file_list{:,'filepath'};
+    valid_idx = ones(size(OSNAP_sample_file_list,1),1);
     for i=1:length(filepaths)
-        if ~has_variables_OSNAP(SNAP_nucleus_file_list{i,'filepath'},vars_to_load)
+        if ~has_variables_OSNAP(OSNAP_sample_file_list{i,'filepath'},vars_to_load)
             valid_idx(i) = 0;
         end
     end
     if ~all(valid_idx)
         disp('Problem files:')
-        f = SNAP_nucleus_file_list{~valid_idx,'filepath'};
+        f = OSNAP_sample_file_list{~valid_idx,'filepath'};
         for i=1:length(f) 
             has_variables_OSNAP(f(i),vars_to_load,"verbose",1);
         end

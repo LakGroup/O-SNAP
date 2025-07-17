@@ -24,7 +24,7 @@
 % Options:
 %   split_method: Method to split the data
 %   k: Number of folds
-%   proportion: Ratio of test:train sample count
+%   proportion: Ratio of test:total sample count
 % -------------------------------------------------------------------------
 % Code written by:
 %   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
@@ -70,7 +70,7 @@ end
             test_idx = [];
         otherwise
             ME = MException('SNAP:invalid_argument_for_feature_selection', ...
-                sprintf("Argument 'by' is invalid: %s\nChoose from: 'replicate' (default),'bootstrap','k-fold','none'",options.split_method));
+                sprintf("Argument 'by' is invalid: %s\nChoose from: 'k-fold' (default), 'replicate','bootstrap','none'",options.split_method));
             throw(ME)
     end
 end
