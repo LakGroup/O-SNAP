@@ -20,7 +20,6 @@
 %   p_adj_method: Identifier for the adjustment method for
 %                 multiple hypothesis testing
 %   fold_change_threshold: Signficant fold change threshold
-%   plot: Flag to plot results
 %   save_path: Name of file location to save to, excluding extension
 %   remove_outliers: Flag to consider or remove outliers when calculating
 %                    fold changes
@@ -39,7 +38,6 @@ arguments
     feature_data table
     options.alpha double = 0.05;
     options.fold_change_threshold double = 2;
-    options.plot logical = true;
     options.save_path string = "";
     options.remove_outliers logical = false;
 end
@@ -54,7 +52,6 @@ for i=1:n_group_pairs
     feature_comparisons{i}.feature_table = compare_OSNAP_group_pair(feature_data,group_pairs(i,1),group_pairs(i,2),...
         "alpha",options.alpha,...
         "fold_change_threshold",options.fold_change_threshold,...
-        "plot",options.plot,...
         "save_path",options.save_path, ...
         "remove_outliers",options.remove_outliers);
 end
