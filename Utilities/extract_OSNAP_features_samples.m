@@ -108,7 +108,7 @@ parfor p=1:n_processes
     samps_to_remove = [];
     for s=1:length(filepaths)
         filepath = filepaths(s);
-        fprintf("Worker %2.0f: File %3.0f/%3.0f...\n",p,s,numel(filepaths));
+        fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
         if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
             try
                 generate_OSNAP_voronoi_segmentations(filepath, ...
@@ -123,6 +123,7 @@ parfor p=1:n_processes
             end
         end
     end
+    fprintf("Worker %2.0f: COMPLETE\n",p);
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 
@@ -205,7 +206,7 @@ if ~all(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0),OSNAP_sample_
         samps_to_remove = [];
         for s=1:length(filepaths)
             filepath = filepaths(s);
-            fprintf("Worker %2.0f: File %3.0f/%3.0f...\n",p,s,numel(filepaths));
+            fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
             if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
                 try
                     extract_OSNAP_morphometrics_dbscan_cluster_radial_features(filepath,density_threshold, ...
@@ -222,6 +223,7 @@ if ~all(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0),OSNAP_sample_
             end
         end
         split_file_list{p}(samps_to_remove,:) = [];
+        fprintf("Worker %2.0f: COMPLETE\n",p);
     end
     fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 end
@@ -241,7 +243,7 @@ parfor p=1:n_processes
     filepaths = OSNAP_sample_file_list_p{:,'filepath'};
     for s=1:length(filepaths) 
         filepath = filepaths(s);
-        fprintf("Worker %2.0f: File %3.0f/%3.0f...\n",p,s,numel(filepaths));
+        fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
         if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
             try
                 extract_OSNAP_voronoi_cluster_features(filepath,...
@@ -254,6 +256,7 @@ parfor p=1:n_processes
             end
         end 
     end
+    fprintf("Worker %2.0f: COMPLETE\n",p);
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 %%

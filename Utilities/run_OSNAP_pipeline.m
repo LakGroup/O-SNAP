@@ -116,9 +116,36 @@
 %                 - venn_data: Data for Venn diagram to compare changes
 %                              between 3-4 comparisons of phenotype pairs
 % Options
-%   run_extract_features:
-%   run_generate_table:
-%   run_comparison:
+%   run_extract_features: 
+%   run_generate_table: 
+%   run_comparison: 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
+%   : 
 % -------------------------------------------------------------------------
 % Code written by:
 %   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
@@ -149,7 +176,7 @@ arguments
     options.run_FSEA logical = 0
     % generate batch options
     options.split_method string = "k-fold"
-    options.test_train_ratio double = 0.2;
+    options.proportion double = 0.2;
     options.test_train_k double = 5;
     % feature select options
     options.feature_select_max_idx = 12;
@@ -172,10 +199,10 @@ arguments
 end
 %% prepare O-SNAP run
 work_dir = fullfile(root_dir,analysis_name);
-if suffix ~= ""
+if options.suffix == ""
     save_analysis_path = fullfile(work_dir,analysis_name+".mat");
 else
-    save_analysis_path = analysis_name+"_"+suffix+".mat";
+    save_analysis_path = analysis_name+"_"+options.suffix+".mat";
 end
 log_file = fullfile(work_dir,sprintf('%s_%s.txt',analysis_name,datetime('now','Format','y-MM-dd_HH-mm-ss')));
 diary(log_file)
@@ -255,6 +282,8 @@ end
 OSNAP_data.date = datetime;
 OSNAP_data.log_file = log_file;
 OSNAP_data.starttime = tic;
+OSNAP_data.groups = unique(groups);
+OSNAP_data.replicates = unique(replicates);
 
 %% extract O-SNAP features per sample (nucleus)
 try
@@ -361,7 +390,7 @@ try
             feature_data_filtered,...
             "split_method",options.split_method,...
             "k",options.test_train_k,...
-            "proportion",options.test_train_ratio);
+            "proportion",options.proportion);
         fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
         options.split_method = by;
     end

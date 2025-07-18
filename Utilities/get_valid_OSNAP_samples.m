@@ -91,7 +91,9 @@ function group = find_group(sample_name,groups)
                     if any(group_idx)
                         group = string(groups{group_idx});
                     else
-                        error('Error: At least one group specified could not be found in the data set')
+                        ME = MException('OSNAP:unmatched_phenotype', ...
+                            sprintf('Error: At least one group specified could not be found in the data set'));
+                        throw(ME)
                     end
                 end
             end

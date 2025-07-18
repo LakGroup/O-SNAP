@@ -26,22 +26,22 @@ end_group = "HK48h"
 babelwhale::set_default_config(babelwhale::create_docker_config()) # ensure that the code runs with docker (as opposed to singularity)
 set.seed(0) # for reproducibility
 
-# ## Open connection to find optimal timeline inference methods
-# guidelines <- guidelines_shiny()
+## Open connection to find optimal timeline inference methods
+guidelines <- guidelines_shiny()
 
-## Below is the hard-coded version of responses to the guidelines
-# If desired, comment out line 29 and uncomment below (33-43) to hardcode guideline responses
-answers <- dynguidelines::answer_questions(
-  multiple_disconnected = FALSE,
-  expect_topology = TRUE,
-  expected_topology = "linear",
-  n_cells = 350,
-  n_features = 144,
-  memory = "2GB",
-  prior_information = c("start_id","start_n","end_n","groups_id","groups_network"),
-  docker = TRUE
-)
-guidelines <- guidelines(answers = answers)
+# ## Below is the hard-coded version of responses to the guidelines
+# # If desired, comment out line 29 and uncomment below (33-43) to hardcode guideline responses
+# answers <- dynguidelines::answer_questions(
+#   multiple_disconnected = FALSE,
+#   expect_topology = TRUE,
+#   expected_topology = "linear",
+#   n_cells = 350,
+#   n_features = 144,
+#   memory = "2GB",
+#   prior_information = c("start_id","start_n","end_n","groups_id","groups_network"),
+#   docker = TRUE
+# )
+# guidelines <- guidelines(answers = answers)
 
 ## Get methods based on results from guidelines
 methods_selected <- guidelines$methods_selected
