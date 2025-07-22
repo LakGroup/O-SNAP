@@ -14,8 +14,10 @@
 % -------------------------------------------------------------------------
 
 %% SET UP
-root_dir = fullfile(getenv("USERPROFILE"),"Documents","Example","Example_H3K27me3_ALL"); %% REPLACE WITH PATH TO DIRECTORY CONTAINING ANALYSIS DIRECTORY
-analysis_name = "OSNAPOutput";
+msgbox('Download example data from DOI: 10.6084/m9.figshare.29533940')
+disp('Download example data from DOI: 10.6084/m9.figshare.29533940')
+root_dir = uigetdir(fullfile(getenv("USERPROFILE")),"Select path to Example_H3K27me3_ALL"); %% REPLACE WITH PATH TO DIRECTORY CONTAINING ANALYSIS DIRECTORY
+analysis_name = "OSNAP_Output";
 phenotypes = {'CtrlhFb','CtrlmESC','HK06h','HK24h','HK48h'};
 replicates = {'20201118','20201203','20201209','20210824'};
 run_options = get_OSNAP_default_options();

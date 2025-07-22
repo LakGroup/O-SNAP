@@ -156,8 +156,7 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
         %% string variables
         T{s,"group"} = OSNAP_sample_file_list{s,"group"};
         T{s,"biological_replicate"} = OSNAP_sample_file_list{s,"replicate"};
-        [~,a]= regexp(OSNAP_sample_file_list{s,"name"}, ".*-([x0-9]+).*","split","tokens");
-        T{s,"name"} = a{1};
+        T{s,"name"} = OSNAP_sample_file_list{s,"name"};
         try
             data = load_variables_OSNAP(OSNAP_sample_file_list{s,"filepath"},vars_to_load);
             data.log_voronoi_density = log10(1./(data.voronoi_areas));

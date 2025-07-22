@@ -202,7 +202,7 @@ work_dir = fullfile(root_dir,analysis_name);
 if options.suffix == ""
     save_analysis_path = fullfile(work_dir,analysis_name+".mat");
 else
-    save_analysis_path = analysis_name+"_"+options.suffix+".mat";
+    save_analysis_path = fullfile(work_dir,analysis_name+"_"+options.suffix+".mat");
 end
 log_file = fullfile(work_dir,sprintf('%s_%s.txt',analysis_name,datetime('now','Format','y-MM-dd_HH-mm-ss')));
 diary(log_file)
