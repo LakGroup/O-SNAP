@@ -172,18 +172,20 @@ else
     classifier.ValidationScores = NaN(n_obs,n_groups);
     for k = 1:options.k
         % split train from test
-        train_k = train_data(cvp.training(k),:);
+        idx_k = cvp.training(k);
+        train_k = train_data(idx_k,:);
+        response_k = response(idx_k);
         % PCA on train data
         if ~isempty(options.pca_result)
-            [train_k,response_k] = preprocess_OSNAP_feature_data(train_k,'numeric_only',true);
+            [train_k,~] = preprocess_OSNAP_feature_data(train_k,'numeric_only',true);
             pca_result_k = run_OSNAP_PCA(train_k,...
                                 "vars_sel",options.vars_selected,...
                                 "num_components_explained",options.pca_result.num_comps_to_keep);
             predictors_k = pca_result_k.pca_transformation_fcn(train_k);
         elseif ~isempty(options.vars_selected)
-            [predictors_k,response_k] = preprocess_OSNAP_feature_data(train_k(:,['group' options.vars_selected]),'numeric_only',true);
+            [predictors_k,~] = preprocess_OSNAP_feature_data(train_k(:,['group' options.vars_selected]),'numeric_only',true);
         else
-            [predictors_k,response_k] = preprocess_OSNAP_feature_data(train_k,'numeric_only',true);
+            [predictors_k,~] = preprocess_OSNAP_feature_data(train_k,'numeric_only',true);
         end
         % Train classifier
         [~, predict_fcn_k] = get_model(options.model_type,predictors_k,response_k);

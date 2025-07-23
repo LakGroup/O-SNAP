@@ -94,7 +94,7 @@ verbose = options.verbose;
 [model_types_p,n_processes] = split_data_to_n_OSNAP(model_types,options.n_processes,"shuffle",false);
 classifiers_p = cell(1,n_processes);
 % generate classifiers of given model types
-parfor p=1:n_processes
+for p=1:n_processes
     warning('off','all')
     n_model_types = numel(model_types_p{p});
     classifiers_p{p} = cell(n_models_per_type,n_model_types);

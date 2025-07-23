@@ -116,36 +116,61 @@
 %                 - venn_data: Data for Venn diagram to compare changes
 %                              between 3-4 comparisons of phenotype pairs
 % Options
-%   run_extract_features: 
-%   run_generate_table: 
-%   run_comparison: 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
-%   : 
+%   run_extract_features: Calculate relevant features from each OSNAP
+%                         sample MAT file
+%   run_generate_table: Create the feature table where each row is an OSNAP
+%                       sample and each column is a feature
+%   run_comparison: Perform pair-wise comparison of OSNAP features between
+%                   different phenotypes
+%   run_generate_batches: When performing classification pipeline, create
+%                         multiple folds to validate model performance
+%   run_feature_selection: Perform feature selection for classification
+%   run_PCA: PCA-transform data
+%   run_classification_all: Create a classification model using all samples
+%                           for training (including feature selection and
+%                           PCA transformation), using 5-fold cross
+%                           validation to evaluate model. Vulnerable to
+%                           data leakage
+%   run_classification_batch: Perform classification using multiple folds,
+%                             both totally independently and using an 
+%                             aggregate of feature selection results
+%   run_venn: If there are 3-4 phenotypes being compared, create a venn
+%             diagram to see what features change in common to each other
+%   run_plot_violin: Create violin plots comparing feature distributions by
+%                    phenotype
+%   run_plot_radial: Create images for every sample depicting the radial
+%                    density analysis
+%   run_FSEA: Perform Feature Set Enrichment Analysis
+%   split_method: The method to generate the folds in classification
+%   proportion: If using the "bootstrap" method to create batches, defines
+%               the ratio of test to total samples
+%   test_train_k: If using the "k-folds" or "bootstrap" method to create
+%                 batches, defines the number of folds generated
+%   feature_select_max_idx: The maximum number of features that may be
+%                           included for feature selection
+%   num_components_explained: Defines the cutoff for the number of PCA
+%                             components to keep. If < 1, the parameter is 
+%                             the minimum amount of variance that the
+%                             number of components must explain. If > 1,
+%                             then it is the number of components that are
+%                             kept.
+%   n_models_per_type: The number of instances of a model of a given
+%                      architecture to train.
+%   alpha: The p-value cutoff for significance testing
+%   fold_change_threshold: The fold change cut off when performing
+%                          pair-wise analysis of groups
+%   feature_universe_names: If multiple feature universes (ie. 
+%                           categorization of features into sets) are 
+%                           defined for FSEA, this parameter is the list of
+%                           identifiers for those to include
+%   FSEA_rank_type: The ranking metric approach
+%   n_processes: The number of workers to use for parallel processing
+%   suffix: A suffix to the identifier for the analysis
+%   save: Logical to save the analysis output to a file
+%   save_if_error: Logical on whether to save the analysis if it encounters
+%                  an error
+%   check_overwrite: Check if a file is going to be overwritten and wait
+%                    for user input
 % -------------------------------------------------------------------------
 % Code written by:
 %   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
@@ -722,7 +747,7 @@ elseif nargin == 4
     fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
 end
 if options.save
-    fprintf("  Saving run to: %s...\n",path)
+    fprintf("  Saving run to: %s...\n",filepath)
     starttime_step = tic;
     save_OSNAP_run(filepath,data,"append",false)
     fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
