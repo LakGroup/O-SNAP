@@ -6,5 +6,7 @@
 - Feature set enrichment analysis for changes in general trends between phenotype pairs
 - Create suite of classifiers to compare phenotypes based on O-SNAP features
 
+The manuscript describing this work, "O-SNAP: A comprehensive pipeline for spatial profiling of chromatin architecture" by Kim et al. is available on bioRxiv at DOI: https://doi.org/10.1101/2025.07.18.665612.
+
 ## Example data
 Full example data used for the tutorial is available on figshare, DOI:  https://doi.org/10.6084/m9.figshare.29533940. The STORM data is of H3K27me3 localizations originally collected from Martinez-Sarmiento et al, Cell Reports (2024) https://doi.org/10.1016/j.celrep.2024.114170.
