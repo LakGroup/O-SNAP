@@ -76,7 +76,7 @@ end
     end
     for i_true=1:n_groups
         for i_pred=1:n_groups
-            c_value = confusion_normalized(i_true,i_pred);
+            c_value = confusion_mean(i_true,i_pred);
             if i_true == i_pred
                 c = color_diagonal+(1-color_diagonal)*(1-c_value);
             else
