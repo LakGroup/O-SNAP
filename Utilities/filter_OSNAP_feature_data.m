@@ -34,17 +34,18 @@
 %   ....
 % -------------------------------------------------------------------------
 %%
-function feature_data_filtered = filter_OSNAP_feature_data(feature_data,groups,replicates)
+function feature_data_filtered = filter_OSNAP_feature_data(feature_data,groups,replicates,options)
 arguments
     feature_data table
     groups cell
     replicates cell
+    options.remove_NaN logical = false
 end
 % filter for groups and replicates
 fprintf("  Filtering feature data table for desired groups and replicates...\n")
 feature_data_filtered = preprocess_OSNAP_feature_data(feature_data,...
     "groups",groups,"replicates",replicates,...
-    "normalize",false,"remove_NaN",true,...
+    "normalize",false,"remove_NaN",options.remove_NaN,...
     "keep_rep_sample_info",true);
 % end execution if not enough groups after filtering
 if numel(unique(feature_data_filtered.group)) < 2
