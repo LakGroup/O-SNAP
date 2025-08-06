@@ -406,6 +406,8 @@ catch ME
     return
 end
 %% run classification steps if needed
+feature_data_filtered = filter_OSNAP_feature_data(feature_data_filtered,groups,replicates,...
+    'remove_NaN',true);
 % generate train and test batches
 try
     if options.run_generate_batches
