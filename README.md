@@ -18,4 +18,6 @@ To perform pseudotimeline analysis, R (https://www.r-project.org/) and the dynve
 ## Example data
 Full example data used for the tutorial is available on figshare, DOI:  https://doi.org/10.6084/m9.figshare.29533940. The STORM data is of H3K27me3 localizations originally collected from Martinez-Sarmiento et al, Cell Reports (2024) https://doi.org/10.1016/j.celrep.2024.114170.
 
-Running the dataset on the example data set "Example_H3K27me3_ALL" on a Intel® Xeon® Silver 4214R CPU, 2.40GHz (48 GB RAM) system using all 12 processes took 45 hours and 26 minutes.
+Datasets tested on an Intel® Xeon® Silver 4214R CPU, 2.40GHz (48 GB RAM) system using all 12 processes
+  - Running the dataset end-to-end on the example data set "Example_H3K27me3_ALL" on took 45 hours and 26 minutes. Excluding feature generation, the analysis time for volcano analysis and classification is ~7 min.
+  - Running the dataset end-to-end on the example data set "Example_H3K27me3_CtrlhFb_HK48h" took 17 hours and 35 minutes. Excluding feature generation, the analysis time for volcano analysis and classification is ~5 min.
