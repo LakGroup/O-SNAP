@@ -28,13 +28,29 @@ arguments
     feature_universe struct
 end
     filepath = feature_universe.name+".xlsx";
+    %% clean feature universe if features are missing (i.e. from NaN filtering) from data
+    feature_set_names = fieldnames(feature_universe.feature_set);
+    n_feature_sets = length(feature_set_names);
+    for s=1:n_feature_sets
+        idx = cellfun(@(x) find(strcmpi(feature_IDs,x)),feature_universe.feature_set.(feature_set_names{s}),'uni',0);
+        idx_valid = ~cellfun('isempty',idx);
+        if all(~idx_valid)
+            feature_universe.feature_set.(feature_set_names{s}) = rmfield(feature_universe.feature_set.(feature_set_names{s}));
+        elseif any(~idx_valid)
+            feature_universe.feature_set.(feature_set_names{s}) = feature_universe.feature_set.(feature_set_names{s})(idx_valid);
+        end
+    end
+    %%
     feature_set_names = fieldnames(feature_universe.feature_set);
     n_feature_sets = length(feature_set_names);
     feature_idxs = cell(n_feature_sets,1);
     for s=1:n_feature_sets
-        idx = cellfun(@(x) find(strcmpi(feature_IDs,x)),feature_universe.feature_set.(feature_set_names{s}),'uni',1);
-        dir = feature_universe.direction.(feature_set_names{s});
-        feature_idxs{s} = (idx.*dir)';
+        idx = cellfun(@(x) find(strcmpi(feature_IDs,x)),feature_universe.feature_set.(feature_set_names{s}),'uni',0);
+        idx_valid = ~cellfun('isempty',idx);
+        idx = cell2mat(idx(idx_valid));
+        direction = feature_universe.direction.(feature_set_names{s});
+        direction = direction(idx_valid);
+        feature_idxs{s} = (idx.*direction)';
     end
     max_n_features = max(cellfun(@(x) length(x), feature_idxs, 'uni',1));
     data_feature_set = table('Size',[n_feature_sets,2+max_n_features],...

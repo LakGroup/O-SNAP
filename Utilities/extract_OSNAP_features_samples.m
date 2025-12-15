@@ -87,12 +87,11 @@ overwrite = options.overwrite;
 warning('off','all')
 
 %% load data and split for processing 
-% smaller n_processes for voronoi density due to high memory demand
-n_processes = ceil(options.n_processes/3);
 OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'});
-[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list,n_processes);
 
 %% calculate voronoi density
+% smaller n_processes for voronoi density due to high memory demand
+n_processes = ceil(options.n_processes/3);
 data_vars = {...
             'voronoi_areas_all',...
             'voronoi_neighbors',...
@@ -100,37 +99,39 @@ data_vars = {...
             'reduced_log_voronoi_density',...
             'faces',...
             'vertices'};
+idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
+[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
 fprintf("      Calculating Voronoi densities...\n");
 starttime_step = tic;
-parfor p=1:n_processes
-    OSNAP_sample_file_list_p = split_file_list{p};
-    filepaths = OSNAP_sample_file_list_p{:,'filepath'};
-    samps_to_remove = [];
-    for s=1:length(filepaths)
-        filepath = filepaths(s);
-        fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
-        if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
-            try
-                generate_OSNAP_voronoi_segmentations(filepath, ...
-                    "min_log_vor_density", min_log_vor_density, ...
-                    "max_log_vor_density", max_log_vor_density,...
-                    "plot", plot_flag,"overwrite",overwrite);
-            catch ME
-                fprintf("- - Removing: %s - -\n",filepath)
-                fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
-                samps_to_remove = [samps_to_remove s];
-                fprintf("- - - - - - - - - - -\n")
+if any(cellfun('length',split_file_list))
+    parfor p=1:n_processes
+        sample_file_list_p = split_file_list{p};
+        filepaths = sample_file_list_p{:,'filepath'};
+        samps_to_remove = [];
+        for s=1:length(filepaths)
+            filepath = filepaths(s);
+            fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
+            if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
+                try
+                    generate_OSNAP_voronoi_segmentations(filepath, ...
+                        "min_log_vor_density", min_log_vor_density, ...
+                        "max_log_vor_density", max_log_vor_density,...
+                        "plot", plot_flag,"overwrite",overwrite);
+                catch ME
+                    fprintf("- - Removing: %s - -\n",filepath)
+                    fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
+                    samps_to_remove = [samps_to_remove s];
+                    fprintf("- - - - - - - - - - -\n")
+                end
             end
         end
+        fprintf("Worker %2.0f: COMPLETE\n",p);
     end
-    fprintf("Worker %2.0f: COMPLETE\n",p);
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 
-%% load data and split for processing 
-OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'});
-[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list,options.n_processes);
 %% perform morphometric, dbscan clustering, and radial analysis
+n_processes = options.n_processes;
 data_vars = {'nucleus_radius',...
             'locs_number',...
             'locs_density',...
@@ -170,8 +171,10 @@ data_vars = {'nucleus_radius',...
             'periphery_loc_density',...
             'interior_cluster_density',...
             'periphery_cluster_density'};
+idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
+[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
 %% calculate density threshold
-if ~all(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0),OSNAP_sample_file_list{:,'filepath'},'uni',1))
+if any(cellfun('length',split_file_list))
     eps = options.eps;
     min_num = options.min_num;
     ellipse_inc = options.ellipse_inc;
@@ -180,8 +183,8 @@ if ~all(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0),OSNAP_sample_
     fprintf("      Calculating density threshold...\n");
     starttime_step = tic;
     parfor p=1:n_processes
-        OSNAP_sample_file_list_p = split_file_list{p};
-        filepaths = OSNAP_sample_file_list_p{:,'filepath'};
+        sample_file_list_p = split_file_list{p};
+        filepaths = sample_file_list_p{:,'filepath'};
         density_data{p} = cell(1,length(filepaths));
         samps_to_remove = [];
         for s=1:numel(filepaths)
@@ -198,11 +201,12 @@ if ~all(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0),OSNAP_sample_
         split_file_list{p}(samps_to_remove,:) = [];
     end
     density_threshold = prctile(vertcat(density_data{:}),options.dbscan_thresh);
+    fprintf("          Density threshold: %.4f...\n",density_threshold);
     clearvars density_data
     fprintf("      Calculating morphometric, dbscan clustering, and radial features...\n")
-    parfor p=1:n_processes
-        OSNAP_sample_file_list_p = split_file_list{p};
-        filepaths = OSNAP_sample_file_list_p{:,'filepath'};
+    for p=1:n_processes
+        sample_file_list_p = split_file_list{p};
+        filepaths = sample_file_list_p{:,'filepath'};
         samps_to_remove = [];
         for s=1:length(filepaths)
             filepath = filepaths(s);
@@ -225,8 +229,8 @@ if ~all(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0),OSNAP_sample_
         split_file_list{p}(samps_to_remove,:) = [];
         fprintf("Worker %2.0f: COMPLETE\n",p);
     end
-    fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 end
+fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 %% perform voronoi clustering analysis
 data_vars = {...
     'area_thresholds',...
@@ -236,27 +240,31 @@ data_vars = {...
     'voronoi_cluster_radius',...
     'voronoi_cluster_density',...
     'voronoi_cluster_gyration_radius'};
+idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
+[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
 fprintf("      Performing Voronoi Clustering Analysis...\n")
 starttime_step = tic;
-parfor p=1:n_processes
-    OSNAP_sample_file_list_p = split_file_list{p};
-    filepaths = OSNAP_sample_file_list_p{:,'filepath'};
-    for s=1:length(filepaths) 
-        filepath = filepaths(s);
-        fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
-        if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
-            try
-                extract_OSNAP_voronoi_cluster_features(filepath,...
-                    area_threshold_arr,...
-                    min_number_of_localizations_arr,...
-                    "overwrite",overwrite);
-            catch ME
-                fprintf("- - Removing: %s - -\n",filepath)
-                fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
-            end
-        end 
+if any(cellfun('length',split_file_list))
+    parfor p=1:n_processes
+        sample_file_list_p = split_file_list{p};
+        filepaths = sample_file_list_p{:,'filepath'};
+        for s=1:length(filepaths) 
+            filepath = filepaths(s);
+            fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
+            if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
+                try
+                    extract_OSNAP_voronoi_cluster_features(filepath,...
+                        area_threshold_arr,...
+                        min_number_of_localizations_arr,...
+                        "overwrite",overwrite);
+                catch ME
+                    fprintf("- - Removing: %s - -\n",filepath)
+                    fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
+                end
+            end 
+        end
+        fprintf("Worker %2.0f: COMPLETE\n",p);
     end
-    fprintf("Worker %2.0f: COMPLETE\n",p);
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 %%

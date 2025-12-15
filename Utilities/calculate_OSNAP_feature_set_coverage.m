@@ -40,8 +40,9 @@
 %   ....
 % -------------------------------------------------------------------------
 %%
-function data = calculate_OSNAP_feature_set_coverage(save_dir,options)
+function data = calculate_OSNAP_feature_set_coverage(feature_comparisons,save_dir,options)
 arguments
+    feature_comparisons cell = {};
     save_dir string = "";
     options.plot = true;
     options.alpha double = 0.05;
@@ -50,41 +51,43 @@ arguments
 end
 %% define feature_universes
 feature_universes = get_feature_universes(options.feature_universe_names);
-groups = unique(T.group);
-for g=1:size(groups,1)
-    groups_is_alpha = isstrprop(groups(g),'alpha');
-    if ~groups_is_alpha(1)
-        groups(g) = "t" + groups(g);
-    end
-end
-group_pairs = nchoosek(groups,2);
-for g=1:size(group_pairs,1)
-    group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
-    %% calculate adjusted p-values, fold changes
-    S = compare_groups(T,group_pairs(g,1),group_pairs(g,2),...
-        "alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,...
-        "plot",options.plot,"save_path",fullfile(save_dir, "features_diff_"+join(group_pairs(g,:),'_')+".csv"));
-    
-    data.(group_pair_string) = sortrows(S,"adj_p_value");
+% groups = unique(feature_comparisons.group);
+% for g=1:size(groups,1)
+%     groups_is_alpha = isstrprop(groups(g),'alpha');
+%     if ~groups_is_alpha(1)
+%         groups(g) = "t" + groups(g);
+%     end
+% end
+% group_pairs = nchoosek(groups,2);
+for g=1:numel(feature_comparisons)
+    S = feature_comparisons{g};
+% for g=1:size(group_pairs,1)
+    % group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
+    % %% calculate adjusted p-values, fold changes
+    % S = compare_groups(feature_data,group_pairs(g,1),group_pairs(g,2),...
+    %     "alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,...
+    %     "plot",options.plot,"save_path",fullfile(save_dir, "features_diff_"+join(group_pairs(g,:),'_')+".csv"));
+    group_pair_string = replace(S.groups(1) + "__vs__" + S.groups(2),"-","_");
+    data.(group_pair_string) = sortrows(S.feature_table,"adj_p_value");
     %% run loop on all universes
     for f = 1:size(feature_universes,2)
         set_name = group_pair_string+"__"+feature_universes{f}.name;
-        data.(set_name) = analyze_feature_family(S,[group_ctrl group_case],feature_universes{f},save_dir,options);
+        data.(set_name) = analyze_feature_family(S.feature_table,[S.groups(1) S.groups(2)],feature_universes{f},save_dir,options);
     end
 end
 end
 
 %% perform ontology analysis for a given feature universe
-function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,options)
+function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,options)
     feature_universe_name = feature_universe_info.name;
     feature_universe = feature_universe_info.feature_set;
     %% get feature families (defined in functions below)
-    S = sort_features(S,feature_universe,feature_universe_name);
+    T = sort_features(T,feature_universe,feature_universe_name);
     % filter out features that do not belong in a set
-    S = S(~ismissing(S.(feature_universe_name)),:);
-    S_universe = groupcounts(S,feature_universe_name);
-    idx_sig = all([abs(S.log2_fold_change) > log2(options.fold_change_threshold) S.adj_p_value < options.alpha],2);
-    S_diff = S(idx_sig,:);
+    T = T(~ismissing(T.(feature_universe_name)),:);
+    S_universe = groupcounts(T,feature_universe_name);
+    idx_sig = all([abs(T.log2_fold_change) > log2(options.fold_change_threshold) T.adj_p_value < options.alpha],2);
+    S_diff = T(idx_sig,:);
     if size(S_diff,1) == 0
         fprintf("   %s: No features satisfy adj p value < %0.2f \n", join(group_pair(:), " vs "), options.alpha);
         return
@@ -106,20 +109,20 @@ function S = analyze_feature_family(S,group_pair,feature_universe_info,save_dir,
     end
     % BgRatio = (size of the feature set)/(total number of features)
     for i=1:size(S_universe,1)
-        idx = strcmpi(S{:,feature_universe_name},S_universe{i,feature_universe_name});
-        S{idx,"bg_ratio_"+feature_universe_name} = repmat(S_universe{i,"Percent"}/100,sum(idx),1);
+        idx = strcmpi(T{:,feature_universe_name},S_universe{i,feature_universe_name});
+        T{idx,"bg_ratio_"+feature_universe_name} = repmat(S_universe{i,"Percent"}/100,sum(idx),1);
     end
     % FeatureRatio = (number of hits in data for a specific feature set)/(number of hits in data across all features)
     for i=1:size(S_diff_grouped,1)
         S_diff{strcmpi(S_diff{:,feature_universe_name},S_diff_grouped{i,feature_universe_name}),"feature_ratio_"+feature_universe_name} = sprintf("%d/%d",S_diff_grouped{i,"GroupCount"},sum(S_diff_grouped.GroupCount));
     end
     for i=1:size(S_diff,1)
-        idx = strcmpi(S{:,"feature"},S_diff{i,"feature"});
-        S{idx,"feature_ratio_"+feature_universe_name} = repmat(S_diff{i,"feature_ratio_"+feature_universe_name},sum(idx),1);
+        idx = strcmpi(T{:,"feature"},S_diff{i,"feature"});
+        T{idx,"feature_ratio_"+feature_universe_name} = repmat(S_diff{i,"feature_ratio_"+feature_universe_name},sum(idx),1);
     end
-    idx = strcmpi(S{:,"feature_ratio_"+feature_universe_name},"");
+    idx = strcmpi(T{:,"feature_ratio_"+feature_universe_name},"");
     if sum(idx) > 0
-        S{idx,"feature_ratio_"+feature_universe_name} = NaN(sum(idx),1);
+        T{idx,"feature_ratio_"+feature_universe_name} = NaN(sum(idx),1);
     end
     %% plot
     if options.plot

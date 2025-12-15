@@ -136,8 +136,13 @@ if ~isfield(data,'locs_dbscan_cluster_labels')
     if isfield(data,'voronoi_areas_all')
         locs_to_cluster = locs((1./data.voronoi_areas_all)>=density_threshold,:);
         labels = dbscan(locs_to_cluster,options.eps,options.min_num);
-        cluster_flt = removerows(locs_to_cluster,'ind',find(labels == -1)); % filter background noise
-        labels_flt = removerows(labels,'ind',find(labels == -1)); 
+        % cluster_flt = removerows(locs_to_cluster,'ind',find(labels == -1)); % filter background noise
+        cluster_flt = locs_to_cluster(labels ~= -1,:); % filter background noise
+        % labels_flt = removerows(labels,'ind',find(labels == -1)); 
+        disp(data.name)
+        % disp(size(labels))
+        % disp(size((labels~=-1)))
+        labels_flt = labels((labels~=-1),:);
         data.locs_dbscan_cluster_labels = [cluster_flt,labels_flt];
     end
 else

@@ -130,7 +130,7 @@ if options.plot
     log_vor_density_ticks = unique(sort([0 0.1 0.25, 0.41, 0.7, 1, 1.7, 2, 3, options.min_log_vor_density, options.max_log_vor_density]));
     log_vor_density_ticks = log_vor_density_ticks(all([(log_vor_density_ticks >= options.min_log_vor_density); (log_vor_density_ticks <= options.max_log_vor_density)]));
     f_reduced = figure('visible','off','name','Reduced Log Voronoi Density Plot','NumberTitle','off','color','k','units','normalized','position',[0.25 0.15 0.6 0.7]);
-    set(gca,'colormap',map,'color','k','box','on','BoxStyle','full','XColor','k','YColor','k');
+    set(gca,'colormap',flipud(map),'color','k','box','on','BoxStyle','full','XColor','k','YColor','k');
     set(f_reduced, 'InvertHardCopy', 'off'); 
     patch('Vertices',data.vertices,'Faces',data.faces(idx,:),'FaceVertexCData',reduced_log_voronoi_density_plot,'FaceColor','flat','edgecolor','none')    
     axis equal

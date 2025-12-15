@@ -103,7 +103,7 @@ if opts.show
     fprintf('Progress:\n');
     fprintf(['\n' repmat('.',1,FS.nb) '\n\n']);
 end
-parfor a=1:FS.nb 
+for a=1:FS.nb 
     opts_tmp = opts;
     out_tmp = zeros(1,9);
     FS_tmp = FS;

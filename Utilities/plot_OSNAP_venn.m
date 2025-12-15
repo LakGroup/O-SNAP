@@ -139,8 +139,22 @@ if options.plot
         savefig(options.save_path+"_decrease.fig");
         saveas(gcf,options.save_path+"_decrease.png");
     end
-    venn_labels_increase_all = venn_labels_increase_1+venn_labels_increase_2;
-    venn(3,'sets',group_pairs_string,'labels',venn_labels_increase_all,'alpha',0.7,'colors',summer(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
+    x = cellfun(@(x) [x.increase_features_group_1;x.increase_features_group_2],venn_data,'uni',0);
+    venn_labels_change_all = zeros(1,7);
+    venn_labels_change_all(1) = length(x{1});
+    venn_labels_change_all(2) = length(x{2});
+    venn_labels_change_all(3) = length(x{3});
+    venn_labels_change_all(4) = length(intersect(x{1},x{2}));
+    venn_labels_change_all(5) = length(intersect(x{1},x{3}));
+    venn_labels_change_all(6) = length(intersect(x{2},x{3}));
+    venn_labels_change_all(7) = length(intersect(intersect(x{1},x{2}),x{3}));
+    venn_labels_change_all(4) = venn_labels_change_all(4) - venn_labels_change_all(7);
+    venn_labels_change_all(5) = venn_labels_change_all(5) - venn_labels_change_all(7);
+    venn_labels_change_all(6) = venn_labels_change_all(6) - venn_labels_change_all(7);
+    venn_labels_change_all(1) = venn_labels_change_all(1) - venn_labels_change_all(4) - venn_labels_change_all(5) - venn_labels_change_all(7);
+    venn_labels_change_all(2) = venn_labels_change_all(2) - venn_labels_change_all(4) - venn_labels_change_all(6) - venn_labels_change_all(7);
+    venn_labels_change_all(3) = venn_labels_change_all(3) - venn_labels_change_all(5) - venn_labels_change_all(6) - venn_labels_change_all(7);
+    venn(3,'sets',group_pairs_string,'labels',venn_labels_change_all,'alpha',0.7,'colors',summer(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
     title("FEATURE VALUE CHANGE",'Position', [1.5 -0.3, 0])
     if options.save_path~=""
         savefig(options.save_path+"_all.fig");

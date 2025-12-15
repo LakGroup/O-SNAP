@@ -79,6 +79,13 @@ end
 if options.normalize
     % T_norm{:,vartype('numeric')} = normalize(abs(T_norm{:,vartype('numeric')}),1);
     feature_data_norm{:,vartype('numeric')} = normalize(feature_data_norm{:,vartype('numeric')},1);
+    % remove NaNs
+    if options.remove_NaN
+        is_nan_col = any(ismissing(feature_data_norm),1);
+        feature_data_norm = feature_data_norm(:,~is_nan_col);
+        is_nan_row = any(ismissing(feature_data_norm),2);
+        feature_data_norm = feature_data_norm(~is_nan_row,:);
+    end
 end
 
 % remove unnecessary columns (group, bio replicate)

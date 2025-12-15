@@ -40,7 +40,14 @@
 %   ....
 % -------------------------------------------------------------------------
 %%
-function OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load)
+function OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load, options)
+arguments
+    work_dir string
+    groups cell
+    replicates cell
+    vars_to_load cell
+    options.filter = false
+end
     % save_name = "OSNAP_sample_file_list.csv";
     % if exist(fullfile(work_dir,save_name),'file')
     %     OSNAP_nucleus_file_list = readtable(fullfile(work_dir,save_name),'NumHeaderLines',0,'TextType','string', 'VariableNamingRule', 'preserve');
@@ -62,7 +69,7 @@ function OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replic
     %     end
     % else
     OSNAP_sample_file_list = get_all_valid_OSNAP_samples(work_dir,vars_to_load);
-    OSNAP_sample_file_list.group = arrayfun(@(x) find_group(x,groups), OSNAP_sample_file_list{:,"name"},'uni',1);
+    OSNAP_sample_file_list.group = arrayfun(@(x) find_group(x,groups,"filter",options.filter), OSNAP_sample_file_list{:,"name"},'uni',1);
     OSNAP_sample_file_list = OSNAP_sample_file_list(:,["name","group","replicate","filepath"]);
     % end
     % filter for groups and replicates
@@ -70,34 +77,51 @@ function OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replic
     OSNAP_sample_file_list = OSNAP_sample_file_list(ismember(OSNAP_sample_file_list.group,groups),:);
 end
 
-function group = find_group(sample_name,groups)
+function group = find_group(sample_name,groups, options)
+arguments
+    sample_name string
+    groups cell
+    options.filter = false;
+end
+% if contains(sample_name,'Catalase-D-Ala-10nM')
     group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups,'uni',0));
     if sum(group_idx) == 1
         group = string(groups{group_idx});
     else
-        group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['_' x '-']), groups,'uni',0));
-        if sum(group_idx) == 1
-            group = string(groups{group_idx});
-        else
-            group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '-']), groups,'uni',0));
-            if sum(group_idx) == 1
-                group = string(groups{group_idx});
-            else
-                group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '_']), groups,'uni',0));
-                if sum(group_idx) == 1
-                    group = string(groups{group_idx});
-                else
-                    group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups,'uni',0));
+        groups_found = groups(group_idx);
+        group_length = cellfun('length',groups_found);
+        [~,idx] = sort(group_length,'descend');
+        groups_found = groups_found(idx);
+        group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['_' x '-']), groups_found,'uni',0));
+        % if sum(group_idx) == 1
+        %     group = string(groups_found{group_idx});
+        % else
+        %     group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '-']), groups_found,'uni',0));
+        %     if sum(group_idx) == 1
+        %         group = string(groups_found{group_idx});
+        %     else
+        %         group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '_']), groups_found,'uni',0));
+        %         if sum(group_idx) == 1
+        %             group = string(groups_found{group_idx});
+        %         else
+        %             group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups_found,'uni',0));
                     if any(group_idx)
-                        group = string(groups{group_idx});
+                        first_group_idx = find(group_idx);
+                        first_group_idx = first_group_idx(1);
+                        group = string(groups_found{first_group_idx});
+                    elseif options.filter
+                        group =  "";
                     else
                         ME = MException('OSNAP:unmatched_phenotype', ...
                             sprintf('Error: At least one group specified could not be found in the data set'));
-                        throw(ME)
+                            throw(ME)
                     end
-                end
-            end
-        end
+                % end
+            % end
+        % end
     end
+% else
+%     group="o";
+% end
 end
 
