@@ -77,6 +77,7 @@ arguments
     options.min_number_of_localizations double = 5;
     options.plot logical = true;
     options.overwrite logical = false;
+    options.filter logical = false;
 end
 min_log_vor_density = options.min_log_vor_density;
 max_log_vor_density = options.max_log_vor_density;
@@ -87,7 +88,7 @@ overwrite = options.overwrite;
 warning('off','all')
 
 %% load data and split for processing 
-OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'});
+OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'},'filter',options.filter);
 
 %% calculate voronoi density
 % smaller n_processes for voronoi density due to high memory demand
@@ -204,7 +205,7 @@ if any(cellfun('length',split_file_list))
     fprintf("          Density threshold: %.4f...\n",density_threshold);
     clearvars density_data
     fprintf("      Calculating morphometric, dbscan clustering, and radial features...\n")
-    for p=1:n_processes
+    parfor p=1:n_processes
         sample_file_list_p = split_file_list{p};
         filepaths = sample_file_list_p{:,'filepath'};
         samps_to_remove = [];

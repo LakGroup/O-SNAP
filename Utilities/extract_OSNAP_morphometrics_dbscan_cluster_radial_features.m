@@ -139,7 +139,6 @@ if ~isfield(data,'locs_dbscan_cluster_labels')
         % cluster_flt = removerows(locs_to_cluster,'ind',find(labels == -1)); % filter background noise
         cluster_flt = locs_to_cluster(labels ~= -1,:); % filter background noise
         % labels_flt = removerows(labels,'ind',find(labels == -1)); 
-        disp(data.name)
         % disp(size(labels))
         % disp(size((labels~=-1)))
         labels_flt = labels((labels~=-1),:);
@@ -270,13 +269,13 @@ if ~all(isfield(data,{...
 end
 
 %% find spacing between interior dbscan clusters
-if ~isfield(data,'interior_dbscan_cluster_spacing')  
+% if ~isfield(data,'interior_dbscan_cluster_spacing')  
     N_neighbour = 5;
     dist_mat = mink(pdist2(data.interior_dbscan_cluster_center,data.interior_dbscan_cluster_center),N_neighbour+1,2);
     interior_dbscan_cluster_spacing = sum(dist_mat,2)/N_neighbour;
     data.interior_dbscan_cluster_spacing = interior_dbscan_cluster_spacing;
     clearvars dist_mat N_neighbour
-end
+% end
 
 %% compute lads thicknesses
 if ~all(isfield(data,...
@@ -463,6 +462,7 @@ if options.plot
         plot(pgon,'FaceColor','k');hold on
         axis equal
     end
+    xlabel('[nm]'); ylabel('[nm]')
     drawnow()
     saveas(f,plot_file);
     close(f);
