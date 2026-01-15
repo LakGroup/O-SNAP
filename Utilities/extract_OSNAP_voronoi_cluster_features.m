@@ -104,19 +104,26 @@ for k=1:n_area_threshold
 
     %% characterize clusters
     n_cluster = max(data.voronoi_clusters(:,k));
-    points = [data.x data.y data.voronoi_areas_all data.voronoi_clusters(:,k)];
-    points = points(data.voronoi_clusters(:,k) > 0,:); % filter out voronoi_cluster=0 that represents non-clustered data
-    points_by_cluster = splitapply(@(x){(x)},points(:,1:3),findgroups(points(:,4))); % Split the clusters into the corresponding groups
-    data.voronoi_cluster_n_locs{k} = cellfun('size',points_by_cluster,1); % use cellfun+length, faster from backwards compatibility
-    data.voronoi_cluster_radius{k} = zeros(n_cluster,1);
-    data.voronoi_cluster_density{k} = zeros(n_cluster,1);
-    data.voronoi_cluster_gyration_radius{k} = zeros(n_cluster,1);
-    for i=1:n_cluster
-        data.voronoi_cluster_radius{k}(i) = sqrt(sum(points_by_cluster{i}(:,3))/pi);
-        data.voronoi_cluster_density{k}(i) = data.voronoi_cluster_n_locs{k}(i)./data.voronoi_cluster_radius{k}(i);
-        data.voronoi_cluster_gyration_radius{k}(i) = sqrt(mean(...
-            (points_by_cluster{i}(:,1)-mean(points_by_cluster{i}(:,1))).^2 ...
-            + (points_by_cluster{i}(:,2)-mean(points_by_cluster{i}(:,2))).^2));
+    if n_cluster > 0
+        points = [data.x data.y data.voronoi_areas_all data.voronoi_clusters(:,k)];
+        points = points(data.voronoi_clusters(:,k) > 0,:); % filter out voronoi_cluster=0 that represents non-clustered data
+        points_by_cluster = splitapply(@(x){(x)},points(:,1:3),findgroups(points(:,4))); % Split the clusters into the corresponding groups
+        data.voronoi_cluster_n_locs{k} = cellfun('size',points_by_cluster,1); % use cellfun+length, faster from backwards compatibility
+        data.voronoi_cluster_radius{k} = zeros(n_cluster,1);
+        data.voronoi_cluster_density{k} = zeros(n_cluster,1);
+        data.voronoi_cluster_gyration_radius{k} = zeros(n_cluster,1);
+        for i=1:n_cluster
+            data.voronoi_cluster_radius{k}(i) = sqrt(sum(points_by_cluster{i}(:,3))/pi);
+            data.voronoi_cluster_density{k}(i) = data.voronoi_cluster_n_locs{k}(i)./data.voronoi_cluster_radius{k}(i);
+            data.voronoi_cluster_gyration_radius{k}(i) = sqrt(mean(...
+                (points_by_cluster{i}(:,1)-mean(points_by_cluster{i}(:,1))).^2 ...
+                + (points_by_cluster{i}(:,2)-mean(points_by_cluster{i}(:,2))).^2));
+        end
+    else
+        data.voronoi_cluster_n_locs{k} = [];
+        data.voronoi_cluster_radius{k} = [];
+        data.voronoi_cluster_density{k} = [];
+        data.voronoi_cluster_gyration_radius{k} = [];
     end
 end
 
