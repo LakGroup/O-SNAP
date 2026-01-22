@@ -24,9 +24,11 @@ parfor p=1:n_processes
         end
         save_path = fullfile(save_dir,(sample_name + ".mat"));
         % create data object
-        sample_data = generate_OSNAP_samples(fullfile(sample_path,sample_file),pixel_size);
-        % save
-        save_OSNAP_sample(save_path, sample_data);
+        if ~exist(save_path,'file')
+            sample_data = generate_OSNAP_samples(fullfile(sample_path,sample_file),pixel_size);
+            % save
+            save_OSNAP_sample(save_path, sample_data);
+        end
         disp("   " + sample_name + ": " + string(datetime))
     end
 end

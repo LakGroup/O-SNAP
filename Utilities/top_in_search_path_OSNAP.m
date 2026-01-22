@@ -39,9 +39,9 @@ end
     for i=2:numel(filepaths)
         if contains(filepaths{i},path_substring)
             dir_top = fileparts(filepaths{i});
+            rmpath(dir_top);
+            addpath(dir_top);
             break
         end
     end
-    rmpath(dir_top);
-    addpath(dir_top);
 end
