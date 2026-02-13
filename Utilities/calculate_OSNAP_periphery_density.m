@@ -37,10 +37,22 @@ function [interior_density, periphery_density]  = calculate_OSNAP_periphery_dens
     polygon = translate(polygon,-(max(polygon.Vertices) - range(polygon.Vertices)/2)); % ensure that the geometric center of the polygon (not centroid) is at the origin
     interior = scale(polygon,1-periphery_thresh);
     % interior_n = sum(insidepoly(points(:,1),points(:,2),interior.Vertices(:,1),interior.Vertices(:,2)));
+<<<<<<< HEAD
+    if size(points,1) > 0
+        interior_n = sum(inpoly(points,interior.Vertices));
+        interior_density = interior_n/area(interior);
+        periphery =  addboundary(polygon,interior.Vertices(:,1),interior.Vertices(:,2));
+        periphery_density = (size(points,1) - interior_n)/area(periphery);
+    else
+        interior_density = 0;
+        periphery_density = 0;
+    end
+=======
     interior_n = sum(inpoly(points,interior.Vertices));
     interior_density = interior_n/area(interior);
     periphery =  addboundary(polygon,interior.Vertices(:,1),interior.Vertices(:,2));
     periphery_density = (size(points,1) - interior_n)/area(periphery);
+>>>>>>> 8d64894 (01/22/2026 - Updated inside polygon check for a mac-compatible version that does not rely on the MinGW compiler)
 end
 
 

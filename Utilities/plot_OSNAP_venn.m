@@ -42,8 +42,12 @@ if n_pairs == 3
     venn_data = plot_OSNAP_venn_3(feature_comparisons,"save_path",options.save_path, "plot", options.plot,"alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold);
 elseif n_pairs == 4
     venn_data = plot_OSNAP_venn_4(feature_comparisons,"save_path",options.save_path, "plot", options.plot,"alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold);
-else
+elseif n_pairs < 2
     disp("   Not enough groups (N<2)")
+    venn_data = [];
+    return
+elseif n_pairs > 4
+    disp("   Too many groups (N<4)")
     venn_data = [];
     return
 end
@@ -200,14 +204,14 @@ group_pairs_pairs_string = join(group_pairs_pairs, ",  ");
 n_group_pairs_pairs = size(group_pairs_pairs,1);
 for i=1:n_group_pairs_pairs
     idx = n_group_pairs+i;
-    group_idx_1 = find(strcmp(group_pairs_string,group_pairs_pairs(i,1)));
+    group_idx = find(strcmp(group_pairs_string,group_pairs_pairs(i,1)));
     group_idx_2 = find(strcmp(group_pairs_string,group_pairs_pairs(i,2)));
     venn_data{idx}.groups = group_pairs_pairs_string(i);
     venn_data{idx}.increase_features_group_1 = intersect(...
-        venn_data{group_idx_1}.increase_features_group_1,...
+        venn_data{group_idx}.increase_features_group_1,...
         venn_data{group_idx_2}.increase_features_group_1);
     venn_data{idx}.increase_features_group_2 = intersect(...
-        venn_data{group_idx_1}.increase_features_group_2,...
+        venn_data{group_idx}.increase_features_group_2,...
         venn_data{group_idx_2}.increase_features_group_2);
     venn_data{idx}.n_increase_features_group_1 = size(venn_data{idx}.increase_features_group_1,1);
     venn_data{idx}.n_increase_features_group_2 = size(venn_data{idx}.increase_features_group_2,1);
@@ -219,15 +223,15 @@ group_pairs_triplets_string = join(group_pairs_triplets, ", ");
 n_group_pairs_triplets = size(group_pairs_triplets,1);
 for i=1:n_group_pairs_triplets
     idx = n_group_pairs+n_group_pairs_pairs+i;
-    venn_data{idx}.groups = group_pairs_triplets_string(idx);
+    venn_data{idx}.groups = group_pairs_triplets_string(i);
     venn_data{idx}.increase_features_group_1 = feature_intersection_3(...
-        venn_data{group_pairs_triplets_idx(1)}.increase_features_group_1,...
-        venn_data{group_pairs_triplets_idx(2)}.increase_features_group_1,...
-        venn_data{group_pairs_triplets_idx(3)}.increase_features_group_1);
+        venn_data{group_pairs_triplets_idx(i,1)}.increase_features_group_1,...
+        venn_data{group_pairs_triplets_idx(i,2)}.increase_features_group_1,...
+        venn_data{group_pairs_triplets_idx(i,3)}.increase_features_group_1);
     venn_data{idx}.increase_features_group_2 = feature_intersection_3(...
-        venn_data{group_pairs_triplets_idx(1)}.increase_features_group_2,...
-        venn_data{group_pairs_triplets_idx(2)}.increase_features_group_2,...
-        venn_data{group_pairs_triplets_idx(3)}.increase_features_group_2);
+        venn_data{group_pairs_triplets_idx(i,1)}.increase_features_group_2,...
+        venn_data{group_pairs_triplets_idx(i,2)}.increase_features_group_2,...
+        venn_data{group_pairs_triplets_idx(i,3)}.increase_features_group_2);
     venn_data{idx}.n_increase_features_group_1 = length(venn_data{idx}.increase_features_group_1);
     venn_data{idx}.n_increase_features_group_2 = length(venn_data{idx}.increase_features_group_2);
 end
@@ -245,20 +249,48 @@ venn_data{end}.increase_features_group_2 = feature_intersection_4(...
     venn_data{4}.increase_features_group_2);
 venn_data{end}.n_increase_features_group_1 = length(venn_data{end}.increase_features_group_1);
 venn_data{end}.n_increase_features_group_2 = length(venn_data{end}.increase_features_group_2);
-%% correct counts - level 4
+% cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
+% disp('1--allcounts')
+%% correct counts
 for i=1:(length(venn_data)-1)
     venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1) - venn_data{end}.n_increase_features_group_1;
     venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1) - venn_data{end}.n_increase_features_group_2;
 end
-for i=1:n_group_pairs
-    idx = n_group_pairs+i;
-    group_pair_idx_1 = find(strcmp(group_pairs_string,group_pairs_pairs(i,1)));
-    group_pair_idx_2 = find(strcmp(group_pairs_string,group_pairs_pairs(i,2)));
-    venn_data{group_pair_idx_1}.n_increase_features_group_1 = venn_data{group_pair_idx_1}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
-    venn_data{group_pair_idx_2}.n_increase_features_group_1 = venn_data{group_pair_idx_2}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
-    venn_data{group_pair_idx_1}.n_increase_features_group_2 = venn_data{group_pair_idx_1}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
-    venn_data{group_pair_idx_2}.n_increase_features_group_2 = venn_data{group_pair_idx_2}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
+cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
+% disp('2--minus 4 at 3,2,1')
+for i=1:n_group_pairs_triplets
+    idx = n_group_pairs+n_group_pairs_pairs+i;
+    for j=1:size(group_pairs_triplets,2)
+        group_idx = find(strcmp(group_pairs_string,group_pairs_triplets(i,j)));
+        venn_data{group_idx}.n_increase_features_group_1 = venn_data{group_idx}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
+        venn_data{group_idx}.n_increase_features_group_2 = venn_data{group_idx}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
+    end
 end
+% cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
+% disp('3--minus 3 at 1')
+for i=1:n_group_pairs_triplets
+    idx = n_group_pairs+n_group_pairs_pairs+i;
+    for j=1:size(group_pairs_pairs,1)
+        if sum(cell2mat(arrayfun(@(x) strcmp(group_pairs_triplets(i,:),x),group_pairs_pairs(j,:),'uni',0)'),'all')==2
+            group_idx = n_group_pairs+j;
+            venn_data{group_idx}.n_increase_features_group_1 = venn_data{group_idx}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
+            venn_data{group_idx}.n_increase_features_group_2 = venn_data{group_idx}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
+        end
+    end
+end
+% cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
+% disp('4--minus 3 at 2')
+for i=1:n_group_pairs_pairs
+    idx = n_group_pairs+i;
+    for j=1:size(group_pairs_pairs,2)
+        group_idx = find(strcmp(group_pairs_string,group_pairs_pairs(i,j)));
+        venn_data{group_idx}.n_increase_features_group_1 = venn_data{group_idx}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
+        venn_data{group_idx}.n_increase_features_group_2 = venn_data{group_idx}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
+    end
+end
+% cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
+% disp('5--minus 2 at 1')
+
 %% plot result
 if options.plot
     venn_labels_increase_1 = cellfun(@(x) x.n_increase_features_group_1,venn_data,'uni',1);
@@ -310,7 +342,7 @@ end
 function v = feature_intersection_4(v1, v2, v3, v4)
     v_234 = feature_intersection_3(v2, v3, v4);
     if ~isempty(v_234)
-        v = feature_intersection_3(v1, v_234);
+        v = feature_intersection_2(v1, v_234);
     else
         v = [];
         return
