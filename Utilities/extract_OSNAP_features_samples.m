@@ -66,8 +66,10 @@ arguments
     groups cell
     replicates cell
     options.n_processes double = maxNumCompThreads;
-    options.min_log_vor_density double = 0;
+    options.min_log_vor_density double = 0.5;
     options.max_log_vor_density double = 3;
+    options.min_log_vor_area double = 1;
+    options.max_log_vor_area double = 3;
     options.dbscan_thresh double = 70;
     options.eps double = 20;
     options.min_num double = 3;
@@ -81,6 +83,8 @@ arguments
 end
 min_log_vor_density = options.min_log_vor_density;
 max_log_vor_density = options.max_log_vor_density;
+min_log_vor_area = options.min_log_vor_area;
+max_log_vor_area = options.max_log_vor_area;
 area_threshold_arr = options.area_threshold_arr;
 min_number_of_localizations_arr = options.min_number_of_localizations;
 plot_flag = options.plot;
@@ -117,6 +121,8 @@ if any(cellfun('length',split_file_list))
                     generate_OSNAP_voronoi_segmentations(filepath, ...
                         "min_log_vor_density", min_log_vor_density, ...
                         "max_log_vor_density", max_log_vor_density,...
+                        "min_log_vor_area", min_log_vor_area, ...
+                        "max_log_vor_area", max_log_vor_area,...
                         "plot", plot_flag,"overwrite",overwrite);
                 catch ME
                     fprintf("- - Removing: %s - -\n",filepath)
