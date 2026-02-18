@@ -38,9 +38,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function [feature_data_norm,group_values] = preprocess_OSNAP_feature_data(feature_data,options)
 arguments
     feature_data table
@@ -51,18 +53,15 @@ arguments
     options.keep_rep_sample_info logical = false;
     options.numeric_only logical = false; 
 end
-
 feature_data_norm = feature_data;
-
-% remove NaNs
+%% Remove NaNs
 if options.remove_NaN
     is_nan_col = any(ismissing(feature_data_norm),1);
     feature_data_norm = feature_data_norm(:,~is_nan_col);
     is_nan_row = any(ismissing(feature_data_norm),2);
     feature_data_norm = feature_data_norm(~is_nan_row,:);
 end
-
-% select only desired groups and replicates for analysis
+%% Select only desired groups and replicates for analysis
 if ~isempty(options.replicates)
     feature_data_norm = feature_data_norm(ismember(feature_data_norm.biological_replicate,options.replicates),:);
 end
@@ -74,8 +73,7 @@ if ismember('group',feature_data_norm.Properties.VariableNames)
 else
     group_values = [];
 end
-
-% normalize T
+%% Normalize T
 if options.normalize
     % T_norm{:,vartype('numeric')} = normalize(abs(T_norm{:,vartype('numeric')}),1);
     feature_data_norm{:,vartype('numeric')} = normalize(feature_data_norm{:,vartype('numeric')},1);
@@ -87,8 +85,7 @@ if options.normalize
         feature_data_norm = feature_data_norm(~is_nan_row,:);
     end
 end
-
-% remove unnecessary columns (group, bio replicate)
+%% Remove unnecessary columns (group, bio replicate)
 if options.numeric_only
     feature_data_norm = feature_data_norm(:,vartype('numeric'));
 elseif ~options.keep_rep_sample_info

@@ -26,17 +26,21 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function [result, vars_missing] = has_variables_OSNAP(file_path, vars_to_check, options)
     arguments
         file_path string
         vars_to_check cell
         options.verbose logical = false
     end
+    % Identify variables in file and those that are missing
     vars_in_file = who("-file",file_path);
     vars_missing = setdiff(vars_to_check,vars_in_file);
+    % List out missing variables
     if ~isempty(vars_missing)
         result = 0;
         if options.verbose

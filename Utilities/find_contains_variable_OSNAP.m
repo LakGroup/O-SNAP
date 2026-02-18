@@ -29,17 +29,22 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function valid_idx = find_contains_variable_OSNAP(OSNAP_sample_file_list,vars_to_load)
     filepaths = OSNAP_sample_file_list{:,'filepath'};
     valid_idx = ones(size(OSNAP_sample_file_list,1),1);
+    % For each file, determine if the file contains all desired variables
     for i=1:length(filepaths)
         if ~has_variables_OSNAP(OSNAP_sample_file_list{i,'filepath'},vars_to_load)
             valid_idx(i) = 0;
         end
     end
+    % Display files that do not contain desired variables
     if ~all(valid_idx)
         disp('Problem files:')
         f = OSNAP_sample_file_list{~valid_idx,'filepath'};

@@ -13,18 +13,18 @@
 % Output:
 %   data: A struct array with information on the coverage results
 %           - (group1__vs__group2__featureUniverse): Table containing the 
-%                                                     feature comparison
-%                                                     data for group1 vs
-%                                                     group2 when
-%                                                     considering a given
-%                                                     feature universe,
-%                                                     with all info from
-%                                                     the feature
-%                                                     comparisons as well
-%                                                     as data on the
-%                                                     feature set and
-%                                                     BGratio and feature
-%                                                     ratio
+%                                                    feature comparison
+%                                                    data for group1 vs
+%                                                    group2 when
+%                                                    considering a given
+%                                                    feature universe,
+%                                                    with all info from
+%                                                    the feature
+%                                                    comparisons as well
+%                                                    as data on the
+%                                                    feature set and
+%                                                    BGratio and feature
+%                                                    ratio
 % Options:
 %   plot: Flag to plot results
 %   alpha: Significance testing threshold
@@ -37,7 +37,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function data = calculate_OSNAP_feature_set_coverage(feature_comparisons,save_dir,options)
@@ -49,27 +52,13 @@ arguments
     options.fold_change_threshold double = 2;
     options.feature_universe_names = ["universe_1"];
 end
-%% define feature_universes
+%% Define feature_universes
 feature_universes = get_feature_universes(options.feature_universe_names);
-% groups = unique(feature_comparisons.group);
-% for g=1:size(groups,1)
-%     groups_is_alpha = isstrprop(groups(g),'alpha');
-%     if ~groups_is_alpha(1)
-%         groups(g) = "t" + groups(g);
-%     end
-% end
-% group_pairs = nchoosek(groups,2);
 for g=1:numel(feature_comparisons)
     S = feature_comparisons{g};
-% for g=1:size(group_pairs,1)
-    % group_pair_string = replace(group_pairs(g,1) + "__vs__" + group_pairs(g,2),"-","_");
-    % %% calculate adjusted p-values, fold changes
-    % S = compare_groups(feature_data,group_pairs(g,1),group_pairs(g,2),...
-    %     "alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold,...
-    %     "plot",options.plot,"save_path",fullfile(save_dir, "features_diff_"+join(group_pairs(g,:),'_')+".csv"));
     group_pair_string = replace(S.groups(1) + "__vs__" + S.groups(2),"-","_");
     data.(group_pair_string) = sortrows(S.feature_table,"adj_p_value");
-    %% run loop on all universes
+    %% Run loop on all universes
     for f = 1:size(feature_universes,2)
         set_name = group_pair_string+"__"+feature_universes{f}.name;
         data.(set_name) = analyze_feature_family(S.feature_table,[S.groups(1) S.groups(2)],feature_universes{f},save_dir,options);
@@ -77,15 +66,16 @@ for g=1:numel(feature_comparisons)
 end
 end
 
-%% perform ontology analysis for a given feature universe
+%% Perform ontology analysis for a given feature universe
 function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,options)
     feature_universe_name = feature_universe_info.name;
     feature_universe = feature_universe_info.feature_set;
-    %% get feature families (defined in functions below)
+    %% Get feature families (defined in functions below)
     T = sort_features(T,feature_universe,feature_universe_name);
-    % filter out features that do not belong in a set
+    % Filter out features that do not belong in a set
     T = T(~ismissing(T.(feature_universe_name)),:);
     S_universe = groupcounts(T,feature_universe_name);
+    % Identify significantly changed features
     idx_sig = all([abs(T.log2_fold_change) > log2(options.fold_change_threshold) T.adj_p_value < options.alpha],2);
     S_diff = T(idx_sig,:);
     if size(S_diff,1) == 0
@@ -94,11 +84,13 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
     end
     S_diff_grouped = sortrows(groupcounts(S_diff,feature_universe_name),"GroupCount","descend");
     n_rows = 0;
+    % Features with decrease in fold change
     S_down = S_diff(S_diff.fold_change < 0, :);
     if size(S_down,1) > 0
         S_down_grouped = sortrows(groupcounts(S_down,feature_universe_name),"GroupCount","descend");
         n_rows = n_rows + 1;
     end
+    % Features with increase in fold change
     S_up = S_diff(S_diff.fold_change > 0,:);
     if size(S_up,1) > 0
         S_up_grouped = sortrows(groupcounts(S_up,feature_universe_name),"GroupCount","descend");
@@ -124,7 +116,7 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
     if sum(idx) > 0
         T{idx,"feature_ratio_"+feature_universe_name} = NaN(sum(idx),1);
     end
-    %% plot
+    %% Plot
     if options.plot
         if save_dir ~= ""
             figure('visible','off','Position',[10 10 910 10+300*n_rows]);
@@ -134,7 +126,7 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
         sgtitle(group_pair(1) + " vs " + group_pair(2))
         tiledlayout(n_rows,2);
         if n_rows == 3
-            % counts
+            % Counts
             nexttile(5);
             x = replace(S_diff_grouped{:,feature_universe_name},"_"," ");
             x = reordercats(categorical(x),x);
@@ -142,7 +134,7 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
             ylabel("Counts")
             y_lim_counts = ylim();
             title({"Differential features", "Counts"},"Interpreter","none")
-            % coverage (p only)
+            % Coverage (p only)
             nexttile(6);
             S_join = join(S_diff_grouped,S_universe,'Keys',feature_universe_name);
             S_join.coverage = S_join.GroupCount_S_diff_grouped./S_join.GroupCount_S_universe;
@@ -155,9 +147,9 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
             ylabel("Coverage of family (%)")
             title({"Differential features","Coverage"},"Interpreter","none")
         end
-        % decreased features in group 2
+        % Plot decreased features in group 2
         if exist("S_down_grouped","var")
-            % counts
+            % Counts
             nexttile();
             x = replace(S_down_grouped{:,feature_universe_name},"_"," ");
             x = reordercats(categorical(x),x);
@@ -168,7 +160,7 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
                 ylim(y_lim_counts)
             end
             title({"Features increased for " + group_pair(1),"Counts"},"Interpreter","none")
-            % coverage (p only)
+            % Coverage (p only)
             nexttile();
             S_join = join(S_down_grouped,S_universe,'Keys',feature_universe_name);
             S_join.coverage = S_join.GroupCount_S_down_grouped./S_join.GroupCount_S_universe;
@@ -181,9 +173,9 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
             ylabel("Coverage of family (%)")
             title({"Features increased for " + group_pair(1),"Coverage"},"Interpreter","none")
         end
-        % increased features in group 1
+        % Plot increased features in group 1
         if exist("S_up_grouped","var")
-            % counts
+            % Counts
             nexttile();
             x = replace(S_up_grouped{:,feature_universe_name},"_"," ");
             x = reordercats(categorical(x),x);
@@ -194,7 +186,7 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
                 ylim(y_lim_counts)
             end
             title({"Features increased for " + group_pair(2),"Counts"},"Interpreter","none")
-            % coverage (p only)
+            % Coverage (p only)
             nexttile();
             S_join = join(S_up_grouped,S_universe,'Keys',feature_universe_name);
             S_join.coverage = S_join.GroupCount_S_up_grouped./S_join.GroupCount_S_universe;
@@ -215,7 +207,7 @@ function T = analyze_feature_family(T,group_pair,feature_universe_info,save_dir,
     end
 end
 
-%% sort features into families from the feature universe
+%% Sort features into families from the feature universe
 function S = sort_features(S,feature_universe,feature_universe_name)
     S{:,feature_universe_name} = repmat("",size(S,1),1);
     feature_families = fieldnames(feature_universe);

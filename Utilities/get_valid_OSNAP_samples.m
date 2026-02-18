@@ -5,7 +5,8 @@
 % under the specified phenotype and replicate combinations.
 %
 % Example on how to use it:
-%   OSNAP_nucleus_file_list = get_valid_OSNAP_samples("D:\Analysis\ExperimentA",...
+%   OSNAP_nucleus_file_list = get_valid_OSNAP_samples(...
+%                                 "D:\Analysis\ExperimentA",...
 %                                 {'Control','KO'},...
 %                                 {'20250101','20250108','20250201'},...
 %                                 {'major_axis','voronoi_cluster_radius'})
@@ -37,9 +38,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load, options)
 arguments
     work_dir string
@@ -48,80 +51,86 @@ arguments
     vars_to_load cell
     options.filter = false
 end
-    % save_name = "OSNAP_sample_file_list.csv";
-    % if exist(fullfile(work_dir,save_name),'file')
-    %     OSNAP_nucleus_file_list = readtable(fullfile(work_dir,save_name),'NumHeaderLines',0,'TextType','string', 'VariableNamingRule', 'preserve');
-    %     OSNAP_nucleus_file_list.Properties.VariableTypes = repmat("string",1,5);
-    %     reps_loaded = unique(OSNAP_nucleus_file_list.replicates);
-    %     groups_loaded = unique(OSNAP_nucleus_file_list.group);
-    %     if (numel(replicates) > numel(reps_loaded)) || (numel(groups) > numel(groups_loaded))
-    %         OSNAP_nucleus_file_list = search_and_find_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load);
-    %     end
-    %     for i=1:numel(replicates)
-    %         if ~ismember(replicates{i}, reps_loaded)
-    %             OSNAP_nucleus_file_list = search_and_find_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load);
-    %         end
-    %     end
-    %     for i=1:numel(groups)
-    %         if ~ismember(groups{i}, groups_loaded)
-    %             OSNAP_nucleus_file_list = search_and_find_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load);
-    %         end
-    %     end
-    % else
-    OSNAP_sample_file_list = get_all_valid_OSNAP_samples(work_dir,vars_to_load);
-    OSNAP_sample_file_list.group = arrayfun(@(x) find_group(x,groups,"filter",options.filter), OSNAP_sample_file_list{:,"name"},'uni',1);
-    OSNAP_sample_file_list = OSNAP_sample_file_list(:,["name","group","replicate","filepath"]);
-    % end
-    % filter for groups and replicates
-    OSNAP_sample_file_list = OSNAP_sample_file_list(ismember(OSNAP_sample_file_list.replicate,replicates),:);
-    OSNAP_sample_file_list = OSNAP_sample_file_list(ismember(OSNAP_sample_file_list.group,groups),:);
+%% Load data from OSNAP_sample_file_list.csv
+% Currently commented out to facilitate re-running analyses from
+% scratch without unexpected behavior
+% save_name = "OSNAP_sample_file_list.csv";
+% if exist(fullfile(work_dir,save_name),'file')
+%     OSNAP_nucleus_file_list = readtable(fullfile(work_dir,save_name),'NumHeaderLines',0,'TextType','string', 'VariableNamingRule', 'preserve');
+%     OSNAP_nucleus_file_list.Properties.VariableTypes = repmat("string",1,5);
+%     reps_loaded = unique(OSNAP_nucleus_file_list.replicates);
+%     groups_loaded = unique(OSNAP_nucleus_file_list.group);
+%     if (numel(replicates) > numel(reps_loaded)) || (numel(groups) > numel(groups_loaded))
+%         OSNAP_nucleus_file_list = search_and_find_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load);
+%     end
+%     for i=1:numel(replicates)
+%         if ~ismember(replicates{i}, reps_loaded)
+%             OSNAP_nucleus_file_list = search_and_find_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load);
+%         end
+%     end
+%     for i=1:numel(groups)
+%         if ~ismember(groups{i}, groups_loaded)
+%             OSNAP_nucleus_file_list = search_and_find_valid_OSNAP_samples(work_dir,groups,replicates,vars_to_load);
+%         end
+%     end
+% else
+%% Obtain all valid OSNAP files and organize their information
+OSNAP_sample_file_list = get_all_valid_OSNAP_samples(work_dir,vars_to_load);
+OSNAP_sample_file_list.group = arrayfun(@(x) find_group(x,groups,"filter",options.filter), OSNAP_sample_file_list{:,"name"},'uni',1);
+OSNAP_sample_file_list = OSNAP_sample_file_list(:,["name","group","replicate","filepath"]);
+% end
+%% Filter for groups and replicates
+OSNAP_sample_file_list = OSNAP_sample_file_list(ismember(OSNAP_sample_file_list.replicate,replicates),:);
+OSNAP_sample_file_list = OSNAP_sample_file_list(ismember(OSNAP_sample_file_list.group,groups),:);
 end
-
-function group = find_group(sample_name,groups, options)
+%% Determine which group a given sample belongs to based on whether the
+% File name contains at least one group in the substring
+function group = find_group(sample_name,groups,options)
 arguments
     sample_name string
     groups cell
     options.filter = false;
 end
-% if contains(sample_name,'Catalase-D-Ala-10nM')
-    group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups,'uni',0));
-    if sum(group_idx) == 1
-        group = string(groups{group_idx});
-    else
-        groups_found = groups(group_idx);
-        group_length = cellfun('length',groups_found);
-        [~,idx] = sort(group_length,'descend');
-        groups_found = groups_found(idx);
-        group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['_' x '-']), groups_found,'uni',0));
-        % if sum(group_idx) == 1
-        %     group = string(groups_found{group_idx});
-        % else
-        %     group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '-']), groups_found,'uni',0));
-        %     if sum(group_idx) == 1
-        %         group = string(groups_found{group_idx});
-        %     else
-        %         group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '_']), groups_found,'uni',0));
-        %         if sum(group_idx) == 1
-        %             group = string(groups_found{group_idx});
-        %         else
-        %             group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups_found,'uni',0));
-                    if any(group_idx)
-                        first_group_idx = find(group_idx);
-                        first_group_idx = first_group_idx(1);
-                        group = string(groups_found{first_group_idx});
-                    elseif options.filter
-                        group =  "";
-                    else
-                        ME = MException('OSNAP:unmatched_phenotype', ...
-                            sprintf('Error: At least one group specified could not be found in the data set'));
-                            throw(ME)
-                    end
-                % end
+group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups,'uni',0));
+% Only one group present
+if sum(group_idx) == 1
+    group = string(groups{group_idx});
+% Multiple groups present
+else
+    groups_found = groups(group_idx);
+    group_length = cellfun('length',groups_found);
+    [~,idx] = sort(group_length,'descend');
+    groups_found = groups_found(idx);
+    % Find which group the samples correspond to
+    group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['_' x '-']), groups_found,'uni',0));
+    % Perform further filtering if the sample appears to contain multiple
+    % groups as substrings
+    % if sum(group_idx) == 1
+    %     group = string(groups_found{group_idx});
+    % else
+    %     group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '-']), groups_found,'uni',0));
+    %     if sum(group_idx) == 1
+    %         group = string(groups_found{group_idx});
+    %     else
+    %         group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '_']), groups_found,'uni',0));
+    %         if sum(group_idx) == 1
+    %             group = string(groups_found{group_idx});
+    %         else
+    %             group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups_found,'uni',0));
+                if any(group_idx)
+                    first_group_idx = find(group_idx);
+                    first_group_idx = first_group_idx(1);
+                    group = string(groups_found{first_group_idx});
+                elseif options.filter
+                    group =  "";
+                else
+                    ME = MException('OSNAP:unmatched_phenotype', ...
+                        sprintf('Error: At least one group specified could not be found in the data set'));
+                        throw(ME)
+                end
             % end
         % end
-    end
-% else
-%     group="o";
-% end
+    % end
+end
 end
 

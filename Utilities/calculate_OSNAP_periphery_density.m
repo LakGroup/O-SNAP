@@ -30,29 +30,25 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function [interior_density, periphery_density]  = calculate_OSNAP_periphery_density(points,polygon,periphery_thresh)
-    polygon = translate(polygon,-(max(polygon.Vertices) - range(polygon.Vertices)/2)); % ensure that the geometric center of the polygon (not centroid) is at the origin
+    % Ensure that the geometric center of the polygon (not centroid) is at the origin
+    polygon = translate(polygon,-(max(polygon.Vertices) - range(polygon.Vertices)/2));
     interior = scale(polygon,1-periphery_thresh);
-    % interior_n = sum(insidepoly(points(:,1),points(:,2),interior.Vertices(:,1),interior.Vertices(:,2)));
-<<<<<<< HEAD
     if size(points,1) > 0
+        % Calculate interior density
         interior_n = sum(inpoly(points,interior.Vertices));
         interior_density = interior_n/area(interior);
+        % Calculate periphery density
         periphery =  addboundary(polygon,interior.Vertices(:,1),interior.Vertices(:,2));
         periphery_density = (size(points,1) - interior_n)/area(periphery);
     else
         interior_density = 0;
         periphery_density = 0;
     end
-=======
-    interior_n = sum(inpoly(points,interior.Vertices));
-    interior_density = interior_n/area(interior);
-    periphery =  addboundary(polygon,interior.Vertices(:,1),interior.Vertices(:,2));
-    periphery_density = (size(points,1) - interior_n)/area(periphery);
->>>>>>> 8d64894 (01/22/2026 - Updated inside polygon check for a mac-compatible version that does not rely on the MinGW compiler)
 end
-
-

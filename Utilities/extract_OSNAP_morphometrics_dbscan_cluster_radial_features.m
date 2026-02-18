@@ -31,24 +31,22 @@
 %   plot: Flag to plot results
 %   overwrite: Flag on whether to ask user before overwriting data
 % -------------------------------------------------------------------------
+% Modified from code (v4.0, 04/05/2024) provided by the Shenoy Lab
 % Code written by:
+%   Aayush Kant         Shenoy lab, University of Pennsylvania (USA)
+%          Current: Kant lab, Indian Institute of Technology Delhi (India)
+% Code edited by:
 %   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
 % Contact:
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   A. Kant, Z. Guo, V. Vinayak, M. V. Neguembor, W. S. Li, V. Agrawal, E. 
+%   Pujadas, L. Almassalha, V. Backman, M. Lakadamyali, M. P. Cosma, V. B. 
+%   Shenoy, Active transcription and epigenetic reactions synergistically 
+%   regulate meso-scale genomic organization. Nature Communications 15, 
+%   4338 (2024).
 % -------------------------------------------------------------------------
-%
-%% This code works as a standard code for the params extraction of 
-% STORM images (@Shenoy_lab) Version 4.0 (last update April 5, 2024)
-
-% Notes: This file is used to extract key params of nucleus as follows:
-% 1. Inner Heterochromatin Size 2. LADs thickness 3. Nuclear a
-% All variables are saved into a cell 'data', which is written to the
-% system
-
-
 function extract_OSNAP_morphometrics_dbscan_cluster_radial_features(filepath, density_threshold, options)
 arguments
     filepath string
@@ -61,6 +59,7 @@ arguments
     options.overwrite logical = false;
 end
 
+% Return if desired variables already present
 data_vars = {'nucleus_radius',...
             'locs_number',...
             'locs_density',...
@@ -98,7 +97,6 @@ data_vars = {'nucleus_radius',...
             'periphery_loc_density',...
             'interior_cluster_density',...
             'periphery_cluster_density'};
-
 if has_variables_OSNAP(filepath,data_vars) && ~options.overwrite
     return
 end
@@ -106,7 +104,7 @@ end
 data = load(filepath);
 locs = [data.x data.y];
 
-%% find nuclear boundary
+%% Find nuclear boundary
 if ~isfield(data,'boundary')
     boundary_old = locs(boundary(locs, 0.5),:);
     bd = smoothdata(boundary_old(1:length(boundary_old)-1,:),'gaussian',10);
@@ -115,23 +113,23 @@ if ~isfield(data,'boundary')
     data.boundary = bd;
 end
 
-%% number of localizations
+%% Number of localizations
 if ~isfield(data,'locs_number') 
     data.locs_number = length(locs(:,1));
 end
 
-%% approximate size of nucleus
+%% Approximate size of nucleus
 if ~isfield(data,'nucleus_radius') 
     nucleus_radius = sqrt(polyarea(data.boundary(:,1),data.boundary(:,2))/pi);
     data.nucleus_radius = nucleus_radius;
 end
 
-%% localization density with respect to nucleus area
+%% Localization density with respect to nucleus area
 if ~isfield(data,'locs_density') 
     data.locs_density = length(locs(:,1))/(pi*data.nucleus_radius^2);
 end
 
-%% dbscan
+%% DBSCAN
 if ~isfield(data,'locs_dbscan_cluster_labels') 
     if isfield(data,'voronoi_areas_all')
         locs_to_cluster = locs((1./data.voronoi_areas_all)>=density_threshold,:);
@@ -150,7 +148,7 @@ else
 end
 clearvars density hetero labels locs_dbscan_cluster_labels
 
-%% define dbscan clusters at the periphery (LADs) and interior (non-LADs)
+%% Define dbscan clusters at the periphery (LADs) and interior (non-LADs)
 if ~all(isfield(data,{...
         'locs_dbscan_cluster_periphery_labels',...
         'locs_dbscan_cluster_interior_labels'}))  
@@ -194,7 +192,7 @@ else
     locs_dbscan_cluster_interior_labels = data.locs_dbscan_cluster_interior_labels(:,1:2);
 end
 
-%% analysis of lads chromatin domain properties
+%% Analysis of LADS chromatin domain properties
 if ~all(isfield(data,{...
         'periphery_dbscan_cluster_n_locs',...
         'periphery_dbscan_cluster_center',...
@@ -231,7 +229,7 @@ if ~all(isfield(data,{...
     data.periphery_dbscan_cluster_gyration_radius = periphery_dbscan_cluster_gyration_radius;
 end
 
-%% analysis of inner heterochromatin domain properties
+%% Analysis of inner heterochromatin domain properties
 if ~all(isfield(data,{...
         'interior_dbscan_cluster_n_locs',...
         'interior_dbscan_cluster_center',...
@@ -268,16 +266,16 @@ if ~all(isfield(data,{...
     data.interior_dbscan_cluster_gyration_radius = interior_dbscan_cluster_gyration_radius;
 end
 
-%% find spacing between interior dbscan clusters
-% if ~isfield(data,'interior_dbscan_cluster_spacing')  
+%% Find spacing between interior dbscan clusters
+if ~isfield(data,'interior_dbscan_cluster_spacing')  
     N_neighbour = 5;
     dist_mat = mink(pdist2(data.interior_dbscan_cluster_center,data.interior_dbscan_cluster_center),N_neighbour+1,2);
     interior_dbscan_cluster_spacing = sum(dist_mat,2)/N_neighbour;
     data.interior_dbscan_cluster_spacing = interior_dbscan_cluster_spacing;
     clearvars dist_mat N_neighbour
-% end
+end
 
-%% compute lads thicknesses
+%% Compute LAD thicknesses
 if ~all(isfield(data,...
         {'model_lad_thickness',...
         'model_lad_segment_normals',...
@@ -371,7 +369,7 @@ if ~isfield(data,'polygon')
     clearvars polygon
 end
 
-%% calculate the boundary descriptors
+%% Calculate the boundary descriptors
 if ~all(isfield(data,{...
         'elastic_energy',...
         'bending_energy',...
@@ -380,7 +378,7 @@ if ~all(isfield(data,{...
     data.border_curvature = Curvature(rotated_boundary); % Only calculate the curvature for the outer boundary of the point cloud. 
 end
 
-%% calculate radial localization density
+%% Calculate radial localization density
 if ~isfield(data,'radial_loc_density') 
     radial_loc_density = calculate_OSNAP_radial_density(data.locs_norm, [data.x_length data.y_length], options.ellipse_inc);
     data.radial_loc_density = radial_loc_density;
@@ -395,7 +393,7 @@ end
 locs_dbscan_cluster = [data.periphery_dbscan_cluster_center; data.interior_dbscan_cluster_center];
 locs_dbscan_cluster = normalize_points(locs_dbscan_cluster,data.components,data.boundary);
 
-%% calculate radial dbscan cluster density
+%% Calculate radial dbscan cluster density
 if ~isfield(data,'radial_dbscan_cluster_density') 
     radial_dbscan_cluster_density = calculate_OSNAP_radial_density(locs_dbscan_cluster,...
         [data.x_length data.y_length], options.ellipse_inc);
@@ -411,7 +409,7 @@ elseif ~options.overwrite
     end
 end
 
-%% calculate periphery/interior density
+%% Calculate periphery/interior density
 if ~all(isfield(data,{'interior_loc_density', ...
         'periphery_loc_density'})) 
     [interior_loc_density, periphery_loc_density]  = calculate_OSNAP_periphery_density(data.locs_norm,data.polygon,...
@@ -420,7 +418,7 @@ if ~all(isfield(data,{'interior_loc_density', ...
     data.periphery_loc_density = periphery_loc_density;
 end
 
-%% calculate periphery/interior density of heterochromatin clusters
+%% Calculate periphery/interior density of heterochromatin clusters
 if ~all(isfield(data,{'interior_cluster_density', ...
         'periphery_cluster_density'})) 
     locs_dbscan_cluster = [data.periphery_dbscan_cluster_center; data.interior_dbscan_cluster_center];
@@ -430,8 +428,10 @@ if ~all(isfield(data,{'interior_cluster_density', ...
     data.periphery_cluster_density = periphery_cluster_density;
 end
 
+%% Save data to sample file
 save_OSNAP_sample(filepath, data);
 
+%% Plot analysis of nucleus
 if options.plot
     [dir_name,name,~] = fileparts(filepath);
     map_dir = replace(dir_name,"_nucleus_data","_nucleus_images");
@@ -469,6 +469,7 @@ if options.plot
 end
 end
 
+%% Normalize localizations
 function points_norm = normalize_points(points,components,boundary)
     rotated_boundary = boundary*components;
     points_norm = points*components - min(boundary*components) - range(rotated_boundary)/2;

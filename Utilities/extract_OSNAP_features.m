@@ -27,13 +27,17 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function T = extract_OSNAP_features(OSNAP_sample_file_list)
-    %% parameters
+    %% Parameters
     percentile_thresh = [40 70];
-    %% define variables of interest
+    area_thresholds = 10.^(1.25:0.25:2);
+    %% Define features of interest
     vars_string = ["group","biological_replicate","name"];
     vars_morphological = [...
         "major_axis",...
@@ -95,7 +99,8 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
     vars_distribution_names_log = vars_distribution_names;
     vars_distribution_names_log(~dist_already_log) = "log_"+vars_distribution_names(~dist_already_log);
     vars_distribution = reshape(vars_distribution_names_log + ["_mean";"_std";"_skewness"],1,[]);
-    % remove n_locs_skewness variables, which even after log transform is very far from normal
+    % Remove n_locs_skewness features, which even after log transform is 
+    % very far from normal
     vars_distribution = vars_distribution(~endsWith(vars_distribution,"_n_locs_skewness"));
     vars_lads = [...
         "interior_dbscan_cluster_n_locs",...
@@ -109,10 +114,6 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
         "radial_loc_density_ring_gradient_minor_axis",...
         "radial_dbscan_cluster_density_ring_gradient_major_axis",...
         "radial_dbscan_cluster_density_ring_gradient_minor_axis"];
-    %% TODO
-    % load(OSNAP_sample_file_list{1,"filepath"},'area_thresholds');
-    area_thresholds = 10.^(1.25:0.25:2);
-    %%
     vars_voronoi_cluster = reshape("voronoi_cluster"+compose("_%03.0fnm^2_",area_thresholds)+"log_"+["radius";"density";"gyration_radius"]+"_",1,[]);
     vars_voronoi_cluster = reshape(vars_voronoi_cluster + ["mean";"std";"skewness"],1,[]);
     vars_voronoi_cluster = [vars_voronoi_cluster reshape("voronoi_cluster"+compose("_%03.0fnm^2_",area_thresholds)+"clusters_per_nucleus_area",1,[])];
@@ -146,21 +147,21 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
         "voronoi_cluster_gyration_radius",...
         "voronoi_cluster_n_locs"]]);
     vars_to_load = setdiff(vars_to_load,'log_voronoi_density');
-    % group voronoi data
+    %% Collect data into a feature table
     n_samp = size(OSNAP_sample_file_list,1);
     T = table('Size',[n_samp numel(vars)], ...
         'VariableTypes',[repmat("string",numel(vars_string),1); ...
                          repmat("double",numel(vars)-numel(vars_string),1)]',...
         'VariableNames',vars);
     for s=1:n_samp
-        %% string variables
+        % String features
         T{s,"group"} = OSNAP_sample_file_list{s,"group"};
         T{s,"biological_replicate"} = OSNAP_sample_file_list{s,"replicate"};
         T{s,"name"} = OSNAP_sample_file_list{s,"name"};
         try
             data = load_variables_OSNAP(OSNAP_sample_file_list{s,"filepath"},vars_to_load);
             data.log_voronoi_density = log10(1./(data.voronoi_areas));
-            %% value variables
+            % Value features
             for j=1:numel(vars_value)
                 if ~isempty(data.(vars_value(j)))
                     T{s,vars_value(j)} = data.(vars_value(j));
@@ -168,7 +169,7 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
                     T{s,vars_value(j)} = NaN;
                 end
             end
-            %% ratio variables
+            % Ratio features
             for j=1:numel(vars_ratio)
                 v_numerator = vars_ratio_components{j}{1};
                 v_denominator = vars_ratio_components{j}{2};
@@ -178,7 +179,7 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
                     T{s,vars_ratio(j)} = NaN;
                 end
             end
-            %% morphological variables
+            % Morphological features
             locs_norm = data.locs_norm;
             % Generate convex hull
             locs_norm_downsize = locs_norm(1:1000:end,:);
@@ -211,7 +212,7 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
             T{s,"minor_axis_norm_area"} = T{s,"minor_axis"} ./ nucleus_area;
             T{s,"elastic_energy_norm_area"} = T{s,"elastic_energy"}./ nucleus_area;            
             T{s,"bending_energy_norm_area"} = T{s,"bending_energy"}./ nucleus_area;            
-            %% chromatin variables
+            % Chromatin features
             for j=1:numel(vars_for_percentiles)
                 percentile_values_j = prctile(data.(vars_for_percentiles(j)),percentile_thresh);
                 for k=1:numel(percentile_thresh)
@@ -219,7 +220,7 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
                 end
             end
             T{s,"reduced_log_voronoi_density_mean"} = mean(data.reduced_log_voronoi_density,"omitmissing");
-            %% distribution variables
+            % Distribution features
             for j=1:numel(vars_distribution_names_log)
                 prefix = vars_distribution_names_log(j);
                 if ~isempty(data.(vars_distribution_names(j)))
@@ -230,7 +231,7 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
                     end
                     T{s,prefix+"_mean"} = mean(d,"omitmissing");
                     T{s,prefix+"_std"} = std(d,"omitmissing");
-                    % skip skewness measurement for n_locs since
+                    % Skip skewness measurement for n_locs since
                     % distribution is not well-suited for skewness
                     % measurement
                     if ~contains(prefix,"n_locs")
@@ -243,11 +244,12 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
                     end
                 end
             end
-            %% model lad variables
+            % Modeled LAD features
             T{s,"interior_dbscan_cluster_n_locs"} = numel(data.locs_dbscan_cluster_interior_labels);
             T{s,"interior_dbscan_cluster_n_clusters"} = numel(data.interior_dbscan_cluster_n_locs);
             T{s,"periphery_dbscan_cluster_n_locs"} = numel(data.locs_dbscan_cluster_periphery_labels);
-            T{s,"periphery_dbscan_cluster_n_clusters"} = numel(data.periphery_dbscan_cluster_n_locs);            %% radial features
+            T{s,"periphery_dbscan_cluster_n_clusters"} = numel(data.periphery_dbscan_cluster_n_locs);            
+            % Radial features
             for j=1:numel(vars_radial_loc_density)
                 T{s,vars_radial_loc_density(j)} = data.radial_loc_density(j);
             end
@@ -264,7 +266,7 @@ function T = extract_OSNAP_features(OSNAP_sample_file_list)
             T{s,"radial_dbscan_cluster_density_ring_gradient_major_axis"} = mdl.Coefficients{2,'Estimate'};
             mdl=fitlm(linspace(0,prop_interior*T{s,"minor_axis"},n_ring),data.radial_dbscan_cluster_density(1:n_ring));
             T{s,"radial_dbscan_cluster_density_ring_gradient_minor_axis"} = mdl.Coefficients{2,'Estimate'};
-            %% voronoi cluster features
+            % Voronoi cluster features
             metrics = ["radius","density","gyration_radius"];
             for j=1:numel(metrics)
                 for k=1:numel(area_thresholds)

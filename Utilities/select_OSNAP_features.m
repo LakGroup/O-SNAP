@@ -35,7 +35,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function [result,vars_selected] = select_OSNAP_features(scores,vars_names,options)
@@ -47,9 +50,9 @@ arguments
 end
 n_batch = size(scores,2);
 n_feature = numel(vars_names);
-
-%% batch-wise
+%% Batch-wise feature selection
 if n_batch > 1
+    % Setup
     result = table('Size',[n_feature n_batch+1], ...
         'VariableNames',[compose("batch_%02.0f",1:n_batch) "batch_sum"],...
         'VariableTypes',repmat({'logical'},1,n_batch+1));
@@ -58,8 +61,7 @@ if n_batch > 1
         'VariableNames',[compose("batch_%02.0f",1:n_batch) "batch_sum"],...
         'VariableTypes',repmat({'logical'},1,n_batch+1));
     vars_selected.Properties.RowNames = vars_names';
-    
-    % variable selection based on each batch
+    % Feature selection based on each batch
     scores_sort = zeros(n_feature,n_batch);
     sort_idx = zeros(n_feature,n_batch);
     scores_sort_diff = zeros(options.max_idx-1,n_batch);
@@ -68,11 +70,12 @@ if n_batch > 1
     for i=1:n_batch
         [scores_sort(:,i),sort_idx(:,i)] = sort(scores(:,i),'descend');
         scores_sort_diff(:,i) = diff(scores_sort(1:options.max_idx,i));
-
         [~,knee_idx] = knee_pt(scores_sort(1:options.max_idx,i));
         [pks,pks_idxs{i}] = findpeaks(abs(scores_sort_diff(:,i)));
         [~,m] = max(pks);
-        % defines number of ranked vars to select 
+        % Defines number of ranked features to select using a combination 
+        % of the knee point or where the peak inthe first-order difference 
+        % in consecutive MRMR scores is, whichever is lower
         if pks_idxs{i}(m) < options.max_idx
             pks_idx = pks_idxs{i}(m);
         else
@@ -84,12 +87,10 @@ if n_batch > 1
         result.(sprintf("batch_%02.0f",i)) = scores(:,i);
         vars_selected.(sprintf("batch_%02.0f",i)) = vars_selected_idx;
     end
-    
-    % variable selection based on summation over all batches
+    % Feature selection based on summation over all batches
     [scores_sum_sort,sort_sum_idx] = sort(sum(scores,2),'descend');
     scores_sorted_by_sum = scores(sort_sum_idx,:);
     scores_sum_sort_diff = diff(scores_sum_sort(1:options.max_idx));
-
     [~,knee_idx] = knee_pt(abs(scores_sum_sort(1:options.max_idx)));
     [pks,pks_sum_idx] = findpeaks(abs(scores_sum_sort_diff));
     [~,m] = max(pks);
@@ -103,8 +104,7 @@ if n_batch > 1
     vars_selected_idx(sort_sum_idx(1:n_vars_selected_sum)) = 1;
     result.("batch_sum") = sum(scores,2);
     vars_selected.("batch_sum") = vars_selected_idx;
-    
-    % plot
+    %% Plot
     if options.save_path ~= ""
         try
             if exist(options.save_path,'file')
@@ -112,7 +112,7 @@ if n_batch > 1
             end
             f_batch=figure('visible','off','position',[1,50,1600,800]);
             tiledlayout('flow');
-            % each batch
+            % Each batch
             c_data = lines(n_batch);
             for i=1:n_batch
                 nexttile
@@ -131,7 +131,7 @@ if n_batch > 1
             end
             axs=findobj(f_batch,'Type','axes');
             linkaxes(axs,'xy');
-            % sum
+            % Aggregated MRMR scores
             f_sum=figure('visible','off','position',[1,50,800,600]);
             bar(scores_sorted_by_sum(1:options.max_idx,:),'stacked');
             hold on
@@ -155,13 +155,15 @@ if n_batch > 1
             disp(getReport(ME))
         end
     end
-
-%% ALL DATA
+%% Feature selection on entire data set at once
 else
     result = [];
-    % variable selection based on summation over all batches
+    % Feature selection based on summation over all batches
     [scores_sort,sort_idx] = sort(scores,'descend');
     scores_sorted = scores(sort_idx,:);
+    % Defines number of ranked features to select using a combination of 
+    % the knee point or where the peak inthe first-order difference in 
+    % consecutive MRMR scores is, whichever is lower
     scores_sort_diff = diff(scores_sort(1:options.max_idx));
     [pks,pks_idxs] = findpeaks(abs(scores_sort_diff));
     [~,m] = max(pks);
@@ -171,15 +173,14 @@ else
         [~,n_vars_selected] = max(abs(scores_sort_diff));
     end
     vars_selected = vars_names(sort_idx(1:n_vars_selected));
-
-    % plot
+    % Plot
     if options.save_path ~= ""
         try
             if exist(options.save_path,'file')
                 delete(options.save_path)
             end
             figure('visible','off','position',[1,50,600,400]);
-            % sum
+            % Aggregated MRMR scores
             bar(scores_sorted(1:options.max_idx,:),'stacked');
             hold on
             plot(1:options.max_idx-1,abs(scores_sort_diff),"LineWidth",1.5,"Color","y","LineStyle",":")

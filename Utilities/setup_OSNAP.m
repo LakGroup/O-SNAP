@@ -13,9 +13,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function flag = setup_OSNAP()
     %% Check that OSNAP is in the path
     disp("Checking path...")
@@ -29,7 +31,7 @@ function flag = setup_OSNAP()
     top_in_search_path_OSNAP('pca','stats\stats\pca.m');
     savepath
     flag = 1;
-    %% start parallel pool
+    %% Start parallel pool
     p_pool = gcp('nocreate');
     if isempty(p_pool)
         parpool("Processes");
@@ -38,14 +40,14 @@ function flag = setup_OSNAP()
         parpool("Processes");
     end
 end
-
+%% Checks that the desired OSNAP path is at the top
 function check_for_OSNAP_path()
     if isempty(which('run_OSNAP_pipeline'))
         path_to_OSNAP = uigetdir(getenv('USERPROFILE'),"Select directory and subdirectories containing O-SNAP package");
         addpath(genpath(fullfile(path_to_OSNAP,'Utilities')));
     end
 end
-
+%% Checks that required toolboxes are included in MATLAB installation
 function check_for_toolboxes()
     toolbox_req = {...
         'Bioinformatics Toolbox',...

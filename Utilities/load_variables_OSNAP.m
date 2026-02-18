@@ -23,9 +23,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function data = load_variables_OSNAP(file_path, vars_to_load, options)
     arguments
         file_path string
@@ -33,6 +35,7 @@ function data = load_variables_OSNAP(file_path, vars_to_load, options)
         options.verbose logical = true
     end
     try
+        %% Check what variables are in file, and load if they exist
         [file_has_variables_OSNAP, vars_missing] = has_variables_OSNAP(file_path, vars_to_load, "verbose", options.verbose);
         if file_has_variables_OSNAP
             for i=1:length(vars_to_load)
@@ -45,6 +48,7 @@ function data = load_variables_OSNAP(file_path, vars_to_load, options)
                     throw(ME)
                 end
             end
+        %% Throw error if variables are missing
         else
             ME = MException('OSNAP:variable_not_in_file', ...
                         'File is missing ''%s''',string(join(vars_missing,''',''')));

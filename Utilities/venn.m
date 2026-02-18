@@ -33,7 +33,7 @@
 %         labelC [RGB triplet]
 %                Color of section labels.
 %
-% Output : A Veenn diagram will be drawn on a new figure.
+% Output : A Venn diagram will be drawn on a new figure.
 %          vennfig (optional): A handle to the figure.
 %
 function vennfig = venn(n,varargin)

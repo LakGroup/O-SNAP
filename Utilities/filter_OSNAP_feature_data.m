@@ -31,7 +31,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function feature_data_filtered = filter_OSNAP_feature_data(feature_data,groups,replicates,options)
@@ -41,13 +44,13 @@ arguments
     replicates cell
     options.remove_NaN logical = false
 end
-% filter for groups and replicates
+% Filter for groups and replicates
 fprintf("  Filtering feature data table for desired groups and replicates...\n")
 feature_data_filtered = preprocess_OSNAP_feature_data(feature_data,...
     "groups",groups,"replicates",replicates,...
     "normalize",false,"remove_NaN",options.remove_NaN,...
     "keep_rep_sample_info",true);
-% end execution if not enough groups after filtering
+% End execution if not enough groups after filtering
 if numel(unique(feature_data_filtered.group)) < 2
     ME = MException('SNAP:insufficient_group_number', ...
                     sprintf('Only one group found: %s',groups{1}));

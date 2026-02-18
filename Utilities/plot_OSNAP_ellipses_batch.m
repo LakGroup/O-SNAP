@@ -20,11 +20,11 @@
 %   groups: Cell array containing char array of the identifiers of the 
 %           phenotypes/cell states
 %           *ENSURE THAT EACH SAMPLE FILENAME CONTAINS EXACTLY ONE 
-%            IDENTIFIER FROM groups*
+%           IDENTIFIER FROM groups*
 %   replicates: Cell array containing char array of the identifiers of the 
 %               replicates.
 %               *ENSURE THAT EACH REPLCIATE IS STORED IN A SEPARATE FOLDER 
-%                PREFIXED BY "Rep"* 
+%               PREFIXED BY "Rep"* 
 % Options:
 %   n_processes: Number of cores to run parallel processes on 
 % -------------------------------------------------------------------------
@@ -34,7 +34,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function plot_OSNAP_ellipses_batch(feature_data,work_dir,groups,replicates,options)
@@ -45,11 +48,11 @@ arguments
     replicates cell
     options.n_processes double= 12;
 end
-%% get data
+%% Get radial density
 OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'radial_loc_density','radial_dbscan_cluster_density'});
-%% split data for parallel processing
+%% Split data for parallel processing
 [split_data, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list,options.n_processes,"shuffle",true);
-%% plot
+%% Plot using multiple workers
 max_radial_density = max(table2array(feature_data(:,contains(feature_data.Properties.VariableNames, 'radial_loc_density'))),[],'all');
 max_radial_hetero_density = max(table2array(feature_data(:,contains(feature_data.Properties.VariableNames, 'radial_dbscan_cluster_density'))),[],'all');
 parfor p=1:n_processes

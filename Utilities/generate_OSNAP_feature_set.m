@@ -19,16 +19,18 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function generate_OSNAP_feature_set(feature_IDs,feature_universe)
 arguments
     feature_IDs cell
     feature_universe struct
 end
     filepath = feature_universe.name+".xlsx";
-    %% clean feature universe if features are missing (i.e. from NaN filtering) from data
+    %% Clean feature universe if features are missing (i.e. from NaN filtering) from data
     feature_set_names = fieldnames(feature_universe.feature_set);
     n_feature_sets = length(feature_set_names);
     for s=1:n_feature_sets
@@ -40,7 +42,9 @@ end
             feature_universe.feature_set.(feature_set_names{s}) = feature_universe.feature_set.(feature_set_names{s})(idx_valid);
         end
     end
-    %%
+    %% Organize feature set information based on the feature set universe
+    % Includes features belonging to feature set and direction of how a
+    % feature increase aligns to a feature set description
     feature_set_names = fieldnames(feature_universe.feature_set);
     n_feature_sets = length(feature_set_names);
     feature_idxs = cell(n_feature_sets,1);
@@ -60,6 +64,7 @@ end
         data_feature_set{s,2} = {NaN};
         data_feature_set{s,3:max_n_features+2} = [feature_idxs{s} NaN(1,max_n_features - length(feature_idxs{s}))];
     end
+    %% Save results
     writetable(data_feature_set,filepath,"WriteVariableNames",false,"WriteMode","overwritesheet");
     update_FS(char(filepath))
 end

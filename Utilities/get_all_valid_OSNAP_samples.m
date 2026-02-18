@@ -28,20 +28,23 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function OSNAP_sample_file_list = get_all_valid_OSNAP_samples(work_dir,vars_to_load)
     if(exist(work_dir,"dir"))
+        %% Directory management
         folder_info = dir(work_dir);
         folder_info = folder_info([folder_info(:).isdir]);
         dir_names = {folder_info(3:end).name};
         valid_dirs_idx = cellfun(@(x) startsWith(x, "Rep"),dir_names,'uni',1);
         valid_dirs = dir_names(valid_dirs_idx);
         save_name = "OSNAP_sample_file_list.csv";
-        %% get preliminary information on valid files to load based on input
+        %% Get preliminary information on valid files to load based on input
         n_valid_files = zeros(1,numel(valid_dirs));
-        % get number of valid files to instantiate variables
+        % Get number of valid files to instantiate variables
         for i=1:numel(valid_dirs)
             valid_dir = string(fullfile(work_dir,valid_dirs(i),'OSNAP_nucleus_data'));
             folder_info = dir(valid_dir);
@@ -50,10 +53,11 @@ function OSNAP_sample_file_list = get_all_valid_OSNAP_samples(work_dir,vars_to_l
             valid_idx = endsWith(file_names_i,".mat");
             n_valid_files(i) = sum(valid_idx);
         end
-        % loop back through to add values
+        %% Prepare variables
         file_names = strings(sum(n_valid_files),1);
         rep_names = strings(sum(n_valid_files),1);
         n=1;
+        %% Obtain file names and add to table
         for i=1:numel(valid_dirs)
             valid_dir = string(fullfile(work_dir,valid_dirs(i),'OSNAP_nucleus_data'));
             folder_info = dir(valid_dir);
@@ -65,6 +69,7 @@ function OSNAP_sample_file_list = get_all_valid_OSNAP_samples(work_dir,vars_to_l
             n = n+n_valid_files(i);
         end
         [~,sample_names,~] = fileparts(file_names);
+        %% Create table
         OSNAP_sample_file_list = table(sample_names,rep_names,file_names);
         OSNAP_sample_file_list.Properties.VariableNames={'name','replicate','filepath'};
         OSNAP_sample_file_list = OSNAP_sample_file_list(find_contains_variable_OSNAP(OSNAP_sample_file_list,vars_to_load),:);

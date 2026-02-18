@@ -24,9 +24,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function plot_OSNAP_FSEA(T_FSEA,group_ctrl,group_case,save_path,options)
 arguments
     T_FSEA table
@@ -36,19 +38,23 @@ arguments
     options.alpha double = 0.05;
     options.q_show double =  0.5
 end
+%% Check whether to plot increasing or decreasing features
 up_flag = any(all([T_FSEA.ES > 0, T_FSEA.("NES_q-val") < options.q_show],2));
 down_flag = any(all([T_FSEA.ES < 0, T_FSEA.("NES_q-val") < options.q_show],2));
+%% Plot both increasing and decreasing features on a single figure
 if up_flag && down_flag
     figure('Position',[10 10 1210 300],'visible','off');
-    %% feature value increase
+    %% Feature value increase
     subplot(1,2,1)
     plot_OSNAP_FSEA_axis(T_FSEA,group_case,"case_greater_than_ctrl",true,"alpha",options.alpha);
-    %% feature value decrease
+    %% Feature value decrease
     subplot(1,2,2)
     plot_OSNAP_FSEA_axis(T_FSEA,group_ctrl,"case_greater_than_ctrl",false,"alpha",options.alpha);
+%% Plot only increasing features
 elseif up_flag
     figure('Position',[10 10 610 300],'visible','off');
     plot_OSNAP_FSEA_axis(T_FSEA,group_case,"case_greater_than_ctrl",true,"alpha",options.alpha);
+%% Plot only decreasing features
 elseif down_flag
     figure('Position',[10 10 610 300],'visible','off');
     plot_OSNAP_FSEA_axis(T_FSEA,group_ctrl,"case_greater_than_ctrl",false,"alpha",options.alpha);
@@ -56,11 +62,12 @@ else
     return
 end
 % sgtitle(replace(feature_universe_name,"_"," "))
-%% save
+%% Save
 savefig(save_path +".fig");
 saveas(gcf,save_path +".png");
 end
 
+%% Plot feature set enrichment
 function plot_OSNAP_FSEA_axis(T_FSEA,group,options)
 arguments
     T_FSEA table
@@ -69,6 +76,7 @@ arguments
     options.alpha double = 0.05;
     options.p_show double =  0.5;
 end
+%% Determine which case to plot
 if options.case_greater_than_ctrl 
     T_FSEA_filt = T_FSEA(all([T_FSEA.ES > 0, T_FSEA.("NES_q-val") < options.p_show],2),:);
     T_FSEA_filt = sortrows(T_FSEA_filt,"NES","descend");
@@ -76,20 +84,27 @@ else
     T_FSEA_filt = T_FSEA(all([T_FSEA.ES < 0, T_FSEA.("NES_q-val") < options.p_show],2),:);
     T_FSEA_filt = sortrows(T_FSEA_filt,"NES","ascend");
 end
+%% Organize data
+% Number of feature sets to plot
 n_feature_families = size(T_FSEA_filt,1);
-x = flip(1:n_feature_families);
-y = abs(T_FSEA_filt.NES)';
+% Normalized enrichment score
+x = abs(T_FSEA_filt.NES)';
+% Ranking of feature set (along y-axis)
+y = flip(1:n_feature_families);
+% Size of marker corresponds to feature value size
 s = T_FSEA_filt{:,"FS size"}'*10+10;
+% Color of marker corresponds to the significance
 c = T_FSEA_filt.("NES_q-val");
 colormap(flipud(jet))
+%% Plot data
 for i=1:n_feature_families
-    l = plot([0,y(i)],[x(i) x(i)],"--k");
+    l = plot([0,x(i)],[y(i) y(i)],"--k");
     if c(i) < options.alpha
         set(l,"LineWidth", 2);
     end
     hold on;
 end
-scatter(y,x,s,c,'filled');
+scatter(x,y,s,c,'filled');
 hold on
 cbar = colorbar();
 yticks(1:n_feature_families);

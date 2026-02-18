@@ -24,25 +24,28 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function p = generate_OSNAP_ellipses(major_axis, minor_axis, inc)
     inc_t = 30;
-    t = 2*pi/inc_t:2*pi/inc_t:2*pi; % parametric variable for ellipse
-    rad = inc:inc:1; % size of radius
+    t = 2*pi/inc_t:2*pi/inc_t:2*pi; % Parametric variable for ellipse
+    rad = inc:inc:1; % Size of radius
     x = (major_axis/2)*cos(t);
     y = (minor_axis/2)*sin(t);
-    p = repmat(polyshape,numel(rad),1);
+    p = repmat(polyshape,numel(rad),1); % Empty array of ellipse polyshapes
     for r=1:numel(rad)
-        % define outer boundary
+        % Define outer boundary
         x_out = rad(r)*x;
         y_out = rad(r)*y;
-        % generate ring
+        % Fenerate ring
         if r == 1
             p(r) = polyshape(x_out,y_out);
         else
-            % define inner boundary
+            % Define inner boundary
             x_in = (rad(r)-inc)*x;
             y_in = (rad(r)-inc)*y;
             p(r) = polyshape({x_in, x_out},{y_in,y_out});

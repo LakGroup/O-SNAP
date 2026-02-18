@@ -71,9 +71,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function classifier = run_OSNAP_classification(train_data,options)
 arguments
     train_data table
@@ -84,6 +86,7 @@ arguments
     options.k double = 5;
     options.verbose logical = false
 end
+%% Setup
 valid_model_types = ["tree_fine","tree_medium","tree_coarse",...
     "discriminant_linear","discriminant_quadratic",...
     "logistic_regression_binary_glm",...
@@ -98,9 +101,7 @@ valid_model_types = ["tree_fine","tree_medium","tree_coarse",...
 assert(ismember(options.model_type,valid_model_types),...
     'SNAP:invalid_classification_model',...
     'Invalid model type: %s, choose from following valid models:\ntree_fine,tree_medium,tree_coarse,\ndiscriminant_linear,discriminant_quadratic,\nlogistic_regression_binary_glm,\nlogistic_regression_efficient,svm_efficient_linear,\nnaive_bayes_gaussian,naive_bayes_kernel,\nsvm_linear,svm_quadratic,\nsvm_gaussian_fine,svm_gaussian_medium,svm_gaussian_coarse,\nknn_fine,knn_medium,knn_coarse,knn_cosine,knn_cubic,knn_weighted,\nensemble_boosted_trees,ensemble_bagged_trees,ensemble_subspace_discriminant,ensemble_rus_boosted_trees,\nNN_narrow,NN_medium,NN_wide,NN_bilayered,NN_trilayered,\nkernel_svm,kernel_logistic_regression',options.model_type);
-
 classifier = struct();
-
 train_data = preprocess_OSNAP_feature_data(train_data,'normalize',false);
 
 %% Get class names (groups) and predictors (preprocessed feature data)

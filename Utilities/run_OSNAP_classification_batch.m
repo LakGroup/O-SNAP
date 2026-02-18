@@ -36,9 +36,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%
 function classifiers = run_OSNAP_classification_batch(train_data,options)
 arguments
     train_data table
@@ -49,6 +51,7 @@ arguments
     options.n_processes double = 12
     options.verbose logical = false
 end
+%% Setup
 groups = unique(train_data.group);
 model_types = [...
     "tree_fine",...
@@ -85,7 +88,6 @@ model_types = [...
 if numel(groups) == 2
     model_types = [model_types "logistic_regression_binary_glm"];
 end
-
 n_models_per_type = options.n_models_per_type;
 pca_result = options.pca_result;
 vars_selected = options.vars_selected;
@@ -93,7 +95,7 @@ test_data = options.test_data;
 verbose = options.verbose;
 [model_types_p,n_processes] = split_data_to_n_OSNAP(model_types,options.n_processes,"shuffle",false);
 classifiers_p = cell(1,n_processes);
-% generate classifiers of given model types
+%% Generate classifiers of given model types
 for p=1:n_processes
     warning('off','all')
     n_model_types = numel(model_types_p{p});
@@ -122,8 +124,7 @@ for p=1:n_processes
     warning('on','all')
 end
 classifiers = [classifiers_p{:}];
-
-% filter models that threw errors
+%% Filter models that threw errors
 valid_idx = true(size(classifiers,2),1);
 for j=1:numel(model_types)
     for i=1:options.n_models_per_type

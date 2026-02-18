@@ -27,7 +27,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function extract_OSNAP_voronoi_cluster_features(filepath,area_threshold_arr,min_number_of_localizations,options)
@@ -38,6 +41,7 @@ arguments
     options.overwrite logical = false;
 end
 
+% Return if desired variables already present
 data_vars = {...
     'area_thresholds',...
     'min_number_of_localizations',...
@@ -46,24 +50,25 @@ data_vars = {...
     'voronoi_cluster_radius',...
     'voronoi_cluster_density',...
     'voronoi_cluster_gyration_radius'};
-
 if has_variables_OSNAP(filepath,data_vars) && ~options.overwrite
     return
 end
 
-n_area_threshold = numel(area_threshold_arr);
-
+%% Load data
 data = load(filepath);
 data.area_thresholds = area_threshold_arr;
 data.min_number_of_localizations = min_number_of_localizations;
+
+%% Prepare fields to add information
+n_area_threshold = numel(area_threshold_arr);
 data.voronoi_clusters = zeros(length(data.voronoi_areas_all),n_area_threshold);
 data.voronoi_cluster_n_locs = cell(n_area_threshold,1);
 data.voronoi_cluster_radius = cell(n_area_threshold,1);
 data.voronoi_cluster_density = cell(n_area_threshold,1);
 data.voronoi_cluster_gyration_radius = cell(n_area_threshold,1);
 
+%% For each area threshold, perform Voronoi clustering and calculate properties
 for k=1:n_area_threshold
-    %% calculate voronoi cluster for given area threshold
     keep_points = data.voronoi_areas_all <= area_threshold_arr(k);
     used_points = zeros(1,numel(keep_points));
     idx = find(keep_points);
@@ -72,13 +77,13 @@ for k=1:n_area_threshold
         if ~used_points(idx(i))
             neighbors_idx = data.voronoi_neighbors(:,idx(i));
             neighbors_idx = neighbors_idx(~isnan(neighbors_idx));
-            % get the neighbors with area below the area threshold surrounding the seed-point
+            % Get the neighbors with area below the area threshold surrounding the seed-point
             current_seed = neighbors_idx(keep_points(neighbors_idx));
             current_seed = current_seed(keep_points(current_seed));
             if ~isempty(current_seed)
                 size_one = 0;
                 size_two = length(current_seed);
-                % find all connected neighbors above threshold
+                % Find all connected neighbors above threshold
                 while size_two ~= size_one
                     neighbors_current_seed = data.voronoi_neighbors(:,current_seed);
                     neighbors_current_seed = neighbors_current_seed(~isnan(neighbors_current_seed));
@@ -102,7 +107,7 @@ for k=1:n_area_threshold
     %%
     clearvars keep_points used_points idx_clustered idx
 
-    %% characterize clusters
+    %% Characterize clusters
     n_cluster = max(data.voronoi_clusters(:,k));
     if n_cluster > 0
         points = [data.x data.y data.voronoi_areas_all data.voronoi_clusters(:,k)];
@@ -127,6 +132,7 @@ for k=1:n_area_threshold
     end
 end
 
+%% Save results to sample file
 save_OSNAP_sample(filepath, data);
 
 end

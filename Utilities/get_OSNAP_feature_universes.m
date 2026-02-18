@@ -1,7 +1,15 @@
 % -------------------------------------------------------------------------
 % get_OSNAP_feature_universes.m
 % -------------------------------------------------------------------------
-% 
+% A function that enables the user to define the feature universes, and if
+% desired, create and call multiple "get_universe_...()". Here, one example
+% of a feature universe, "universe_1" is presented.
+%
+% In designing a feature universe, ensure that the feature set name
+% indicates a direction of change such that feature values increasing or
+% decreasing between group 1 and 2 contributes or detracts from the 
+% described set change. The value of the "direction" of 1 or -1 indicates 
+% whether a given feature's increase aligns or anti-aligns with the change.
 %
 % Example on how to use it:
 %   feature_universes = get_OSNAP_feature_universes() - Gives the default
@@ -34,9 +42,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function feature_universes = get_OSNAP_feature_universes(feature_universe_names)
 arguments
     feature_universe_names string = ["universe_1"];
@@ -49,11 +59,11 @@ for i=1:length(feature_universe_names)
     feature_universes{i}.direction = structfun(@(x) cell2mat(x(:,2)), universe, 'uni', 0);
 end
 end
-% the direction (whether it is for or against the direction listed in the
+% The direction (whether it is for or against the direction listed in the
 % feature universe) is indicated with +/-1 where +1 indicates an increase
 % in the feature value indicates FOR while -1 means an increase in the 
 % feature value goes AGAINST the change described by the feature set
-%% feature set definition
+%% Feature set definition
 function universe = get_universe_1()
 universe.larger_nucleus = {...
     "major_axis",1;...

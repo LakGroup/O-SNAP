@@ -32,9 +32,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function [train_idx, test_idx, split_method] = generate_OSNAP_train_test_sets(feature_data,options)
 arguments
     feature_data table
@@ -43,8 +45,9 @@ arguments
     options.proportion double = 0.2 
 end
     switch options.split_method
+        % Replicate method
         case "replicate"
-            % check for proper number of replicates
+            % Check for proper number of replicates
             bio_reps_by_group=arrayfun(@(x) unique(feature_data{strcmp(feature_data.group,x),"biological_replicate"}), unique(feature_data.group),'uni',0);
             bio_reps_all = bio_reps_by_group{1};
             for i=2:numel(bio_reps_by_group)
@@ -59,12 +62,16 @@ end
                 [train_idx, test_idx] = split_for_k_fold(feature_data,options.k);
                 split_method = "k-fold";
             end
+        % Boootstrap method
         case "bootstrap"
             [train_idx, test_idx] = split_for_bootstrap(feature_data,options.k,options.proportion);
             split_method = "bootstrap";
+        % K-fold method
         case "k-fold"
             [train_idx, test_idx] = split_for_k_fold(feature_data,options.k);
             split_method = "k-fold";
+        % Does not create any test data, returns full data set as training
+        % data
         case "none"
             train_idx = {1:size(feature_data,1)};
             test_idx = [];
@@ -75,6 +82,10 @@ end
     end
 end
 
+%% Helper functions
+% Splits data based on the replicates assigned
+% If not enough replicates present (<4), return a warning and default
+% to the "k-fold" split method
 function [train_idx, test_idx] = split_for_replicates(data)
     [bio_reps,~,idx] = unique(data.biological_replicate);
     n_reps = numel(bio_reps);
@@ -85,26 +96,9 @@ function [train_idx, test_idx] = split_for_replicates(data)
         train_idx{i} = find(i~=idx);
     end
 end
-
-function [train_idx, test_idx] = split_for_k_fold(data,k)
-    n_samps = size(data,1);
-    n_groups = numel(unique(data.group));
-    all_groups_present = false;
-    % split data until it is ensured that there are multiple groups in each division
-    tries = 1;
-    while ~all_groups_present && tries < 30
-        split_idx_components = split_data_to_n_OSNAP(1:n_samps,k);
-        all_groups_present = all(cellfun(@(x) numel(unique(data(x,"group"))),split_idx_components,'uni',1) == n_groups);
-        tries = tries + 1;
-    end
-    test_idx = cell(1,k);
-    train_idx = cell(1,k);
-    for i=1:k
-        test_idx{i} = split_idx_components{i};
-        train_idx{i} = [split_idx_components{(1:k)~=i}];
-    end
-end
-
+% Uses bootstrap method where batches are generated with
+% replacement (ie. samples may reappear in test set across batch
+% generation)
 function [train_idx, test_idx] = split_for_bootstrap(data,k,proportion)
     n_samps = size(data,1);
     n_groups = numel(unique(data.group));
@@ -118,7 +112,7 @@ function [train_idx, test_idx] = split_for_bootstrap(data,k,proportion)
     train_idx = cell(1,k);
     for i=1:k
         all_groups_present = false;
-        % split data until it is ensured that there are multiple groups in each division
+        % Split data until it is ensured that there are multiple groups in each division
         tries = 1;
         while ~all_groups_present && tries < 30
             idx = randperm(n_samps);
@@ -130,5 +124,29 @@ function [train_idx, test_idx] = split_for_bootstrap(data,k,proportion)
         end
         test_idx{i} = idx_test;
         train_idx{i} = idx_train;
+    end
+end
+% Uses k-fold method where K batches are generated and samples are divided 
+% into K subsets such that each subset is used as a different test set each 
+% time, minimizing a sample reappearing in  the test set across batches. 
+% However, if the sample size or  proportion are such that it is difficult 
+% to form K batches with completely unique test sets, the restriction 
+% loosens to allow for samples to reappear to generate sufficient test data
+function [train_idx, test_idx] = split_for_k_fold(data,k)
+    n_samps = size(data,1);
+    n_groups = numel(unique(data.group));
+    all_groups_present = false;
+    % Split data until it is ensured that there are multiple groups in each division
+    tries = 1;
+    while ~all_groups_present && tries < 30
+        split_idx_components = split_data_to_n_OSNAP(1:n_samps,k);
+        all_groups_present = all(cellfun(@(x) numel(unique(data(x,"group"))),split_idx_components,'uni',1) == n_groups);
+        tries = tries + 1;
+    end
+    test_idx = cell(1,k);
+    train_idx = cell(1,k);
+    for i=1:k
+        test_idx{i} = split_idx_components{i};
+        train_idx{i} = [split_idx_components{(1:k)~=i}];
     end
 end

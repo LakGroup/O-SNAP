@@ -58,7 +58,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 function extract_OSNAP_features_samples(work_dir, groups, replicates, options)
 arguments
@@ -91,11 +94,11 @@ plot_flag = options.plot;
 overwrite = options.overwrite;
 warning('off','all')
 
-%% load data and split for processing 
+%% Load data and split for processing 
 OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'},'filter',options.filter);
 
-%% calculate voronoi density
-% smaller n_processes for voronoi density due to high memory demand
+%% Calculate voronoi density
+% Smaller n_processes for voronoi density due to high memory demand
 n_processes = ceil(options.n_processes/3);
 data_vars = {...
             'voronoi_areas_all',...
@@ -104,6 +107,7 @@ data_vars = {...
             'reduced_log_voronoi_density',...
             'faces',...
             'vertices'};
+% Identify files to process
 idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
 [split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
 fprintf("      Calculating Voronoi densities...\n");
@@ -137,7 +141,7 @@ if any(cellfun('length',split_file_list))
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
 
-%% perform morphometric, dbscan clustering, and radial analysis
+%% Perform morphometric, dbscan clustering, and radial analysis
 n_processes = options.n_processes;
 data_vars = {'nucleus_radius',...
             'locs_number',...
@@ -178,9 +182,10 @@ data_vars = {'nucleus_radius',...
             'periphery_loc_density',...
             'interior_cluster_density',...
             'periphery_cluster_density'};
+% Identify files to process
 idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
 [split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
-%% calculate density threshold
+%% Calculate density threshold
 if any(cellfun('length',split_file_list))
     eps = options.eps;
     min_num = options.min_num;
@@ -204,6 +209,7 @@ if any(cellfun('length',split_file_list))
                 samps_to_remove = [samps_to_remove s];
             end
         end
+        % Remove samples that give errors
         density_data{p} = vertcat(density_data{p}{:});
         split_file_list{p}(samps_to_remove,:) = [];
     end
@@ -238,7 +244,7 @@ if any(cellfun('length',split_file_list))
     end
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-%% perform voronoi clustering analysis
+%% Perform voronoi clustering analysis
 data_vars = {...
     'area_thresholds',...
     'min_number_of_localizations',...
@@ -247,6 +253,7 @@ data_vars = {...
     'voronoi_cluster_radius',...
     'voronoi_cluster_density',...
     'voronoi_cluster_gyration_radius'};
+% Identify files to process
 idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
 [split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
 fprintf("      Performing Voronoi Clustering Analysis...\n")
@@ -274,7 +281,7 @@ if any(cellfun('length',split_file_list))
     end
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-%%
+%% Conclude output
 fprintf("  RUN END: %s\n",datetime);
 fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
 warning('on','all')

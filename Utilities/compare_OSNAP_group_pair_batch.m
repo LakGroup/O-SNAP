@@ -30,7 +30,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function feature_comparisons = compare_OSNAP_group_pair_batch(feature_data,options)
@@ -41,15 +44,17 @@ arguments
     options.save_path string = "";
     options.remove_outliers logical = false;
 end
-%% setup
+%% Setup
 groups = unique(feature_data.group);
 group_pairs = nchoosek(groups,2);
 n_group_pairs = size(group_pairs,1);
 feature_comparisons = cell(1,n_group_pairs);
-%% compare each combo of group pairs
+%% Compare each combination of group pairs
 for i=1:n_group_pairs
     feature_comparisons{i}.groups = group_pairs(i,:);
-    feature_comparisons{i}.feature_table = compare_OSNAP_group_pair(feature_data,group_pairs(i,1),group_pairs(i,2),...
+    feature_comparisons{i}.feature_table = compare_OSNAP_group_pair(...
+        feature_data,...
+        group_pairs(i,1),group_pairs(i,2),...
         "alpha",options.alpha,...
         "fold_change_threshold",options.fold_change_threshold,...
         "save_path",options.save_path, ...

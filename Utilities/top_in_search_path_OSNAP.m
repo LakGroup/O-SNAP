@@ -24,7 +24,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function top_in_search_path_OSNAP(function_name,path_substring)
@@ -32,10 +35,13 @@ arguments
     function_name string
     path_substring string = []
 end
+    %% Find all paths of the same function name
     filepaths = which(function_name,'-all');
+    %% Stop if there is only one version
     if contains(filepaths{1},path_substring)
         return
     end
+    %% Remove and add back the desired file path so that it is prioritized
     for i=2:numel(filepaths)
         if contains(filepaths{i},path_substring)
             dir_top = fileparts(filepaths{i});

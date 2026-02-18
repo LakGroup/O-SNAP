@@ -178,7 +178,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 function OSNAP_data = run_OSNAP_pipeline(root_dir,analysis_name,groups,replicates,options)
 arguments
@@ -222,7 +225,7 @@ arguments
     options.save_if_error = 1;
     options.check_overwrite = 0
 end
-%% prepare O-SNAP run
+%% Setup O-SNAP run
 work_dir = fullfile(root_dir,analysis_name);
 if options.suffix == ""
     save_analysis_path = fullfile(work_dir,analysis_name+".mat");
@@ -238,10 +241,10 @@ fprintf("   GROUPS: %s\n", string(join(groups(:),', ')))
 fprintf("   REPS: %s\n", string(join(replicates(:),', ')))
 warning('off','all');
 close('all');
-
 rng('default');
-
+%% Check which analyses to run depending on the run options
 try
+    % Load existing data
     if exist(save_analysis_path,"file")
         starttime_step = tic;
         fprintf("  Loading data from %s...\n",save_analysis_path)
@@ -256,28 +259,31 @@ try
         OSNAP_data.analysis_name = analysis_name;
         OSNAP_data.groups = unique(groups);
         OSNAP_data.replicates = unique(replicates);
-        % generate O-SNAP feature table data if not loaded
+        % Generate O-SNAP feature table data if not loaded
         if isfield(OSNAP_data,'feature_data')
             feature_data = OSNAP_data.feature_data;
         else
             options.run_generate_table = 1;
         end
-        % run feature comparisons if not loaded
+        % Run feature comparisons if not loaded
         if ~isfield(OSNAP_data,'feature_comparisons')
             options.run_comparison = 1;
         end
-        % run steps prior to classification
+        % Run steps prior to classification
         if options.run_classification_batch
+            % Batch generation
             if ~all(isfield(OSNAP_data,{'train_idxs','test_idxs'}))
                 options.run_generate_batches = 1;
             elseif isempty(OSNAP_data.train_idxs) || isempty(OSNAP_data.test_idxs)
                 options.run_generate_batches = 1;
             end
+            % Feature selection
             if ~all(isfield(OSNAP_data,{'vars_select_result_batch','vars_selected_batch'}))
                 options.run_feature_selection = 1;
             elseif isempty(OSNAP_data.vars_select_result_batch) || isempty(OSNAP_data.vars_selected_batch)
                 options.run_feature_selection = 1;
             end
+            % PCA
             if ~isfield(OSNAP_data,'pca_result_batch_each')
                 options.run_PCA = 1;
             elseif isempty(OSNAP_data.pca_result_batch_each)
@@ -303,14 +309,13 @@ catch ME
         handle_OSNAP_error(ME,save_analysis_path,OSNAP_data,"save",options.save_if_error);
     end
 end
-
+%% Get metadata for the run
 OSNAP_data.date = datetime;
 OSNAP_data.log_file = log_file;
 OSNAP_data.starttime = tic;
 OSNAP_data.groups = unique(groups);
 OSNAP_data.replicates = unique(replicates);
-
-%% extract O-SNAP features per sample (nucleus)
+%% Extract O-SNAP features per sample (nucleus)
 try
     if options.run_extract_features
         fprintf("  Generating features from scratch...\n")
@@ -323,8 +328,7 @@ catch ME
     fprintf("%s\n",getReport(ME));
     return
 end
-
-%% generate O-SNAP feature table data
+%% Generate O-SNAP feature table data
 try
     if options.run_generate_table
         fprintf("  Creating table from generated features...\n");
@@ -338,8 +342,7 @@ catch ME
     handle_OSNAP_error(ME,save_analysis_path,OSNAP_data,"save",options.save_if_error);
     return
 end
-
-%% filter data
+%% Filter data
 if exist("feature_data","var")
     try
         feature_data_filtered = filter_OSNAP_feature_data(feature_data,groups,replicates);
@@ -353,8 +356,7 @@ else
     fprintf("No feature data, ending run...\n");
     return
 end
-
-%% violin plots
+%% Violin plots
 try
     if options.run_plot_violin
         fprintf("  Plotting violin plots...\n")
@@ -366,8 +368,7 @@ catch ME
     handle_OSNAP_error(ME,save_analysis_path,OSNAP_data,"save",options.save_if_error);
     return
 end
-
-%% compare all groups to each other
+%% Compare all groups to each other
 try
     if options.run_comparison || (options.run_venn && ~isfield(OSNAP_data,"feature_comparisons"))
         fprintf("  Comparing features...\n")
@@ -393,7 +394,7 @@ if isfield(OSNAP_data,"feature_comparisons")
         fprintf("DOWN: %3.0f\n",sum(all([OSNAP_data.feature_comparisons{i}.feature_table{:,5}<-1, OSNAP_data.feature_comparisons{i}.feature_table{:,7} < 0.05],2)))
     end
 end
-%% venn diagram
+%% Venn diagram
 try
     if options.run_venn
         fprintf("  Creating venn diagrams...\n")
@@ -405,10 +406,10 @@ catch ME
     handle_OSNAP_error(ME,save_analysis_path,OSNAP_data,"save",options.save_if_error);
     return
 end
-%% run classification steps if needed
+%% Run classification steps if needed
 feature_data_filtered = filter_OSNAP_feature_data(feature_data_filtered,groups,replicates,...
     'remove_NaN',true);
-% generate train and test batches
+%% Generate train and test batches
 try
     if options.run_generate_batches
         fprintf("  Creating train/test batches...\n")
@@ -425,17 +426,17 @@ catch ME
     handle_OSNAP_error(ME,save_analysis_path,OSNAP_data,"save",options.save_if_error);
     return
 end
-% feature selection
+%% Feature selection
 try
     if options.run_feature_selection
-        % clear variable for new run
+        % Clear variable for new run
         if isfield(OSNAP_data,'vars_select_result_batch')
             OSNAP_data = rmfield(OSNAP_data,"vars_select_result_batch");
         end
         fprintf("  Selecting features (batch-wise)...\n")
         starttime_step = tic;
         save_path = fullfile(work_dir, join(['feature_selection_batch',groups],'_'));
-        % split batches for parallel
+        % Split batches for parallel
         train_idx_p = split_data_to_n_OSNAP(OSNAP_data.train_idxs,options.n_processes,"shuffle",false);
         n_processes = numel(train_idx_p);
         feature_data_p = cell(1,n_processes);
@@ -450,10 +451,10 @@ try
                 [~, var_scores_p{p}{b}] = fscmrmr(train_data(:,vartype('numeric')),train_data.group);
             end
         end
-        % bring together batches from each parallel process
+        % Bring together batches from each parallel process
         scores = [var_scores_p{:}];
         scores = vertcat(scores{:})';
-        % store values
+        % Store values
         [OSNAP_data.vars_select_result_batch,OSNAP_data.vars_selected_batch] = select_OSNAP_features( ...
             scores, ...
             feature_data_filtered(:,vartype('numeric')).Properties.VariableNames, ...
@@ -481,7 +482,7 @@ try
         end
         fprintf("  Performing PCA (batch-wise)...\n")
         starttime_step = tic;
-        % split batches for parallel
+        % Split batches for parallel
         num_components_explained = options.num_components_explained;
         train_idx_p = split_data_to_n_OSNAP(OSNAP_data.train_idxs,options.n_processes,"shuffle",false);
         n_processes = numel(train_idx_p);
@@ -492,7 +493,7 @@ try
                 feature_data_p{p} = feature_data_filtered;
             end
         end
-        % pca based on feature selection by EACH batch
+        % PCA based on feature selection by EACH batch
         if isfield(OSNAP_data,'vars_select_result_batch')
             vars_selected_b = split_data_to_n_OSNAP(arrayfun(@(x) OSNAP_data.vars_selected_batch.Properties.RowNames(logical(OSNAP_data.vars_selected_batch{:,x})), 1:n_batch,'uni',0),n_processes,"shuffle",false);
         else
@@ -510,7 +511,7 @@ try
             end
         end
         OSNAP_data.pca_result_batch_each = [pca_result_b{:}];
-        % pca based on feature selection on ALL batches
+        % PCA based on feature selection on ALL batches
         if isfield(OSNAP_data,'vars_select_result_batch')
             vars_selected_b = split_data_to_n_OSNAP(repmat({OSNAP_data.vars_selected_batch.Properties.RowNames(logical(OSNAP_data.vars_selected_batch{:,end}))},1,n_batch),n_processes,"shuffle",false);
         else
@@ -533,7 +534,7 @@ try
 catch ME
     handle_OSNAP_error(ME,save_analysis_path,OSNAP_data,"save",options.save_if_error);
 end
-%% run classification batch-wise
+%% Run classification batch-wise
 try
     if options.run_classification_batch
         n_models_per_type = options.n_models_per_type;
@@ -541,9 +542,9 @@ try
         starttime_step = tic;
         % cell_dims = [numel(OSNAP_data.train_idxs),numel(OSNAP_data.vars_selected_batch),numel(OSNAP_data.pca_result)];
         % assert(all(cell_dims == cell_dims(1)),'OSNAP:classification_length_mismatch','number of batches not consistent with classification structures (feature selection, PCA)')
-        % split batches for parallel
+        % Split batches for parallel
         n_batch = numel(OSNAP_data.train_idxs);
-        % classification based on feature selection by EACH batch
+        % Classification based on feature selection by EACH batch
         if isfield(OSNAP_data,'vars_select_result_batch')
             vars_selected_b = arrayfun(@(x) OSNAP_data.vars_selected_batch.Properties.RowNames(logical(OSNAP_data.vars_selected_batch{:,x}))',1:n_batch,'uni',0);
         else
@@ -571,14 +572,13 @@ try
                 'verbose',0);
         end
         OSNAP_data.classifiers_batch_each = classifiers;
-        % plot figures
+        % Plot figures
         if options.save
             OSNAP_data.classification_summary_batch_each = evaluate_OSNAP_classifiers(OSNAP_data.classifiers_batch_each,"save_path",fullfile(work_dir,"batch_each"));
         else
             OSNAP_data.classification_summary_batch_each = evaluate_OSNAP_classifiers(OSNAP_data.classifiers_batch_each);
         end
-
-        % classification based on feature selection on ALL batches
+        % Classification based on feature selection on ALL batches
         if isfield(OSNAP_data,'vars_select_result_batch')
             vars_selected_b = OSNAP_data.vars_selected_batch.Properties.RowNames(logical(OSNAP_data.vars_selected_batch{:,end}))';
         else
@@ -625,8 +625,7 @@ if isfield(OSNAP_data,"classification_summary_batch_all")
     fprintf('    Classification summary (batch - aggregated feature selection):\n');
     head(OSNAP_data.classification_summary_batch_all,3)
 end
-
-%% run classification on whole data
+%% Run classification on whole data
 try
     if options.run_classification_all
         n_models_per_type = options.n_models_per_type;
@@ -634,8 +633,8 @@ try
         starttime_step = tic;
         % cell_dims = [numel(OSNAP_data.train_idxs),numel(OSNAP_data.vars_selected_batch),numel(OSNAP_data.pca_result)];
         % assert(all(cell_dims == cell_dims(1)),'OSNAP:classification_length_mismatch','number of batches not consistent with classification structures (feature selection, PCA)')
-        % split batches for parallel
-        % variable selection
+        % Split batches for parallel
+        % Variable selection
         save_path = fullfile(work_dir, join(['feature_selection_all',groups],'_'));
         if options.suffix ~= ""
             save_path = string(join([save_path options.suffix],'_'));
@@ -646,7 +645,7 @@ try
         for i=1:numel(OSNAP_data.vars_selected_all)
             fprintf("        - %s\n", OSNAP_data.vars_selected_all{i})
         end
-        % pca
+        % PCA
         save_path = fullfile(work_dir, string(join(['PCA',groups],'_')));
         if options.suffix ~= ""
             save_path = string(join([save_path options.suffix],'_'));
@@ -655,7 +654,7 @@ try
             "vars_sel",OSNAP_data.vars_selected_all,...
             "save_path",save_path,...
             "num_components_explained",options.num_components_explained);
-        % classification
+        % Classification
         classifiers =...
             run_OSNAP_classification_batch(...
             feature_data_filtered,...
@@ -678,7 +677,7 @@ if isfield(OSNAP_data,"classification_summary_all")
     fprintf('    Classification summary (batch - aggregated feature selection):\n');
     head(OSNAP_data.classification_summary_all,3)
 end
-%% plot radial
+%% Plot radial
 try
     if options.run_plot_radial
         fprintf("  Plotting radial densities...\n")
@@ -701,12 +700,12 @@ catch ME
     handle_OSNAP_error(ME,save_analysis_path,OSNAP_data,"save",options.save_if_error);
     return
 end
-
-% Finish run
+%% Finish run
 OSNAP_data.options = options;
 conclude_OSNAP_run(save_analysis_path,OSNAP_data,"save",options.save)
 end
 
+%% Performs wrap up tasks to end the OSNAP run
 function conclude_OSNAP_run(save_path,data,options)
 arguments
     save_path string
@@ -730,7 +729,7 @@ set(findall(groot,'Type','Figure'),'visible','on');
 diary off
 return
 end
-
+%% Handles OSNAP errors
 function handle_OSNAP_error(ME,filepath,data,options)
 arguments
     ME
@@ -758,7 +757,7 @@ if options.stop_run
     conclude_OSNAP_run(filepath,data,"save",false);
 end
 end
-
+%% Save OSNAP run
 function save_OSNAP_run(save_path,data,options)
 arguments
     save_path string
@@ -766,11 +765,11 @@ arguments
     options.check_overwrite logical = 0
     options.append logical = 1
 end
-% if structure is empty, return
+% If structure is empty, return
 if isempty(fieldnames(data))
     return
 end
-% append option
+% Append option
 if options.append
     if exist(save_path,'file')
         save(save_path,'-struct','data','-append');
@@ -778,14 +777,14 @@ if options.append
         fprintf("Warning: File does not exist, creating file: "+save_path)
         save(save_path,'-struct','data');
     end
-    % overwrite file
+    % Overwrite file
 elseif options.check_overwrite
     if exist(save_path,'file')
         overwrite_dialog();
     else
         save(save_path,'-struct','data');
     end
-    % overwrite file with no check
+    % Overwrite file with no check
 else
     save(save_path,'-struct','data');
 end

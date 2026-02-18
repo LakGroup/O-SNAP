@@ -47,7 +47,10 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
 function data = generate_OSNAP_voronoi_segmentations(filepath, options)
@@ -68,33 +71,33 @@ vor_data_vars = {...
     'faces',...
     'vertices'};
 
-% if overwrite is on, rerun the calculation
+% If overwrite is on, rerun the calculation
 if options.overwrite
     data = calculate_voronoi_density(filepath);
     if options.plot
         plot_voronoi_map(filepath,data,options)
     end
-% return if all variables already in file
+% Return if all variables already in file
 elseif has_variables_OSNAP(filepath,vor_data_vars) && ~options.overwrite
-    % load data and plot if plot flag
+    % Load data and plot if plot flag
     if options.plot
         if ~exist('data','var')
             data = load(filepath);
         end
         plot_voronoi_map(filepath,data,options)
     end
-% if plot but no data is present in the file, calculate densities and plot
+% If plot but no data is present in the file, calculate densities and plot
 elseif options.plot
     data = calculate_voronoi_density(filepath);
     plot_voronoi_map(filepath,data,options)
 end
 end
 
-%% helper functions
-% calculate voronoi density values and save to file
+%% Helper functions
+% Calculate voronoi density values and save to file
 function data = calculate_voronoi_density(filepath)
     data = load(filepath);
-    % calculate voronoi segmentation
+    % Calculate voronoi segmentation
     dt = delaunayTriangulation(data.x,data.y);
     [vertices,connections] = voronoiDiagram(dt);
     voronoi_areas_all = nan(numel(connections),1);
@@ -104,7 +107,7 @@ function data = calculate_voronoi_density(filepath)
             voronoi_areas_all(i) = polyarea(tmp(:,1),tmp(:,2));
         end
     end
-    % clean data (boundary points that cause outliers and NaN values)
+    % Clean data (boundary points that cause outliers and NaN values)
     voronoi_areas = voronoi_areas_all;
     boundary_idx = boundary(data.x,data.y);
     voronoi_areas(boundary_idx) = [];
@@ -112,7 +115,7 @@ function data = calculate_voronoi_density(filepath)
     % connections = connections(idx);
     reduced_voronoi_areas = voronoi_areas ./ mean(voronoi_areas);
     reduced_log_voronoi_density = log10(1./reduced_voronoi_areas);
-    % find neighbors
+    % Find neighbors
     connectivity_list = dt.ConnectivityList;
     attached_triangles = vertexAttachments(dt);
     neighbors = cell(numel(attached_triangles),1);
@@ -121,7 +124,7 @@ function data = calculate_voronoi_density(filepath)
         neighbors{i} = unique(neighbors{i});
         neighbors{i}(neighbors{i}==i) = [];
     end
-    % return relevant info
+    % Return relevant info
     data.voronoi_areas_all = voronoi_areas_all;
     data.voronoi_areas = voronoi_areas;
     data.voronoi_neighbors = uneven_cell2mat(neighbors);
@@ -131,22 +134,21 @@ function data = calculate_voronoi_density(filepath)
     save_OSNAP_sample(filepath, data);
 end
 
-% plot the voronoi maps
+% Plot the voronoi maps
 function plot_voronoi_map(filepath,data,options)
     [dir_name,name,~] = fileparts(filepath);
     map_dir = replace(dir_name,"_nucleus_data","_nucleus_images");
     if ~exist(map_dir, 'dir')
         mkdir(map_dir)
     end
-    %% setup
-    % colorbar 
+    % Setup colorbar 
     scale_bar_size_x = 2;
     scale_bar_size_y = 0.5;
     nm_to_um_x = scale_bar_size_x*1000;
     nm_to_um_y = scale_bar_size_y*1000;
     CT = interp1([0 2 4 6 8 9]/9,[0 0 0; 0 0 1; 0 1 1; 1 1 0; 1 0 0; 0.3 0 0],linspace(0,1,256),'linear','extrap');
     map = (colormap(CT));
-    %% reduced voronoi density
+    % Plot reduced voronoi density
     reduced_voronoi_areas_all = data.voronoi_areas_all/mean(data.voronoi_areas_all,'omitnan');
     reduced_log_voronoi_density_plot = log10(1./reduced_voronoi_areas_all);
     idx = reduced_log_voronoi_density_plot >= options.min_log_vor_density;
@@ -172,7 +174,7 @@ function plot_voronoi_map(filepath,data,options)
     caxis([options.min_log_vor_density options.max_log_vor_density]);
     rectangle('Position',[min(data.x) min(data.y) nm_to_um_x nm_to_um_y],'facecolor','w')
     saveas(f_reduced,fullfile(map_dir,name+"_reduced.png"));
-    %% voronoi area
+    % Plot Voronoi area
     log_voronoi_area_plot = log10(data.voronoi_areas_all);
     idx = log_voronoi_area_plot >= options.min_log_vor_area;
     log_voronoi_area_plot = log_voronoi_area_plot(idx);  
@@ -199,10 +201,9 @@ function plot_voronoi_map(filepath,data,options)
     saveas(f,fullfile(map_dir,name+".png"));
     close(f_reduced);
     close(f);
-    disp('here')
 end
 
-% change structure of neighbors from cell array to matrix
+% Change structure of neighbors from cell array to matrix to reduce memory
 function arr_new = uneven_cell2mat(arr)
     arr_new = nan(max(cellfun('length',arr)),length(arr));
     for i=1:length(arr)

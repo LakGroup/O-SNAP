@@ -28,21 +28,25 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function [split_data, n_out] = split_data_to_n_OSNAP(data,n_in,options)
     arguments
         data
         n_in double
         options.shuffle logical = true
     end
+    %% Setup
     n_out = n_in;
     class_data = class(data);
     if isempty(data)
         split_data = cell(1,n_in);
         return
     end
+    %% Depending on the data, perform different functions to divide the data
     switch class_data
         case 'double'
             n_samples = numel(data);
@@ -50,14 +54,14 @@ function [split_data, n_out] = split_data_to_n_OSNAP(data,n_in,options)
                 data = data(randperm(n_samples));
             end
             if n_samples < n_in
-                % if the number of samples is less than parallel processing
+                % If the number of samples is less than parallel processing
                 split_data = cell(1,n_samples);
                 for i=1:n_samples
                     split_data{i} = data(i);
                 end
                 n_out = n_samples;
             else
-                % divide into groups for parallel processing
+                % Divide into groups for parallel processing
                 n_samp_per_process = get_OSNAP_n_samples_per_split(n_samples,n_in);
                 split_data = cell(1,n_in);
                 idx = 1;
@@ -72,14 +76,14 @@ function [split_data, n_out] = split_data_to_n_OSNAP(data,n_in,options)
                 data = data(randperm(n_samples));
             end
             if n_samples < n_in
-                % if the number of samples is less than parallel processing
+                % If the number of samples is less than parallel processing
                 split_data = cell(1,n_samples);
                 for i=1:n_samples
                     split_data{i} = data(i);
                 end
                 n_out = n_samples;
             else
-                % divide into groups for parallel processing
+                % Divide into groups for parallel processing
                 n_samp_per_process = get_OSNAP_n_samples_per_split(n_samples,n_in);
                 split_data = cell(1,n_in);
                 idx = 1;
@@ -94,14 +98,14 @@ function [split_data, n_out] = split_data_to_n_OSNAP(data,n_in,options)
                 data = data(randperm(n_samples),:);
             end
             if n_samples < n_in
-                % if the number of samples is less than parallel processing
+                % If the number of samples is less than parallel processing
                 split_data = cell(1,n_samples);
                 for i=1:n_samples
                     split_data{i} = data(i,:);
                 end
                 n_out = n_samples;
             else
-                % else, divide into groups for parallel processing
+                % Else, divide into groups for parallel processing
                 n_samp_per_process = get_OSNAP_n_samples_per_split(n_samples,n_in);
                 split_data = cell(1,n_in);
                 idx = 1;
@@ -116,14 +120,14 @@ function [split_data, n_out] = split_data_to_n_OSNAP(data,n_in,options)
                 data = data(randperm(n_samples),:);
             end
             if n_samples < n_in
-                % if the number of samples is less than parallel processing
+                % If the number of samples is less than parallel processing
                 split_data = cell(1,n_samples);
                 for i=1:n_samples
                     split_data{i} = data(i,:);
                 end
                 n_out = n_samples;
             else
-                % else, divide into groups for parallel processing
+                % Else, divide into groups for parallel processing
                 n_samp_per_process = get_OSNAP_n_samples_per_split(n_samples,n_in);
                 split_data = cell(1,n_in);
                 idx = 1;
@@ -133,7 +137,7 @@ function [split_data, n_out] = split_data_to_n_OSNAP(data,n_in,options)
                 end
             end
         otherwise
-            ME = MException('SNAP:invalid_data_class_for_split', ...
+            ME = MException('OSNAP:invalid_data_class_for_split', ...
                 sprintf("Parameter 'data' has invalid class: %s",class_data));
             throw(ME)
     end

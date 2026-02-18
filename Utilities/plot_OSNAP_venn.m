@@ -1,7 +1,9 @@
 % -------------------------------------------------------------------------
 % plot_OSNAP_venn.m
 % -------------------------------------------------------------------------
-% 
+% Creates Venn diagrams to measure number of features for changes between
+% 3 or 4 sets of comparisons (a comparison one set comparing feature 
+% differences in group1 vs group2).
 %
 % Example on how to use it:
 %   plot_OSNAP_venn(feature_comparisons)
@@ -9,7 +11,7 @@
 % Input:
 %   feature_comparisons: A cell array where every cell isa pair-wise 
 %                        combination of the fold-change analysis used in 
-%                        the volcano plots%   : 
+%                        the volcano plots
 % Output:
 %   venn_data: A cell array containing information on the features that
 %              comprise each set of comparisons present in the venn diagram
@@ -25,9 +27,11 @@
 %   hannah.kim3@pennmedicine.upenn.edu
 %   melike.lakadamyali@pennmedicine.upenn.edu
 % If used, please cite:
-%   ....
+%   H. H. Kim, J. A. Martinez-Sarmiento, F. R. Palma, A. Kant, E. Y. Zhang,
+%   Z. Guo, R. L. Mauck, S. C. Heo, V. Shenoy, M. G. Bonini, M. Lakadamyali,
+%   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
+%   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-%%
 function venn_data = plot_OSNAP_venn(feature_comparisons,options)
 arguments
     feature_comparisons cell
@@ -36,7 +40,7 @@ arguments
     options.fold_change_threshold double = 2;
     options.save_path string = "";
 end
-%% find number of sections for venn diagram
+%% Find number of sections for venn diagram
 n_pairs = numel(feature_comparisons);
 if n_pairs == 3
     venn_data = plot_OSNAP_venn_3(feature_comparisons,"save_path",options.save_path, "plot", options.plot,"alpha",options.alpha,"fold_change_threshold",options.fold_change_threshold);
@@ -53,7 +57,7 @@ elseif n_pairs > 4
 end
 save(fullfile(options.save_path+".mat"),"venn_data");
 end
-
+%% Plot a venn diagram of three comparisons (from 3 conditions)
 function venn_data = plot_OSNAP_venn_3(feature_comparisons,options)
 arguments
     feature_comparisons cell
@@ -62,12 +66,12 @@ arguments
     options.fold_change_threshold double = 2;
     options.save_path string = "";
 end
-%% data preparation
+% Data preparation
 group_pairs_string = cellfun(@(x) join(x.groups, " vs "),feature_comparisons,'uni',1);
 n_group_pairs = numel(feature_comparisons);
 venn_data = cell(1,7);
 log2_fold_change_threshold = log2(options.fold_change_threshold);
-%% get comparison between two groups - level 1 (A, B, C)
+% Get comparison between two groups - level 1 (A, B, C)
 for i=1:n_group_pairs
     venn_data{i}.groups = feature_comparisons{i}.groups;
     if ~isempty(feature_comparisons{i}.feature_table)
@@ -83,7 +87,7 @@ for i=1:n_group_pairs
         venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1);
         venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1);
 end
-%% get shared DEFs between different group comparisons - level 2 (AB, AC, BC)
+% Get shared DEFs between different group comparisons - level 2 (AB, AC, BC)
 group_pairs_pairs = nchoosek(group_pairs_string,2);
 group_pairs_pairs_string = join(group_pairs_pairs, ", ");
 n_group_pairs_pairs = size(group_pairs_pairs,1);
@@ -101,7 +105,7 @@ for i=1:n_group_pairs_pairs
     venn_data{idx}.n_increase_features_group_1 = size(venn_data{idx}.increase_features_group_1,1);
     venn_data{idx}.n_increase_features_group_2 = size(venn_data{idx}.increase_features_group_2,1);
 end
-%% get shared DEFs between all groups - level 3 (ABC)
+% Get shared DEFs between all groups - level 3 (ABC)
 venn_data{end}.groups = join(group_pairs_string,", ");
 venn_data{end}.increase_features_group_1 = feature_intersection_3(...
     venn_data{1}.increase_features_group_1,...
@@ -113,7 +117,7 @@ venn_data{end}.increase_features_group_2 = feature_intersection_3(...
     venn_data{3}.increase_features_group_2);
 venn_data{end}.n_increase_features_group_1 = length(venn_data{end}.increase_features_group_1);
 venn_data{end}.n_increase_features_group_2 = length(venn_data{end}.increase_features_group_2);
-%% correct counts
+% Correct counts
 for i=1:(length(venn_data)-1)
     venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1) - venn_data{end}.n_increase_features_group_1;
     venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1) - venn_data{end}.n_increase_features_group_2;
@@ -127,7 +131,7 @@ for i=1:n_group_pairs
     venn_data{group_pair_idx_1}.n_increase_features_group_2 = venn_data{group_pair_idx_1}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
     venn_data{group_pair_idx_2}.n_increase_features_group_2 = venn_data{group_pair_idx_2}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
 end
-%% plot result
+% Plot result
 if options.plot
     venn_labels_increase_1 = cellfun(@(x) x.n_increase_features_group_1,venn_data,'uni',1);
     venn(3,'sets',group_pairs_string,'labels',venn_labels_increase_1,'alpha',0.7,'colors',autumn(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
@@ -166,7 +170,7 @@ if options.plot
     end
 end
 end
-
+%% Plot a venn diagram of four comparisons (from 4 conditions)
 function venn_data = plot_OSNAP_venn_4(feature_comparisons,options)
 arguments
     feature_comparisons cell
@@ -177,12 +181,12 @@ arguments
 end
 groups = cellfun(@(x) x.groups,feature_comparisons,'uni',0);
 groups = unique([groups{:}]);
-%% data preparation
+% Data preparation
 group_pairs_string = cellfun(@(x) join(x.groups, " vs "),feature_comparisons,'uni',1);
 n_group_pairs = numel(feature_comparisons);
 venn_data = cell(1,15);
 log2_fold_change_threshold = log2(options.fold_change_threshold);
-%% get comparison between two groups - level 1 (A, B, C, D)
+% Get comparison between two groups - level 1 (A, B, C, D)
 for i=1:n_group_pairs
     venn_data{i}.groups = feature_comparisons{i}.groups;
     if ~isempty(feature_comparisons{i}.feature_table)
@@ -198,7 +202,7 @@ for i=1:n_group_pairs
         venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1);
         venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1);
 end
-%% get shared DEFs between different group comparisons - level 2 (AB, AC, AD, BC, BC, CD)
+% Get shared DEFs between different group comparisons - level 2 (AB, AC, AD, BC, BC, CD)
 group_pairs_pairs = nchoosek(group_pairs_string,2);
 group_pairs_pairs_string = join(group_pairs_pairs, ",  ");
 n_group_pairs_pairs = size(group_pairs_pairs,1);
@@ -216,7 +220,7 @@ for i=1:n_group_pairs_pairs
     venn_data{idx}.n_increase_features_group_1 = size(venn_data{idx}.increase_features_group_1,1);
     venn_data{idx}.n_increase_features_group_2 = size(venn_data{idx}.increase_features_group_2,1);
 end
-%% get shared DEFs between level 2 - level 3 (ABC, ABD, ACD, ACD, BCD)
+% Get shared DEFs between level 2 - level 3 (ABC, ABD, ACD, ACD, BCD)
 group_pairs_triplets_idx = nchoosek([1 2 3 4],3);
 group_pairs_triplets = nchoosek(group_pairs_string,3);
 group_pairs_triplets_string = join(group_pairs_triplets, ", ");
@@ -235,7 +239,7 @@ for i=1:n_group_pairs_triplets
     venn_data{idx}.n_increase_features_group_1 = length(venn_data{idx}.increase_features_group_1);
     venn_data{idx}.n_increase_features_group_2 = length(venn_data{idx}.increase_features_group_2);
 end
-%% get shared DEFs between level 3 - level 4 (ABCD)
+% Get shared DEFs between level 3 - level 4 (ABCD)
 venn_data{end}.groups = join(groups," vs ");
 venn_data{end}.increase_features_group_1 = feature_intersection_4(...
     venn_data{1}.increase_features_group_1,...
@@ -249,15 +253,19 @@ venn_data{end}.increase_features_group_2 = feature_intersection_4(...
     venn_data{4}.increase_features_group_2);
 venn_data{end}.n_increase_features_group_1 = length(venn_data{end}.increase_features_group_1);
 venn_data{end}.n_increase_features_group_2 = length(venn_data{end}.increase_features_group_2);
-% cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
-% disp('1--allcounts')
-%% correct counts
+% Correct counts
+% - - - - -
+% Level 1: Features that only are in exactly one comparison
+% Level 2: Features that are shared across two comparisons
+% Level 3: Features that are shared across three comparisons
+% Level 4: Features that are shared across all comparisons
+% - - - - -
+% Levels 1,2,3 subtracted by Level 4 counts
 for i=1:(length(venn_data)-1)
     venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1) - venn_data{end}.n_increase_features_group_1;
     venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1) - venn_data{end}.n_increase_features_group_2;
 end
-cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
-% disp('2--minus 4 at 3,2,1')
+% Level 1 subtracted by Level 3 counts
 for i=1:n_group_pairs_triplets
     idx = n_group_pairs+n_group_pairs_pairs+i;
     for j=1:size(group_pairs_triplets,2)
@@ -266,8 +274,7 @@ for i=1:n_group_pairs_triplets
         venn_data{group_idx}.n_increase_features_group_2 = venn_data{group_idx}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
     end
 end
-% cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
-% disp('3--minus 3 at 1')
+% Level 2 subtracted by Level 3 counts
 for i=1:n_group_pairs_triplets
     idx = n_group_pairs+n_group_pairs_pairs+i;
     for j=1:size(group_pairs_pairs,1)
@@ -278,8 +285,7 @@ for i=1:n_group_pairs_triplets
         end
     end
 end
-% cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
-% disp('4--minus 3 at 2')
+% Level 1 subtracted by Level 2 counts
 for i=1:n_group_pairs_pairs
     idx = n_group_pairs+i;
     for j=1:size(group_pairs_pairs,2)
@@ -288,10 +294,7 @@ for i=1:n_group_pairs_pairs
         venn_data{group_idx}.n_increase_features_group_2 = venn_data{group_idx}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
     end
 end
-% cellfun(@(x) disp([x.n_increase_features_group_1 x.n_increase_features_group_2]),venn_data,'uni',1)
-% disp('5--minus 2 at 1')
-
-%% plot result
+% Plot result
 if options.plot
     venn_labels_increase_1 = cellfun(@(x) x.n_increase_features_group_1,venn_data,'uni',1);
     venn(4,'sets',group_pairs_string,'labels',venn_labels_increase_1,'alpha',0.7,'colors',autumn(4),'edgeC',[0 0 0],'labelC',[1 1 1],'edgeW',5);
@@ -316,6 +319,7 @@ if options.plot
     end
 end
 end
+%% Find features shared between 2 comparisons
 function v = feature_intersection_2(v1, v2)
     if (isempty(v1)) || (isempty(v2))
         v = [];
@@ -327,6 +331,7 @@ function v = feature_intersection_2(v1, v2)
         v = [];
     end
 end
+%% Find features shared between 3 comparisons
 function v = feature_intersection_3(v1, v2, v3)
     v_23 = feature_intersection_2(v2, v3);
     if ~isempty(v_23)
@@ -339,6 +344,7 @@ function v = feature_intersection_3(v1, v2, v3)
         v = [];
     end
 end
+%% Find features shared between 4 comparisons
 function v = feature_intersection_4(v1, v2, v3, v4)
     v_234 = feature_intersection_3(v2, v3, v4);
     if ~isempty(v_234)
