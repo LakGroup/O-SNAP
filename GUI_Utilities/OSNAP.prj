@@ -1,19 +1,24 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration file="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP.prj" location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities" name="OSNAP" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="3186692111" file="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP.prj" location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities" name="OSNAP" preferred-package-location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>OSNAP</param.appname>
-    <param.icon />
-    <param.icons />
+    <param.icon>${PROJECT_ROOT}\OSNAP_resources\icon.ico</param.icon>
+    <param.icons>
+      <file>${PROJECT_ROOT}\OSNAP_resources\icon_48.png</file>
+      <file>${PROJECT_ROOT}\OSNAP_resources\icon_32.png</file>
+      <file>${PROJECT_ROOT}\OSNAP_resources\icon_24.png</file>
+      <file>${PROJECT_ROOT}\OSNAP_resources\icon_16.png</file>
+    </param.icons>
     <param.version>1.0</param.version>
     <param.authnamewatermark>Hannah Kim</param.authnamewatermark>
-    <param.email />
-    <param.company />
+    <param.email>hannah.kim3@pennmedicine.upenn.edu</param.email>
+    <param.company>Lakadamyali Lab, Uni. of Pennsylvania</param.company>
     <param.summary>GUI for O-SNAP (Objective Single-Molecule Nucleus Architecture Profiler)</param.summary>
     <param.description>Designed to facilitate analysis of SMLM data of nuclear targets. Accepts input as a 2-D array (CSV or TXT) for localizations of single-channel data for each nucleus. Sends output to the selected analysis directory.</param.description>
-    <param.screenshot />
+    <param.screenshot>${PROJECT_ROOT}\OSNAP_Logo.png</param.screenshot>
     <param.guid />
     <param.installpath.string>\OSNAP\</param.installpath.string>
     <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
-    <param.logo />
+    <param.logo>${PROJECT_ROOT}\OSNAP_Logo.png</param.logo>
     <param.install.notes />
     <param.target.install.notes />
     <param.intermediate>${PROJECT_ROOT}\OSNAP\for_testing</param.intermediate>
@@ -27,27 +32,25 @@
     <param.web.mcr>true</param.web.mcr>
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
-    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
-    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.web.mcr.name>OSNAP_Install</param.web.mcr.name>
+    <param.package.mcr.name>OSNAP_Installer</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>true</param.windows.command.prompt>
-    <param.create.log>false</param.create.log>
-    <param.log.file />
+    <param.create.log>true</param.create.log>
+    <param.log.file>OSNAP_log</param.log.file>
     <param.native.matlab>false</param.native.matlab>
     <param.checkbox>false</param.checkbox>
     <param.example />
-    <param.help.text />
+    <param.help.text>Syntax 
+	  -? 
+	 
+ Input Arguments 
+	 -?  print help on how to use the application 
+	 input arguments</param.help.text>
     <unset>
-      <param.icon />
-      <param.icons />
       <param.version />
-      <param.email />
-      <param.company />
-      <param.screenshot />
       <param.guid />
-      <param.installpath.string />
       <param.installpath.combo />
-      <param.logo />
       <param.install.notes />
       <param.target.install.notes />
       <param.intermediate />
@@ -61,23 +64,85 @@
       <param.web.mcr />
       <param.package.mcr />
       <param.no.mcr />
-      <param.web.mcr.name />
-      <param.package.mcr.name />
       <param.no.mcr.name />
       <param.windows.command.prompt />
-      <param.create.log />
-      <param.log.file />
       <param.native.matlab />
       <param.checkbox />
       <param.example />
-      <param.help.text />
     </unset>
     <fileset.main>
       <file>${PROJECT_ROOT}\OSNAP.mlapp</file>
     </fileset.main>
     <fileset.resources />
     <fileset.package />
-    <fileset.depfun />
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}\OSNAP_Logo_cropped.png</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\calculate_OSNAP_feature_set_coverage.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\calculate_OSNAP_periphery_density.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\calculate_OSNAP_radial_density.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\compare_OSNAP_group_pair.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\compare_OSNAP_group_pair_batch.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\Curvature.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\display_FSEA_results.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\Energy.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\evaluate_OSNAP_classifiers.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_features.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_features_batch.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_features_samples.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_morphometrics_dbscan_cluster_radial_features.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_voronoi_cluster_features.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\fast_inpolygon\inpoly.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\filter_OSNAP_feature_data.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\find_contains_variable_OSNAP.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_ellipses.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_feature_set.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_samples.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_samples_batch.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_train_test_sets.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_voronoi_segmentations.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_all_valid_OSNAP_samples.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_OSNAP_classifiers_of_model_type.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_OSNAP_default_options.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_OSNAP_feature_universes.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_OSNAP_n_samples_per_split.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_valid_OSNAP_samples.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\has_variables_OSNAP.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\knee_pt\knee_pt.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\load_variables_OSNAP.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\calc_ranks_FSEA.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\default_FSEA_opts.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\ES_perm_test.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\intersect_fast.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\MrFSEA.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\plot_classic_FSEA.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\pre_calc_ranks_FSEA.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\RandPermFast.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\update_FS.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_confusion.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_ellipses.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_ellipses_batch.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_ellipses_locs_and_clusters.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_FSEA.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_PCA.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_ROC.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_venn.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_violin.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_volcano.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\preprocess_OSNAP_feature_data.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\pval_adjust.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\run_OSNAP_classification.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\run_OSNAP_classification_batch.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\run_OSNAP_FSEA.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\run_OSNAP_PCA.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\run_OSNAP_pipeline.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\save_OSNAP_sample.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\select_OSNAP_features.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\setup_OSNAP.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\shuffle_label.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\split_data_to_n_OSNAP.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\top_in_search_path_OSNAP.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\venn.m</file>
+    </fileset.depfun>
     <build-deliverables>
       <file location="${PROJECT_ROOT}\OSNAP\for_testing" name="OSNAP.exe" optional="false">C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_testing\OSNAP.exe</file>
       <file location="${PROJECT_ROOT}\OSNAP\for_testing" name="splash.png" optional="false">C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_testing\splash.png</file>
