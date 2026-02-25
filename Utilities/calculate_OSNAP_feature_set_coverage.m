@@ -53,10 +53,10 @@ arguments
     options.feature_universe_names = ["universe_1"];
 end
 %% Define feature_universes
-feature_universes = get_feature_universes(options.feature_universe_names);
+feature_universes = get_OSNAP_feature_universes(options.feature_universe_names);
 for g=1:numel(feature_comparisons)
     S = feature_comparisons{g};
-    group_pair_string = replace(S.groups(1) + "__vs__" + S.groups(2),"-","_");
+    group_pair_string = "Pair_"+replace(S.groups(1) + "__vs__" + S.groups(2),"-","_");
     data.(group_pair_string) = sortrows(S.feature_table,"adj_p_value");
     %% Run loop on all universes
     for f = 1:size(feature_universes,2)
