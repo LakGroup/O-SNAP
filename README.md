@@ -9,9 +9,9 @@
 The manuscript describing this work, "O-SNAP: A comprehensive pipeline for spatial profiling of chromatin architecture" by Kim et al. is available on bioRxiv at DOI: https://doi.org/10.1101/2025.07.18.665612.
 
 ## System Requirements
-O-SNAP is implemented in MATLAB R2024b and is currently only available for Windows 64-bit systems. The code was implemented and tested on a Intel® Xeon® Silver 4214R CPU, 2.40GHz (48 GB RAM) desktop tower.
+O-SNAP was implemented in MATLAB R2024b and will run on Windows, Mac, and Linux systems with MATLAB versions R2023 or above. The code was implemented and tested on a Intel® Xeon® Silver 4214R CPU, 2.40GHz (48 GB RAM) desktop tower.
 
-The application additionally requires the Bioinformatics, Deep Learning, Paralllel Computing, Signal Processing, and Statistics and Machine Learning Toolboxes in MATLAB. For speedups, multiple cores and a Mex setup is required (see tutorial).
+The application additionally requires the Bioinformatics, Deep Learning, Paralllel Computing, Signal Processing, and Statistics and Machine Learning Toolboxes in MATLAB. For speedups, multiple cores are required (see tutorial).
 
 To perform pseudotimeline analysis, R (https://www.r-project.org/) and the dynverse package (https://github.com/dynverse/dyno) are required. The respective links contain installation instructions.
 
