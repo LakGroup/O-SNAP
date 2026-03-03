@@ -84,8 +84,6 @@ for i=1:n_group_pairs
         venn_data{i}.increase_features_group_1 = [];
         venn_data{i}.increase_features_group_2 = [];
     end
-        venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1);
-        venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1);
 end
 % Get shared DEFs between different group comparisons - level 2 (AB, AC, BC)
 group_pairs_pairs = nchoosek(group_pairs_string,2);
@@ -102,8 +100,6 @@ for i=1:n_group_pairs_pairs
     venn_data{idx}.increase_features_group_2 = intersect(...
         venn_data{group_idx_1}.increase_features_group_2,...
         venn_data{group_idx_2}.increase_features_group_2);
-    venn_data{idx}.n_increase_features_group_1 = size(venn_data{idx}.increase_features_group_1,1);
-    venn_data{idx}.n_increase_features_group_2 = size(venn_data{idx}.increase_features_group_2,1);
 end
 % Get shared DEFs between all groups - level 3 (ABC)
 venn_data{end}.groups = join(group_pairs_string,", ");
@@ -115,21 +111,24 @@ venn_data{end}.increase_features_group_2 = feature_intersection_3(...
     venn_data{1}.increase_features_group_2,...
     venn_data{2}.increase_features_group_2,...
     venn_data{3}.increase_features_group_2);
-venn_data{end}.n_increase_features_group_1 = length(venn_data{end}.increase_features_group_1);
-venn_data{end}.n_increase_features_group_2 = length(venn_data{end}.increase_features_group_2);
 % Correct counts
-for i=1:(length(venn_data)-1)
-    venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1) - venn_data{end}.n_increase_features_group_1;
-    venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1) - venn_data{end}.n_increase_features_group_2;
+for i=1:(numel(venn_data)-1)
+    venn_data{i}.increase_features_group_1 = setdiff(venn_data{i}.increase_features_group_1,venn_data{end}.increase_features_group_1);
+    venn_data{i}.increase_features_group_1 = setdiff(venn_data{i}.increase_features_group_2,venn_data{end}.increase_features_group_2);
 end
 for i=1:n_group_pairs
     idx = n_group_pairs+i;
     group_pair_idx_1 = find(strcmp(group_pairs_string,group_pairs_pairs(i,1)));
     group_pair_idx_2 = find(strcmp(group_pairs_string,group_pairs_pairs(i,2)));
-    venn_data{group_pair_idx_1}.n_increase_features_group_1 = venn_data{group_pair_idx_1}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
-    venn_data{group_pair_idx_2}.n_increase_features_group_1 = venn_data{group_pair_idx_2}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
-    venn_data{group_pair_idx_1}.n_increase_features_group_2 = venn_data{group_pair_idx_1}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
-    venn_data{group_pair_idx_2}.n_increase_features_group_2 = venn_data{group_pair_idx_2}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
+    venn_data{group_pair_idx_1}.increase_features_group_1 = setdiff(venn_data{group_pair_idx_1}.increase_features_group_1, venn_data{idx}.increase_features_group_1);
+    venn_data{group_pair_idx_2}.increase_features_group_1 = setdiff(venn_data{group_pair_idx_2}.increase_features_group_1, venn_data{idx}.increase_features_group_1);
+    venn_data{group_pair_idx_1}.increase_features_group_2 = setdiff(venn_data{group_pair_idx_1}.increase_features_group_2, venn_data{idx}.increase_features_group_2);
+    venn_data{group_pair_idx_2}.increase_features_group_2 = setdiff(venn_data{group_pair_idx_2}.increase_features_group_2, venn_data{idx}.increase_features_group_2);
+end
+% Calculate counts
+for i=1:numel(venn_data)
+    venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1);
+    venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1);
 end
 % Plot result
 if options.plot
@@ -149,13 +148,13 @@ if options.plot
     end
     x = cellfun(@(x) [x.increase_features_group_1;x.increase_features_group_2],venn_data,'uni',0);
     venn_labels_change_all = zeros(1,7);
-    venn_labels_change_all(1) = length(x{1});
-    venn_labels_change_all(2) = length(x{2});
-    venn_labels_change_all(3) = length(x{3});
-    venn_labels_change_all(4) = length(intersect(x{1},x{2}));
-    venn_labels_change_all(5) = length(intersect(x{1},x{3}));
-    venn_labels_change_all(6) = length(intersect(x{2},x{3}));
-    venn_labels_change_all(7) = length(intersect(intersect(x{1},x{2}),x{3}));
+    venn_labels_change_all(1) = numel(x{1});
+    venn_labels_change_all(2) = numel(x{2});
+    venn_labels_change_all(3) = numel(x{3});
+    venn_labels_change_all(4) = numel(intersect(x{1},x{2}));
+    venn_labels_change_all(5) = numel(intersect(x{1},x{3}));
+    venn_labels_change_all(6) = numel(intersect(x{2},x{3}));
+    venn_labels_change_all(7) = numel(intersect(intersect(x{1},x{2}),x{3}));
     venn_labels_change_all(4) = venn_labels_change_all(4) - venn_labels_change_all(7);
     venn_labels_change_all(5) = venn_labels_change_all(5) - venn_labels_change_all(7);
     venn_labels_change_all(6) = venn_labels_change_all(6) - venn_labels_change_all(7);
@@ -199,8 +198,6 @@ for i=1:n_group_pairs
         venn_data{i}.increase_features_group_1 = [];
         venn_data{i}.increase_features_group_2 = [];
     end
-        venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1);
-        venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1);
 end
 % Get shared DEFs between different group comparisons - level 2 (AB, AC, AD, BC, BC, CD)
 group_pairs_pairs = nchoosek(group_pairs_string,2);
@@ -217,8 +214,6 @@ for i=1:n_group_pairs_pairs
     venn_data{idx}.increase_features_group_2 = intersect(...
         venn_data{group_idx}.increase_features_group_2,...
         venn_data{group_idx_2}.increase_features_group_2);
-    venn_data{idx}.n_increase_features_group_1 = size(venn_data{idx}.increase_features_group_1,1);
-    venn_data{idx}.n_increase_features_group_2 = size(venn_data{idx}.increase_features_group_2,1);
 end
 % Get shared DEFs between level 2 - level 3 (ABC, ABD, ACD, ACD, BCD)
 group_pairs_triplets_idx = nchoosek([1 2 3 4],3);
@@ -236,8 +231,6 @@ for i=1:n_group_pairs_triplets
         venn_data{group_pairs_triplets_idx(i,1)}.increase_features_group_2,...
         venn_data{group_pairs_triplets_idx(i,2)}.increase_features_group_2,...
         venn_data{group_pairs_triplets_idx(i,3)}.increase_features_group_2);
-    venn_data{idx}.n_increase_features_group_1 = length(venn_data{idx}.increase_features_group_1);
-    venn_data{idx}.n_increase_features_group_2 = length(venn_data{idx}.increase_features_group_2);
 end
 % Get shared DEFs between level 3 - level 4 (ABCD)
 venn_data{end}.groups = join(groups," vs ");
@@ -251,8 +244,6 @@ venn_data{end}.increase_features_group_2 = feature_intersection_4(...
     venn_data{2}.increase_features_group_2,...
     venn_data{3}.increase_features_group_2,...
     venn_data{4}.increase_features_group_2);
-venn_data{end}.n_increase_features_group_1 = length(venn_data{end}.increase_features_group_1);
-venn_data{end}.n_increase_features_group_2 = length(venn_data{end}.increase_features_group_2);
 % Correct counts
 % - - - - -
 % Level 1: Features that only are in exactly one comparison
@@ -261,18 +252,18 @@ venn_data{end}.n_increase_features_group_2 = length(venn_data{end}.increase_feat
 % Level 4: Features that are shared across all comparisons
 % - - - - -
 % Levels 1,2,3 subtracted by Level 4 counts
-for i=1:(length(venn_data)-1)
-    venn_data{i}.n_increase_features_group_1 = size(venn_data{i}.increase_features_group_1,1) - venn_data{end}.n_increase_features_group_1;
-    venn_data{i}.n_increase_features_group_2 = size(venn_data{i}.increase_features_group_2,1) - venn_data{end}.n_increase_features_group_2;
+for i=1:(numel(venn_data)-1)
+    venn_data{i}.increase_features_group_1 = setdiff(venn_data{i}.increase_features_group_1, venn_data{end}.increase_features_group_1);
+    venn_data{i}.increase_features_group_2 = setdiff(venn_data{i}.increase_features_group_2, venn_data{end}.increase_features_group_2);
 end
 % Level 1 subtracted by Level 3 counts
 for i=1:n_group_pairs_triplets
     idx = n_group_pairs+n_group_pairs_pairs+i;
     for j=1:size(group_pairs_triplets,2)
         group_idx = find(strcmp(group_pairs_string,group_pairs_triplets(i,j)));
-        venn_data{group_idx}.n_increase_features_group_1 = venn_data{group_idx}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
-        venn_data{group_idx}.n_increase_features_group_2 = venn_data{group_idx}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
-    end
+        venn_data{group_idx}.increase_features_group_1 = setdiff(venn_data{group_idx}.increase_features_group_1, venn_data{idx}.increase_features_group_1);
+        venn_data{group_idx}.increase_features_group_2 = setdiff(venn_data{group_idx}.increase_features_group_2, venn_data{idx}.increase_features_group_2);
+     end
 end
 % Level 2 subtracted by Level 3 counts
 for i=1:n_group_pairs_triplets
@@ -280,8 +271,8 @@ for i=1:n_group_pairs_triplets
     for j=1:size(group_pairs_pairs,1)
         if sum(cell2mat(arrayfun(@(x) strcmp(group_pairs_triplets(i,:),x),group_pairs_pairs(j,:),'uni',0)'),'all')==2
             group_idx = n_group_pairs+j;
-            venn_data{group_idx}.n_increase_features_group_1 = venn_data{group_idx}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
-            venn_data{group_idx}.n_increase_features_group_2 = venn_data{group_idx}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
+            venn_data{group_idx}.increase_features_group_1 = setdiff(venn_data{group_idx}.increase_features_group_1, venn_data{idx}.increase_features_group_1);
+            venn_data{group_idx}.increase_features_group_2 = setdiff(venn_data{group_idx}.increase_features_group_2, venn_data{idx}.increase_features_group_2);
         end
     end
 end
@@ -290,9 +281,14 @@ for i=1:n_group_pairs_pairs
     idx = n_group_pairs+i;
     for j=1:size(group_pairs_pairs,2)
         group_idx = find(strcmp(group_pairs_string,group_pairs_pairs(i,j)));
-        venn_data{group_idx}.n_increase_features_group_1 = venn_data{group_idx}.n_increase_features_group_1 - venn_data{idx}.n_increase_features_group_1;
-        venn_data{group_idx}.n_increase_features_group_2 = venn_data{group_idx}.n_increase_features_group_2 - venn_data{idx}.n_increase_features_group_2;
+        venn_data{group_idx}.increase_features_group_1 = setdiff(venn_data{group_idx}.increase_features_group_1, venn_data{idx}.increase_features_group_1);
+        venn_data{group_idx}.increase_features_group_2 = setdiff(venn_data{group_idx}.increase_features_group_2, venn_data{idx}.increase_features_group_2);
     end
+end
+% Calculate counts
+for i=1:numel(venn_data)
+    venn_data{i}.n_increase_features_group_1 = numel(venn_data{i}.increase_features_group_1);
+    venn_data{i}.n_increase_features_group_2 = numel(venn_data{i}.increase_features_group_2);
 end
 % Plot result
 if options.plot
