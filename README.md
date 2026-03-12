@@ -11,12 +11,13 @@ The manuscript describing this work, "O-SNAP: A comprehensive pipeline for spati
 ## System Requirements
 O-SNAP was implemented in MATLAB R2024b and will run on Windows, Mac, and Linux systems with MATLAB versions R2023 or above. The code was implemented and tested on a Intel® Xeon® Silver 4214R CPU, 2.40GHz (48 GB RAM) desktop tower. Follow instructions under "Getting Started" in the tutorial to run the O-SNAP app.
 
-An EXE installer is also provided to install O-SNAP as an applet for Windows Systems with MATLAB Runtime installed. ***Currently, the EXE only works with the following versions of MATLAB:***
-   - MATLAB R2024b
-
 The application additionally requires the Bioinformatics, Deep Learning, Paralllel Computing, Signal Processing, and Statistics and Machine Learning Toolboxes in MATLAB. For speedups, multiple cores are required (see tutorial).
 
 To perform pseudotimeline analysis, R (https://www.r-project.org/) and the dynverse package (https://github.com/dynverse/dyno) are required. The respective links contain installation instructions.
+
+An EXE installer is also provided to install O-SNAP as an applet for Windows Systems with MATLAB Runtime installed.
+***Currently, the EXE only works with the following versions of MATLAB:***
+   - MATLAB R2024b
 
 ## Example data
 Full example data used for the tutorial is available on figshare, DOI:  https://doi.org/10.6084/m9.figshare.29533940. The STORM data is of H3K27me3 localizations originally collected from Martinez-Sarmiento et al, Cell Reports (2024) https://doi.org/10.1016/j.celrep.2024.114170.
