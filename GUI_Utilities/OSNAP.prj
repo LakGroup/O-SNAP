@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="3186692111" file="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP.prj" location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities" name="OSNAP" preferred-package-location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="788034989" file="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP.prj" location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities" name="OSNAP" preferred-package-location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>OSNAP</param.appname>
     <param.icon>${PROJECT_ROOT}\OSNAP_resources\icon.ico</param.icon>
     <param.icons>

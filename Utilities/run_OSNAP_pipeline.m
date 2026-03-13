@@ -199,8 +199,8 @@ arguments
     options.run_classification_all logical = 1
     options.run_classification_batch logical = 1
     options.run_venn logical = 0
-    options.run_plot_violin logical = 0
-    options.run_plot_radial logical = 0
+    options.run_plot_violin logical = 1
+    options.run_plot_radial logical = 1
     options.run_FSEA logical = 0
     % generate batch options
     options.split_method string = "k-fold"
