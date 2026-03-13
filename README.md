@@ -15,7 +15,7 @@ The application additionally requires the Bioinformatics, Deep Learning, Paralll
 
 To perform pseudotimeline analysis, R (https://www.r-project.org/) and the dynverse package (https://github.com/dynverse/dyno) are required. The respective links contain installation instructions.
 
-An EXE installer is also provided to install O-SNAP (under StandaloneReleases) as an applet for Windows Systems with the respective version of MATLAB Runtime installed.
+An EXE applet is also provided to install O-SNAP (under StandaloneReleases) as an applet for Windows Systems with the respective version of MATLAB Runtime installed.
 ***Currently, the EXE only works with the following versions of MATLAB:***
    - MATLAB R2024b
    - MATLAB R2025b
