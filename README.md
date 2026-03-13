@@ -18,6 +18,7 @@ To perform pseudotimeline analysis, R (https://www.r-project.org/) and the dynve
 An EXE installer is also provided to install O-SNAP as an applet for Windows Systems with MATLAB Runtime installed.
 ***Currently, the EXE only works with the following versions of MATLAB:***
    - MATLAB R2024b
+   - MATLAB R2025b
 
 ## Example data
 Full example data used for the tutorial is available on figshare, DOI:  https://doi.org/10.6084/m9.figshare.29533940. The STORM data is of H3K27me3 localizations originally collected from Martinez-Sarmiento et al, Cell Reports (2024) https://doi.org/10.1016/j.celrep.2024.114170.
