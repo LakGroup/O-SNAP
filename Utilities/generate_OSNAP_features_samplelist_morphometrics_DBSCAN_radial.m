@@ -1,34 +1,29 @@
 % -------------------------------------------------------------------------
-% extract_OSNAP_features_samples.m
+% extract_OSNAP_features_samples_morphometrics_dbscan_cluster_radial.m
 % -------------------------------------------------------------------------
-% Obtains the O-SNAP features for every sample under the specified
-% phenotype (groups) and replicates. The feature information is stored in
-% the file that corresponds to the samples of the given groups and
-% replicates.
+% Coordinates calculation of features related to morphometrics, DBSCAN 
+% heterochromatin-associated localization clustering, and radial features 
+% for multiple samples (nuclei). Saves information to the MAT analysis 
+% file specific to that sample.
 %
 % Example on how to use it:
-%   extract_OSNAP_features_samples("D:\Analysis\ExperimentA",...
-%                                 {'Control','KO'},...
-%                                 {'20250101','20250108','20250201'})
+%   generate_OSNAP_features_samplelist_morphometrics_DBSCAN_radial(OSNAP_sample_file_list)
 % -------------------------------------------------------------------------
 % Input:
-%   work_dir: O-SNAP analysis directory. Should contain one or more folders
-%             with the MAT O_SNAP feature files for each sample (nucleus),
-%             divided by replicates with each folder prefixed by "Rep"
-%   groups: Cell array containing char array of the identifiers of the 
-%           phenotypes/cell states
-%           *ENSURE THAT EACH SAMPLE FILENAME CONTAINS EXACTLY ONE 
-%            IDENTIFIER FROM groups*
-%   replicates: Cell array containing char array of the identifiers of the 
-%               replicates.
-%               *ENSURE THAT EACH REPLCIATE IS STORED IN A SEPARATE FOLDER 
-%                PREFIXED BY "Rep"*
+%   OSNAP_sample_file_list: Table with details on the samples of interest
+%                           to extract feature information from, including 
+%                           the file path, replicate, phenotype, and sample
+%                           identifier
 % Options:
 %   n_processes: Number of cores to run parallel processes on
-%   min_log_vor_density: Lower bound for filtering and visualizing voronoi
-%                        density values
-%   max_log_vor_density: Upper bound for filtering and visualizing voronoi
-%                        density values
+%   min_log_vor_density: Lower bound for filtering and visualizing reduced 
+%                        Voronoi density values
+%   max_log_vor_density: Upper bound for filtering and visualizing reduced
+%                        Voronoi density values
+%   min_log_vor_area: Lower bound for filtering and visualizing Voronoi
+%                     area values
+%   max_log_vor_area: Upper bound for filtering and visualizing Voronoi
+%                     area values
 %   dbscan_thresh: Lower percentile cutoff for localizations to include in
 %                  the DBSCAN clustering analysis for heterochromatin-
 %                  associated domains
@@ -51,6 +46,8 @@
 %                                filtered.
 %   plot: Flag to plot results
 %   overwrite: Flag on whether to ask user before overwriting data
+%   filter: Flag to retain samples where names do not satisfy a condition
+%           (group name in information table is left as an empty string)
 % -------------------------------------------------------------------------
 % Code written by:
 %   Hannah Kim          Lakadamyali lab, University of Pennsylvania (USA)
@@ -63,85 +60,19 @@
 %   O-SNAP: A comprehensive pipeline for spatial profiling of chromatin
 %   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
-function extract_OSNAP_features_samples(work_dir, groups, replicates, options)
+function generate_OSNAP_features_samplelist_morphometrics_DBSCAN_radial(OSNAP_sample_file_list, options)
 arguments
-    work_dir string
-    groups cell
-    replicates cell
+    OSNAP_sample_file_list table
     options.n_processes double = maxNumCompThreads;
-    options.min_log_vor_density double = 0.5;
-    options.max_log_vor_density double = 3;
-    options.min_log_vor_area double = 1;
-    options.max_log_vor_area double = 3;
     options.dbscan_thresh double = 70;
     options.eps double = 20;
     options.min_num double = 3;
     options.ellipse_inc double = 0.1;
     options.periphery_thresh double = 0.15;
-    options.area_threshold_arr double = 10.^(1.25:0.25:2);
-    options.min_number_of_localizations double = 5;
     options.plot logical = true;
     options.overwrite logical = false;
-    options.filter logical = false;
 end
-min_log_vor_density = options.min_log_vor_density;
-max_log_vor_density = options.max_log_vor_density;
-min_log_vor_area = options.min_log_vor_area;
-max_log_vor_area = options.max_log_vor_area;
-area_threshold_arr = options.area_threshold_arr;
-min_number_of_localizations_arr = options.min_number_of_localizations;
-plot_flag = options.plot;
-overwrite = options.overwrite;
-warning('off','all')
 
-%% Load data and split for processing 
-OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'x','y'},'filter',options.filter);
-
-%% Calculate voronoi density
-% Smaller n_processes for voronoi density due to high memory demand
-n_processes = ceil(options.n_processes/3);
-data_vars = {...
-            'voronoi_areas_all',...
-            'voronoi_neighbors',...
-            'voronoi_areas',...
-            'reduced_log_voronoi_density',...
-            'faces',...
-            'vertices'};
-% Identify files to process
-idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
-[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
-fprintf("      Calculating Voronoi densities...\n");
-starttime_step = tic;
-if any(cellfun('length',split_file_list))
-    parfor p=1:n_processes
-        sample_file_list_p = split_file_list{p};
-        filepaths = sample_file_list_p{:,'filepath'};
-        samps_to_remove = [];
-        for s=1:length(filepaths)
-            filepath = filepaths(s);
-            fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
-            if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
-                try
-                    generate_OSNAP_voronoi_segmentations(filepath, ...
-                        "min_log_vor_density", min_log_vor_density, ...
-                        "max_log_vor_density", max_log_vor_density,...
-                        "min_log_vor_area", min_log_vor_area, ...
-                        "max_log_vor_area", max_log_vor_area,...
-                        "plot", plot_flag,"overwrite",overwrite);
-                catch ME
-                    fprintf("- - Removing: %s - -\n",filepath)
-                    fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
-                    samps_to_remove = [samps_to_remove s];
-                    fprintf("- - - - - - - - - - -\n")
-                end
-            end
-        end
-        fprintf("Worker %2.0f: COMPLETE\n",p);
-    end
-end
-fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-
-%% Perform morphometric, dbscan clustering, and radial analysis
 n_processes = options.n_processes;
 data_vars = {'nucleus_radius',...
             'locs_number',...
@@ -191,6 +122,8 @@ if any(cellfun('length',split_file_list))
     min_num = options.min_num;
     ellipse_inc = options.ellipse_inc;
     periphery_thresh = options.periphery_thresh;
+    plot_flag = options.plot;
+    overwrite = options.overwrite;
     density_data=cell(1,n_processes);
     fprintf("      Calculating density threshold...\n");
     starttime_step = tic;
@@ -204,7 +137,7 @@ if any(cellfun('length',split_file_list))
                 sample = load(filepaths(s),'voronoi_areas');
                 density_data{p}{s} = 1./sample.voronoi_areas;
             catch ME
-                fprintf("- - Removing: %s - -\n",filepaths(s))
+                fprintf("- - Skipping: %s - -\n",filepaths(s))
                 fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
                 samps_to_remove = [samps_to_remove s];
             end
@@ -217,74 +150,31 @@ if any(cellfun('length',split_file_list))
     fprintf("          Density threshold: %.4f...\n",density_threshold);
     clearvars density_data
     fprintf("      Calculating morphometric, dbscan clustering, and radial features...\n")
-    parfor p=1:n_processes
+    parfor p=1:options.n_processes
         sample_file_list_p = split_file_list{p};
         filepaths = sample_file_list_p{:,'filepath'};
-        samps_to_remove = [];
+        % samps_to_remove = [];
         for s=1:length(filepaths)
             filepath = filepaths(s);
             fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
             if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
                 try
-                    extract_OSNAP_morphometrics_dbscan_cluster_radial_features(filepath,density_threshold, ...
+                    generate_OSNAP_features_sample_morphometrics_DBSCAN_radial(filepath,density_threshold, ...
                         "eps",eps,...
                         "min_num",min_num, ...
                         "ellipse_inc",ellipse_inc,...
                         "periphery_thresh",periphery_thresh,...
+                        "plot",plot_flag,...
                         "overwrite",overwrite);
                 catch ME
-                    fprintf("- - Removing: %s - -\n",filepath)
+                    fprintf("- - Skipping: %s - -\n",filepath)
                     fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
-                    samps_to_remove = [samps_to_remove s];
+                    % samps_to_remove = [samps_to_remove s];
                 end
             end
         end
-        split_file_list{p}(samps_to_remove,:) = [];
+        % split_file_list{p}(samps_to_remove,:) = [];
         fprintf("Worker %2.0f: COMPLETE\n",p);
     end
 end
 fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-%% Perform voronoi clustering analysis
-data_vars = {...
-    'area_thresholds',...
-    'min_number_of_localizations',...
-    'voronoi_clusters',...
-    'voronoi_cluster_n_locs',...
-    'voronoi_cluster_radius',...
-    'voronoi_cluster_density',...
-    'voronoi_cluster_gyration_radius'};
-% Identify files to process
-idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
-[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
-fprintf("      Performing Voronoi Clustering Analysis...\n")
-starttime_step = tic;
-if any(cellfun('length',split_file_list))
-    parfor p=1:n_processes
-        sample_file_list_p = split_file_list{p};
-        filepaths = sample_file_list_p{:,'filepath'};
-        for s=1:length(filepaths) 
-            filepath = filepaths(s);
-            fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);
-            if exist(filepath,'file') && ~has_variables_OSNAP(filepath,data_vars,"verbose",0)
-                try
-                    extract_OSNAP_voronoi_cluster_features(filepath,...
-                        area_threshold_arr,...
-                        min_number_of_localizations_arr,...
-                        "overwrite",overwrite);
-                catch ME
-                    fprintf("- - Removing: %s - -\n",filepath)
-                    fprintf("%s\n",getReport(ME,'extended','hyperlinks','off'))
-                end
-            end 
-        end
-        fprintf("Worker %2.0f: COMPLETE\n",p);
-    end
-end
-fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
-%% Conclude output
-fprintf("  RUN END: %s\n",datetime);
-fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
-warning('on','all')
-end
-
-

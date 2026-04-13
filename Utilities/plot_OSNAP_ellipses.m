@@ -42,21 +42,21 @@ end
     min_area = 0.5;
     max_area = 3;
     %% Plot rings
-    c = parula;
     n_r = size(radial_density,1);
     p = generate_OSNAP_ellipses(x_length, y_length, 1/n_r);
-    d_r = [radial_density/options.max_density; 0];
-    d_rc = round((256-1)*(d_r - min(d_r))/range(d_r)+1);
+    d_r = min([radial_density/options.max_density; 1],1);
+    d_rc = floor(255*d_r+1);
     if isempty(options.save_path)
         f = figure('visible','on','Position',[616,80,850,900],'color','k');
     else
         f = figure('visible','off','Position',[616,80,850,900],'color','k');
     end
+    tiledlayout(2,1,"tilespacing","compact");
     %% Plot rings (bounds)
-    h_rings_edge = gca;
+    ax = nexttile();
     for i=1:n_r
         p_temp = p(i);
-        p_temp.Vertices(:,2) = p_temp.Vertices(:,2)+y_length;
+        p_temp.Vertices(:,2) = p_temp.Vertices(:,2);
         ring_edge = plot(p_temp,"FaceAlpha",0,"EdgeAlpha",0.4,"LineWidth",2,"EdgeColor",'w');%c(d_rc(i),:));
         if i==n_r
             ring_edge.LineStyle="--";
@@ -65,13 +65,17 @@ end
         clearvars p_temp
     end
     %% Plot voronoi densities
-    h_scatter = axes;
     if isempty(options.c_data_raw)
-        scatter(points(:,1),points(:,2)+y_length,15,'y','filled','MarkerEdgeColor','k','MarkerFaceAlpha',0.8);
+        s = scatter(points(:,1),points(:,2),25,'w','filled','MarkerEdgeColor','k');
+        legend(s,"domain centroid","location","eastoutside","fontsize",16,"color","k","TextColor","w")
     else
         CT = interp1([0 2 4 6 8 9]/9,[0 0 0; 0 0 1; 0 1 1; 1 1 0; 1 0 0; 0.3 0 0],linspace(0,1,256),'linear','extrap');
-        map = (colormap(CT));
+        colormap(ax, flipud(CT));
         idx = all([~isnan(options.c_data_raw)  log10(options.c_data_raw) >= min_area],2);
+        for i=1:2
+            loc_diff = max(points(:,i))+min(points(:,i));
+            points(:,i) = points(:,i) - loc_diff/2;
+        end
         points = points(idx,:);
         options.c_data_raw = options.c_data_raw(idx);
         % Downsample when plotting
@@ -85,46 +89,54 @@ end
         s_data = c_data;
         s_data = 5*(s_data-min(s_data))/(max(s_data)-min(s_data))+0.5;
         % Plot
-        scatter(points(:,1),points(:,2)+y_length,s_data,c_data,'filled','MarkerEdgeColor','none','MarkerFaceAlpha',0.3);
-        clim(h_scatter,[min_area max_area]);
-        colormap(h_scatter,flipud(map));
+        scatter(points(:,1),points(:,2),s_data,c_data,'filled','MarkerEdgeColor','none','MarkerFaceAlpha',0.3);
+        clim([min_area max_area]);
+        cb_1 = colorbar('Color','w','Location','eastoutside','FontSize',20,...
+            'Ticks',min_area:0.5:max_area,...
+            'TickLabels',arrayfun(@(elem) sprintf('10^{%g}',elem), min_area:0.5:max_area,'uni',0),...
+            'tickdirection','out');
+        ylabel(cb_1, {'Voronoi polygon area [nm^{2}]'},'HorizontalAlignment','center')
     end
+    set(ax,'color','k','xlim',[-x_length/2 x_length/2],'ylim',[-y_length/2 y_length/2],'xticklabels',[],'ytick',[],...
+        'xtick',linspace(-x_length/2,x_length/2,11),'XGrid','on','GridColor','w','XColor','none');
+    daspect([1 1 1])
+    disp("")
+   
     %% Plot rings (filled)
-    h_rings_filled = axes;
+    ax=nexttile();
+    c = interp1(linspace(0,1,7),[0.0 0.0 0.0; 0.1412 0.1804 0.5059; 0.1804 0.4157 0.6824; 0.2275 0.6196 0.749; 0.4627 0.7765 0.7412; 0.749 0.898 0.7373; 1.0 1.0 0.8],linspace(0,1,256),'linear','extrap');
     for i=1:n_r
         plot(p(i),"FaceColor",c(d_rc(i),:),"FaceAlpha",1,"EdgeAlpha",0);
         hold on
     end
-    colormap(h_rings_filled,"parula");
+    colormap(ax,c);
     %% Plot barplot
-    h_bar = axes;
     b_width = x_length/(2*n_r);
-    b = bar(b_width/2:x_length/(2*n_r):(x_length-b_width)/2,y_length*radial_density/(2*options.max_density),1);
+    b = bar(b_width/2:x_length/(2*n_r):(x_length-b_width)/2,(y_length/2)*(radial_density/options.max_density),1);
     b.FaceColor = 'flat';
     b.LineWidth = 1;
     b.CData = c(d_rc(1:n_r),:);
-    %% Save axis information
-    axpos = [0.06,0.17,0.55,0.8];
     %% Colorbar for barplot
-    cb = colorbar('Color','w','Location','eastoutside','FontSize',24);
-    ylabel(cb, {'Density [nm^{-2}]'},'HorizontalAlignment','center')
-    xlabel("Percent of major/minor axis")
-    xticklabels(["","","","","","0%","20%","40%","60%","80%","100%"])
-    set(gca,'FontSize',24);
+    cb_2 = colorbar('Color','w','Location','eastoutside','FontSize',20,'tickdirection','out');
+    xlabel("Ring Index",'Color','w')
+    set(ax,'xtick',linspace(x_length/20,x_length/2,10),'xticklabels',compose("%g",1:10));
     c_max_label = round(options.max_density,ceil(-log10(options.max_density)));
-    c_max_tick = (c_max_label*range(cb.Limits)/options.max_density+cb.Limits(1));
-    cb.Limits = [cb.Limits(1) c_max_tick];
+    c_max_tick = (c_max_label*range(cb_2.Limits)/options.max_density+cb_2.Limits(1));
+    cb_2.Limits = [cb_2.Limits(1) c_max_tick];
     n_ticks = 4;
-    cb.Ticks = cb.Limits(1):range(cb.Limits)/n_ticks:cb.Limits(2);
-    cb.TickLabels = compose("%.2e",0:c_max_label/n_ticks:c_max_label);
-    colormap(h_bar,"parula");
-    %% Adjust axes geometry
-    xticks(-x_length/2:x_length/10:x_length/2)
-    set(h_rings_edge,'position',axpos,'PlotBoxAspectRatio', [1 2*y_length/x_length 1],'color','k','xlim',[-x_length/2 x_length/2],'ylim',[-y_length/2 3*y_length/2],'xtick',[],'ytick',[]);
-    set(h_scatter,'position',axpos,'PlotBoxAspectRatio',[1 2*y_length/x_length 1],'color','none','xlim',[-x_length/2 x_length/2],'ylim',[-y_length/2 3*y_length/2],'xtick',[],'ytick',[]);
-    set(h_rings_filled,'position',axpos,'PlotBoxAspectRatio', [1 2*y_length/x_length 1],'color','none','xlim',[-x_length/2 x_length/2],'ylim',[-y_length/2 3*y_length/2],'xtick',[],'ytick',[]);
-    set(h_bar,'position',axpos,'PlotBoxAspectRatio', [1 2*y_length/x_length 1],'color','none','xlim',[-x_length/2 x_length/2],'ylim',[-y_length/2 3*y_length/2],'ytick',[]);
-    set(h_bar,'XGrid','on','GridColor','w','XColor','w');
+    cb_2.Ticks = cb_2.Limits(1):range(cb_2.Limits)/n_ticks:cb_2.Limits(2);
+    cb_2.TickLabels = compose("%.1e",0:c_max_label/n_ticks:c_max_label);
+    daspect([1 1 1]),
+    set(ax,'FontSize',14,'color','k','xlim',[-x_length/2 x_length/2],'ylim',[-y_length/2 y_length/2],'ytick',[],...
+        'XGrid','on','GridColor','w','XColor','w','XTickLabelRotation',30); 
+    ax.XLabel.FontSize = 22;
+    if isempty(options.c_data_raw)
+        ylabel(cb_2, {'Radial Domain Density [nm^{-2}]'},'HorizontalAlignment','center')
+        cb_1.Position(1) = cb_2.Position(1);
+        cb_1.Label.Position(1) = cb_2.Label.Position(1);
+    else
+        ylabel(cb_2, {'Radial Localization Density [nm^{-2}]'},'HorizontalAlignment','center')
+    end
     %% Save
     if ~isempty(options.save_path)
         set(f,'InvertHardcopy','off');

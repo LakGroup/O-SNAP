@@ -53,7 +53,7 @@
 %   architecture. bioRxiv, doi: 10.1101/2025.07.18.665612 (2025).
 % -------------------------------------------------------------------------
 %%
-function data = generate_OSNAP_voronoi_segmentations(filepath, options)
+function data = generate_OSNAP_features_sample_voronoi_segmentations(filepath, options)
 arguments
     filepath string
     options.min_log_vor_density double = 0;
@@ -64,8 +64,6 @@ arguments
     options.overwrite logical = false;
 end
 vor_data_vars = {...
-    'x',...
-    'y',...
     'voronoi_areas_all',...
     'voronoi_neighbors',...
     'voronoi_areas',...
@@ -77,7 +75,11 @@ vor_data_vars = {...
 if options.overwrite
     data = calculate_voronoi_density(filepath);
     if options.plot
-        plot_OSNAP_voronoi_map(filepath,data,options)
+        plot_OSNAP_voronoi_map(filepath,data,...
+                        "min_log_vor_density", min_log_reduced_vor_density, ...
+                        "max_log_vor_density", max_log_reduced_vor_density,...
+                        "min_log_vor_area", min_log_vor_area, ...
+                        "max_log_vor_area", max_log_vor_area);
     end
 % Return if all variables already in file
 elseif has_variables_OSNAP(filepath,vor_data_vars) && ~options.overwrite
@@ -86,12 +88,20 @@ elseif has_variables_OSNAP(filepath,vor_data_vars) && ~options.overwrite
         if ~exist('data','var')
             data = load_variables_OSNAP(filepath,vor_data_vars);
         end
-        plot_OSNAP_voronoi_map(filepath,data,options)
+        plot_OSNAP_voronoi_map(filepath,data,...
+                        "min_log_vor_density", min_log_reduced_vor_density, ...
+                        "max_log_vor_density", max_log_reduced_vor_density,...
+                        "min_log_vor_area", min_log_vor_area, ...
+                        "max_log_vor_area", max_log_vor_area);
     end
 % If plot but no data is present in the file, calculate densities and plot
 elseif options.plot
     data = calculate_voronoi_density(filepath);
-    plot_OSNAP_voronoi_map(filepath,data,options)
+    plot_OSNAP_voronoi_map(filepath,data,...
+                        "min_log_vor_density", min_log_reduced_vor_density, ...
+                        "max_log_vor_density", max_log_reduced_vor_density,...
+                        "min_log_vor_area", min_log_vor_area, ...
+                        "max_log_vor_area", max_log_vor_area);
 end
 end
 
@@ -102,13 +112,13 @@ function data = calculate_voronoi_density(filepath)
     % Calculate voronoi segmentation
     dt = delaunayTriangulation(data.x,data.y);
     [vertices,connections] = voronoiDiagram(dt);
-    voronoi_areas_all = nan(numel(connections),1);
-    for i = 1:numel(connections)
-        tmp = vertices(connections{i},:);
-        if ~any(isnan(tmp) | isinf(tmp))
-            voronoi_areas_all(i) = polyarea(tmp(:,1),tmp(:,2));
-        end
-    end
+    % Find Voronoi cells
+    voronoi_cells = cellfun(@(x) vertices(x,:),connections,'uni',0);
+    % Calculate Voronoi areas
+    voronoi_areas_all = cellfun(@(x) polyarea(x(:,1),x(:,2)),voronoi_cells,'uni',0);
+    idx = cell2mat(cellfun(@(x) isnan(x) | x == Inf,voronoi_areas_all,'uni',0));
+    voronoi_areas_all(idx) = {nan};
+    voronoi_areas_all = cell2mat(voronoi_areas_all);
     % Clean data (boundary points that cause outliers and NaN values)
     voronoi_areas = voronoi_areas_all;
     boundary_idx = boundary(data.x,data.y);
@@ -117,13 +127,12 @@ function data = calculate_voronoi_density(filepath)
     % connections = connections(idx);
     reduced_voronoi_areas = voronoi_areas ./ mean(voronoi_areas);
     reduced_log_voronoi_density = log10(1./reduced_voronoi_areas);
-    % Find neighbors
+    % Find Voronoi neighbors
     connectivity_list = dt.ConnectivityList;
     attached_triangles = vertexAttachments(dt);
-    neighbors = cell(numel(attached_triangles),1);
-    for i = 1:numel(attached_triangles)
-        neighbors{i} = connectivity_list(attached_triangles{i},:);
-        neighbors{i} = unique(neighbors{i});
+    neighbors = cellfun(@(x) connectivity_list(x,:),attached_triangles,'UniformOutput',false);
+    neighbors = cellfun(@(x) unique(x),neighbors,'uniformoutput',false);
+    for i = 1:length(neighbors)
         neighbors{i}(neighbors{i}==i) = [];
     end
     % Return relevant info
@@ -137,11 +146,14 @@ function data = calculate_voronoi_density(filepath)
 end
 
 % Change structure of neighbors from cell array to matrix to reduce memory
-function arr_new = uneven_cell2mat(arr)
-    arr_new = nan(max(cellfun('length',arr)),length(arr));
-    for i=1:length(arr)
-        value = arr{i};
-        arr_new(1:numel(value),i) = value;
+function data_arr = uneven_cell2mat(data_cell)
+arguments
+    data_cell cell
+end
+    data_arr = nan(max(cellfun('length',data_cell)),length(data_cell));
+    for i=1:length(data_cell)
+        value = data_cell{i};
+        data_arr(1:numel(value),i) = value;
     end
 end
 

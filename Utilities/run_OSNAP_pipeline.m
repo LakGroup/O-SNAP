@@ -321,7 +321,9 @@ try
         fprintf("  Generating features from scratch...\n")
         % extract features
         starttime_step = tic;
-        extract_OSNAP_features_samples(work_dir,groups,replicates,'overwrite',true,'n_processes',options.n_processes,'filter',true);
+        OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir, groups, replicate,...
+            {'x','y'},'filter',options.filter);
+        generate_OSNAP_features_samplelist(OSNAP_sample_file_list,'overwrite',true,'n_processes',options.n_processes,'filter',true);
         fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
     end
 catch ME

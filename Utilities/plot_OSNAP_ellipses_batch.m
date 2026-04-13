@@ -53,8 +53,8 @@ OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir,groups,replicates,{'ra
 %% Split data for parallel processing
 [split_data, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list,options.n_processes,"shuffle",true);
 %% Plot using multiple workers
-max_radial_density = max(table2array(feature_data(:,contains(feature_data.Properties.VariableNames, 'radial_loc_density'))),[],'all');
-max_radial_hetero_density = max(table2array(feature_data(:,contains(feature_data.Properties.VariableNames, 'radial_dbscan_cluster_density'))),[],'all');
+max_radial_density = prctile(reshape(table2array(feature_data(:,contains(feature_data.Properties.VariableNames, 'radial_loc_density'))),1,[]),95);
+max_radial_hetero_density = prctile(reshape(table2array(feature_data(:,contains(feature_data.Properties.VariableNames, 'radial_dbscan_cluster_density'))),1,[]),95);
 parfor p=1:n_processes
     OSNAP_sample_file_list_p = split_data{p};
     filepaths = OSNAP_sample_file_list_p{:,'filepath'};

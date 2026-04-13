@@ -26,6 +26,8 @@
 %   vars_to_load: Cell array listing the variable names that the MAT file 
 %                 for the sample must contain in order for it to be 
 %                 considered valid to load from
+%   filter: Flag to retain samples where names do not satisfy a condition
+%           (group name in information table is left as an empty string)
 % Output:
 %   OSNAP_sample_file_list: Table with details on the samples of interest
 %                           to extract feature information from, including 
@@ -105,18 +107,18 @@ else
     group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['_' x '-']), groups_found,'uni',0));
     % Perform further filtering if the sample appears to contain multiple
     % groups as substrings
-    % if sum(group_idx) == 1
-    %     group = string(groups_found{group_idx});
-    % else
-    %     group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '-']), groups_found,'uni',0));
-    %     if sum(group_idx) == 1
-    %         group = string(groups_found{group_idx});
-    %     else
-    %         group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '_']), groups_found,'uni',0));
-    %         if sum(group_idx) == 1
-    %             group = string(groups_found{group_idx});
-    %         else
-    %             group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups_found,'uni',0));
+    if sum(group_idx) == 1
+        group = string(groups_found{group_idx});
+    else
+        group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '-']), groups_found,'uni',0));
+        if sum(group_idx) == 1
+            group = string(groups_found{group_idx});
+        else
+            group_idx = cell2mat(cellfun(@(x) contains(sample_name, ['-' x '_']), groups_found,'uni',0));
+            if sum(group_idx) == 1
+                group = string(groups_found{group_idx});
+            else
+                group_idx = cell2mat(cellfun(@(x) contains(sample_name, x), groups_found,'uni',0));
                 if any(group_idx)
                     first_group_idx = find(group_idx);
                     first_group_idx = first_group_idx(1);
@@ -128,9 +130,9 @@ else
                         sprintf('Error: At least one group specified could not be found in the data set'));
                         throw(ME)
                 end
-            % end
-        % end
-    % end
+            end
+        end
+    end
 end
 end
 

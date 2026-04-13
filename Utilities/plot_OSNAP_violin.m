@@ -96,6 +96,6 @@ parfor p=1:options.n_processes
         xtickangle(30)
         set(gca,'FontSize',16)
         % title(replace(feature,"_"," "),'FontSize',10)
-        saveas(gcf,fullfile(save_dir,"violin_plot_"+feature+".png"));
+        exportgraphics(gcf,fullfile(save_dir,"violin_plot_"+feature+".png"),"Resolution",300,"BackgroundColor","w");
     end
 end
