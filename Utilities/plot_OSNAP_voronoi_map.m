@@ -40,9 +40,9 @@
 %                should connect to each other
 %       - vertices: Information on the vertex values of the Voronoi cells
 % Options:
-%   min_log_vor_density: Lower bound for filtering and visualizing reduced 
+%   min_log_reduced_vor_density: Lower bound for filtering and visualizing reduced 
 %                        Voronoi density values
-%   max_log_vor_density: Upper bound for filtering and visualizing reduced
+%   max_log_reduced_vor_density: Upper bound for filtering and visualizing reduced
 %                        Voronoi density values
 %   min_log_vor_area: Lower bound for filtering and visualizing Voronoi
 %                     area values
@@ -60,9 +60,9 @@
 %                           identifier
 % Options:
 %   n_processes: Number of cores to run parallel processes on
-%   min_log_vor_density: Lower bound for filtering and visualizing reduced 
+%   min_log_reduced_vor_density: Lower bound for filtering and visualizing reduced 
 %                        Voronoi density values
-%   max_log_vor_density: Upper bound for filtering and visualizing reduced
+%   max_log_reduced_vor_density: Upper bound for filtering and visualizing reduced
 %                        Voronoi density values
 %   min_log_vor_area: Lower bound for filtering and visualizing Voronoi
 %                     area values
@@ -86,8 +86,8 @@ function plot_OSNAP_voronoi_map(filepath,data,options)
 arguments
     filepath string
     data struct
-    options.min_log_vor_density double = 0;
-    options.max_log_vor_density double = 3;
+    options.min_log_reduced_vor_density double = 0;
+    options.max_log_reduced_vor_density double = 3;
     options.min_log_vor_area double = 1;
     options.max_log_vor_area double = 3;
     options.CT;
@@ -128,7 +128,7 @@ end
         fullfile(voronoi_density_map_dir,name+".png"));
     %% Plot reduced voronoi density
     plot_faces(data.vertices,data.faces,1./(data.voronoi_areas_all/mean(data.voronoi_areas_all,'omitnan')),CT,...
-        x_min,x_max,y_min,y_max,options.min_log_vor_density,options.max_log_vor_density,...
+        x_min,x_max,y_min,y_max,options.min_log_reduced_vor_density,options.max_log_reduced_vor_density,...
         nm_to_um_x,nm_to_um_y,...
         'Reduced Log Voronoi Density Map','Reduced $\textrm{Log}_{10}$(Voronoi polygon density) [$\textrm{nm}^{-2}$]',...
         fullfile(reduced_voronoi_density_map_dir,name+"_reduced.png"));

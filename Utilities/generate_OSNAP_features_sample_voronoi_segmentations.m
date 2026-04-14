@@ -30,9 +30,9 @@
 %                should connect to each other
 %       - vertices: Information on the vertex values of the Voronoi cells
 % Options:
-%   min_log_vor_density: Lower bound for filtering and visualizing reduced
+%   min_log_reduced_vor_density: Lower bound for filtering and visualizing reduced
 %                        Voronoi density values
-%   max_log_vor_density: Upper bound for filtering and visualizing reduced
+%   max_log_reduced_vor_density: Upper bound for filtering and visualizing reduced
 %                        Voronoi density values
 %   min_log_vor_area: Lower bound for filtering and visualizing Voronoi
 %                     area values
@@ -56,8 +56,8 @@
 function data = generate_OSNAP_features_sample_voronoi_segmentations(filepath, options)
 arguments
     filepath string
-    options.min_log_vor_density double = 0;
-    options.max_log_vor_density double = 3;
+    options.min_log_reduced_vor_density double = 0;
+    options.max_log_reduced_vor_density double = 3;
     options.min_log_vor_area double = 1;
     options.max_log_vor_area double = 3;
     options.plot logical = true;
@@ -76,32 +76,41 @@ if options.overwrite
     data = calculate_voronoi_density(filepath);
     if options.plot
         plot_OSNAP_voronoi_map(filepath,data,...
-                        "min_log_vor_density", min_log_reduced_vor_density, ...
-                        "max_log_vor_density", max_log_reduced_vor_density,...
-                        "min_log_vor_area", min_log_vor_area, ...
-                        "max_log_vor_area", max_log_vor_area);
+                        "min_log_reduced_vor_density", options.min_log_reduced_vor_density, ...
+                        "max_log_reduced_vor_density", options.max_log_reduced_vor_density,...
+                        "min_log_vor_area", options.min_log_vor_area, ...
+                        "max_log_vor_area", options.max_log_vor_area);
     end
 % Return if all variables already in file
-elseif has_variables_OSNAP(filepath,vor_data_vars) && ~options.overwrite
-    % Load data and plot if plot flag
-    if options.plot
-        if ~exist('data','var')
-            data = load_variables_OSNAP(filepath,vor_data_vars);
+elseif has_variables_OSNAP(filepath,vor_data_vars)
+    if ~options.overwrite
+        [dir_name,name,~] = fileparts(filepath);
+        voronoi_density_map_dir = replace(dir_name,"_nucleus_data","_voronoi_density_maps");
+        reduced_voronoi_density_map_dir = replace(dir_name,"_nucleus_data","_reduced_voronoi_density_maps");
+        % Check plot is not present
+        if ~exist(fullfile(voronoi_density_map_dir,name+".png"), 'file') || ~exist(fullfile(reduced_voronoi_density_map_dir,name+"_reduced.png"), 'file')
+            % Load data and plot if plot flag
+            if options.plot
+                if ~exist('data','var')
+                    data = load_variables_OSNAP(filepath,vor_data_vars);
+                end
+                plot_OSNAP_voronoi_map(filepath,data,...
+                    "min_log_reduced_vor_density", options.min_log_reduced_vor_density, ...
+                    "max_log_reduced_vor_density", options.max_log_reduced_vor_density,...
+                    "min_log_vor_area", options.min_log_vor_area, ...
+                    "max_log_vor_area", options.max_log_vor_area);
+            end
+            % Otherwise continue
         end
-        plot_OSNAP_voronoi_map(filepath,data,...
-                        "min_log_vor_density", min_log_reduced_vor_density, ...
-                        "max_log_vor_density", max_log_reduced_vor_density,...
-                        "min_log_vor_area", min_log_vor_area, ...
-                        "max_log_vor_area", max_log_vor_area);
     end
 % If plot but no data is present in the file, calculate densities and plot
 elseif options.plot
     data = calculate_voronoi_density(filepath);
     plot_OSNAP_voronoi_map(filepath,data,...
-                        "min_log_vor_density", min_log_reduced_vor_density, ...
-                        "max_log_vor_density", max_log_reduced_vor_density,...
-                        "min_log_vor_area", min_log_vor_area, ...
-                        "max_log_vor_area", max_log_vor_area);
+                        "min_log_reduced_vor_density", options.min_log_reduced_vor_density, ...
+                        "max_log_reduced_vor_density", options.max_log_reduced_vor_density,...
+                        "min_log_vor_area", options.min_log_vor_area, ...
+                        "max_log_vor_area", options.max_log_vor_area);
 end
 end
 

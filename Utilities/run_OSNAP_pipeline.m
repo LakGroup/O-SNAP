@@ -165,6 +165,8 @@
 %                           identifiers for those to include
 %   FSEA_rank_type: The ranking metric approach
 %   n_processes: The number of workers to use for parallel processing
+%   filter: Flag as to whether to filter out samples that do not contain
+%           either the specified phenotype or replicate labels
 %   suffix: A suffix to the identifier for the analysis
 %   save: Logical to save the analysis output to a file
 %   save_if_error: Logical on whether to save the analysis if it encounters
@@ -220,6 +222,7 @@ arguments
     options.FSEA_rank_type string = "S2N";
     % other options
     options.n_processes double = maxNumCompThreads;
+    options.filter logical = true;
     options.suffix = ""
     options.save = 1;
     options.save_if_error = 1;
@@ -321,9 +324,9 @@ try
         fprintf("  Generating features from scratch...\n")
         % extract features
         starttime_step = tic;
-        OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir, groups, replicate,...
+        OSNAP_sample_file_list = get_valid_OSNAP_samples(work_dir, groups, replicates,...
             {'x','y'},'filter',options.filter);
-        generate_OSNAP_features_samplelist(OSNAP_sample_file_list,'overwrite',true,'n_processes',options.n_processes,'filter',true);
+        generate_OSNAP_features_samplelist(OSNAP_sample_file_list,'overwrite',false,'n_processes',options.n_processes,'filter',true);
         fprintf("      Completed %s (%.2f min)...\n",string(datetime),toc(starttime_step)/60);
     end
 catch ME

@@ -116,6 +116,7 @@ data_vars = {'nucleus_radius',...
 % Identify files to process
 idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
 [split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
+starttime_step = tic;
 %% Calculate density threshold
 if any(cellfun('length',split_file_list))
     eps = options.eps;
@@ -126,7 +127,6 @@ if any(cellfun('length',split_file_list))
     overwrite = options.overwrite;
     density_data=cell(1,n_processes);
     fprintf("      Calculating density threshold...\n");
-    starttime_step = tic;
     parfor p=1:n_processes
         sample_file_list_p = split_file_list{p};
         filepaths = sample_file_list_p{:,'filepath'};
