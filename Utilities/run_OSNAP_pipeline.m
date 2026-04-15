@@ -3,10 +3,10 @@
 % -------------------------------------------------------------------------
 % Function that runs the suite of analysis available in O-SNAP, excluding
 % the pseudotime analysis that implemented in R.
-% <FILL>
+% 
 % Most descriptors/features that are calculated are calculated with respect to
 % the point cloud or an accurate representation of a pointcloud (based on
-% the alphaShape or polyshape functions of Matlab).
+% the polyshape functions of MATLAB).
 %
 % Example on how to use it:
 %   results = run_OSNAP_pipeline("C:\Users\JohnSmith\Documents\O-SNAP_Analysis\,...
@@ -236,6 +236,7 @@ else
     save_analysis_path = fullfile(work_dir,analysis_name+"_"+options.suffix+".mat");
 end
 log_file = fullfile(work_dir,sprintf('%s_%s.txt',analysis_name,datetime('now','Format','y-MM-dd_HH-mm-ss')));
+diary off
 diary(log_file)
 fprintf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - \n")
 fprintf("Running analysis for: " + analysis_name + "\n")

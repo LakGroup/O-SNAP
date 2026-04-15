@@ -62,6 +62,9 @@ if any(cellfun('length',split_file_list))
     parfor p=1:n_processes
         sample_file_list_p = split_file_list{p};
         filepaths = sample_file_list_p{:,'filepath'};
+        if numel(filepaths)==0
+            continue;
+        end
         for s=1:length(filepaths) 
             filepath = filepaths(s);
             fprintf("Worker %2.0f: File %3.0f/%3.0f...\t%s\n",p,s,numel(filepaths),filepath);

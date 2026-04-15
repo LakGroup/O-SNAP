@@ -139,7 +139,7 @@ function plot_faces(vertices,faces,values,CT,...
     x_min,x_max,y_min,y_max,c_min,c_max,...
     nm_to_um_x,nm_to_um_y,...
     f_label,c_label,...
-    savepath)
+    save_path)
     c_values = log10(values);
     idx = values >= c_min;
     c_values = c_values(idx);
@@ -164,6 +164,6 @@ function plot_faces(vertices,faces,values,CT,...
     ylabel(h,c_label,'FontSize',14,'interpreter','latex');
     caxis([c_min c_max]);
     rectangle('Position',[x_min y_min nm_to_um_x nm_to_um_y],'facecolor','w')
-    exportgraphics(ax,savepath,"Resolution",300,"BackgroundColor","k");
+    exportgraphics(ax,save_path,"Resolution",300,"BackgroundColor","k");
     close(f)
 end

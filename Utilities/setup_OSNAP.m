@@ -25,11 +25,11 @@ function flag = setup_OSNAP()
     %% Check for all required Toolboxes
     disp("Checking for required toolboxes...")
     check_for_toolboxes();
-    %% Ensure correct functions if shadowed another installation (ex. PLS toolbox)
-    disp("Ensuring functions are not shadowed...")
-    top_in_search_path_OSNAP('skewness','stats\stats\skewness.m');
-    top_in_search_path_OSNAP('pca','stats\stats\pca.m');
-    savepath
+    % %% Ensure correct functions if shadowed another installation (ex. PLS toolbox)
+    % disp("Ensuring functions are not shadowed...")
+    % top_in_search_path_OSNAP('skewness','stats\stats\skewness.m');
+    % top_in_search_path_OSNAP('pca','stats\stats\pca.m');
+    % savepath
     flag = 1;
     %% Start parallel pool
     p_pool = gcp('nocreate');

@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="788034989" file="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP.prj" location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities" name="OSNAP" preferred-package-location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
+  <configuration build-checksum="788034989" file="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP.prj" location="C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities" name="OSNAP" preferred-package-location="C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="Application Compiler">
     <param.appname>OSNAP</param.appname>
     <param.icon>${PROJECT_ROOT}\OSNAP_resources\icon.ico</param.icon>
     <param.icons>
@@ -21,10 +21,10 @@
     <param.logo>${PROJECT_ROOT}\OSNAP_Logo.png</param.logo>
     <param.install.notes />
     <param.target.install.notes />
-    <param.intermediate>${PROJECT_ROOT}\OSNAP\for_testing</param.intermediate>
-    <param.files.only>${PROJECT_ROOT}\OSNAP\for_redistribution_files_only</param.files.only>
-    <param.output>${PROJECT_ROOT}\OSNAP\for_redistribution</param.output>
-    <param.logdir>${PROJECT_ROOT}\OSNAP</param.logdir>
+    <param.intermediate>C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b</param.intermediate>
+    <param.files.only>C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b</param.files.only>
+    <param.output>C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b</param.output>
+    <param.logdir>C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b</param.logdir>
     <param.enable.clean.build>false</param.enable.clean.build>
     <param.user.defined.mcr.options />
     <param.target.type>subtarget.standalone</param.target.type>
@@ -33,7 +33,7 @@
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
     <param.web.mcr.name>OSNAP_R2024b</param.web.mcr.name>
-    <param.package.mcr.name>OSNAP_Installer</param.package.mcr.name>
+    <param.package.mcr.name>OSNAP_R2024b</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>true</param.windows.command.prompt>
     <param.create.log>true</param.create.log>
@@ -52,10 +52,6 @@
       <param.installpath.combo />
       <param.install.notes />
       <param.target.install.notes />
-      <param.intermediate />
-      <param.files.only />
-      <param.output />
-      <param.logdir />
       <param.enable.clean.build />
       <param.user.defined.mcr.options />
       <param.target.type />
@@ -73,7 +69,9 @@
       <file>${PROJECT_ROOT}\OSNAP.mlapp</file>
     </fileset.main>
     <fileset.resources />
-    <fileset.package />
+    <fileset.package>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\O-SNAP_Tutorial_v1.1.pdf</file>
+    </fileset.package>
     <fileset.depfun>
       <file>${PROJECT_ROOT}\OSNAP_Logo_cropped.png</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\calculate_OSNAP_feature_set_coverage.m</file>
@@ -87,18 +85,21 @@
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\evaluate_OSNAP_classifiers.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_features.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_features_batch.m</file>
-      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_features_samples.m</file>
-      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_morphometrics_dbscan_cluster_radial_features.m</file>
-      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\extract_OSNAP_voronoi_cluster_features.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\fast_inpolygon\inpoly.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\filter_OSNAP_feature_data.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\find_contains_variable_OSNAP.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_ellipses.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_feature_set.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_features_sample_morphometrics_DBSCAN_radial.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_features_sample_voronoi_cluster.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_features_sample_voronoi_segmentations.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_features_samplelist.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_features_samplelist_morphometrics_DBSCAN_radial.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_features_samplelist_voronoi_cluster.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_features_samplelist_voronoi_segmentations.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_samples.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_samples_batch.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_train_test_sets.m</file>
-      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\generate_OSNAP_voronoi_segmentations.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_all_valid_OSNAP_samples.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_OSNAP_classifiers_of_model_type.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\get_OSNAP_default_options.m</file>
@@ -118,6 +119,7 @@
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\RandPermFast.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\MrFSEA\FSEA_package\update_FS.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_confusion.m</file>
+      <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_DBSCAN_LAD.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_ellipses.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_ellipses_batch.m</file>
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\plot_OSNAP_ellipses_locs_and_clusters.m</file>
@@ -144,9 +146,9 @@
       <file>C:\Users\HannahKim\Documents\STORM\OSNAP\Utilities\venn.m</file>
     </fileset.depfun>
     <build-deliverables>
-      <file location="${PROJECT_ROOT}\OSNAP\for_testing" name="OSNAP.exe" optional="false">C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_testing\OSNAP.exe</file>
-      <file location="${PROJECT_ROOT}\OSNAP\for_testing" name="splash.png" optional="false">C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_testing\splash.png</file>
-      <file location="${PROJECT_ROOT}\OSNAP\for_testing" name="readme.txt" optional="true">C:\Users\HannahKim\Documents\STORM\OSNAP\GUI_Utilities\OSNAP\for_testing\readme.txt</file>
+      <file location="C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b" name="readme.txt" optional="true">C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b\readme.txt</file>
+      <file location="C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b" name="OSNAP.exe" optional="false">C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b\OSNAP.exe</file>
+      <file location="C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b" name="splash.png" optional="false">C:\Users\HannahKim\Documents\STORM\OSNAP\StandaloneReleases\R2024b\splash.png</file>
     </build-deliverables>
     <workflow />
     <matlab>

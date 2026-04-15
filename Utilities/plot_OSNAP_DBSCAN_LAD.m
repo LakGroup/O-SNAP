@@ -92,6 +92,7 @@ end
             'model_lad_segment_thickness'};
         data = load_variables_OSNAP(filepath,vars_to_load);
     end
+    warning('off','MATLAB:polyshape:repairedBySimplify')
     [dir_name,name,~] = fileparts(filepath);
     map_dir = replace(dir_name,"_nucleus_data","_nucleus_analysis_images");
     if ~exist(map_dir, 'dir')
@@ -123,15 +124,16 @@ end
         point2 = model_lad_segment_locs(i+1,:);
         point4 = point1 + data.model_lad_segment_thickness(i)*model_lad_segment_normals(i,:);
         point3 = point2 + data.model_lad_segment_thickness(i)*model_lad_segment_normals(i+1,:);
-        pgon = polyshape([point1(1);point2(1);point3(1);point4(1);point1(1)],...
-            [point1(2);point2(2);point3(2);point4(2);point1(2)]);
+        vertices = unique([[point1(1);point2(1);point3(1);point4(1);point1(1)],...
+            [point1(2);point2(2);point3(2);point4(2);point1(2)]],'rows');
+        pgon = polyshape(vertices);
         if i==1
             p3 = plot(pgon,'FaceColor','k');hold on
         else
             plot(pgon,'FaceColor','k');hold on
         end
-        axis equal
     end
+    axis equal
     x_bounds=xlim();
     y_bounds=ylim();
     rectangle('Position',[x_bounds(1)+nm_to_um_y y_bounds(1)+nm_to_um_y nm_to_um_x nm_to_um_y],...
@@ -146,6 +148,7 @@ end
     drawnow()
     exportgraphics(f,save_path,"Resolution",300,"BackgroundColor","w");
     close(f);
+    warning('on','MATLAB:polyshape:repairedBySimplify')
 end
 
 %% Normalize localizations

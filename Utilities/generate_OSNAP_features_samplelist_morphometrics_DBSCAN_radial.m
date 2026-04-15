@@ -130,6 +130,9 @@ if any(cellfun('length',split_file_list))
     parfor p=1:n_processes
         sample_file_list_p = split_file_list{p};
         filepaths = sample_file_list_p{:,'filepath'};
+        if numel(filepaths)==0
+            continue;
+        end
         density_data{p} = cell(1,length(filepaths));
         samps_to_remove = [];
         for s=1:numel(filepaths)
@@ -150,9 +153,12 @@ if any(cellfun('length',split_file_list))
     fprintf("          Density threshold: %.4f...\n",density_threshold);
     clearvars density_data
     fprintf("      Calculating morphometric, dbscan clustering, and radial features...\n")
-    parfor p=1:options.n_processes
+    parfor p=1:n_processes
         sample_file_list_p = split_file_list{p};
         filepaths = sample_file_list_p{:,'filepath'};
+        if numel(filepaths)==0
+            continue;
+        end
         % samps_to_remove = [];
         for s=1:length(filepaths)
             filepath = filepaths(s);
