@@ -54,8 +54,8 @@ data_vars = {...
     'voronoi_cluster_density',...
     'voronoi_cluster_gyration_radius'};
 % Identify files to process
-idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
-[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),options.n_processes);
+% idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
+[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list,options.n_processes);
 fprintf("      Performing Voronoi Clustering Analysis...\n")
 starttime_step = tic;
 if any(cellfun('length',split_file_list))

@@ -54,13 +54,6 @@ arguments
     options.numeric_only logical = false; 
 end
 feature_data_norm = feature_data;
-%% Remove NaNs
-if options.remove_NaN
-    is_nan_col = any(ismissing(feature_data_norm),1);
-    feature_data_norm = feature_data_norm(:,~is_nan_col);
-    is_nan_row = any(ismissing(feature_data_norm),2);
-    feature_data_norm = feature_data_norm(~is_nan_row,:);
-end
 %% Select only desired groups and replicates for analysis
 if ~isempty(options.replicates)
     feature_data_norm = feature_data_norm(ismember(feature_data_norm.biological_replicate,options.replicates),:);
@@ -68,23 +61,7 @@ end
 if ~isempty(options.groups)
     feature_data_norm = feature_data_norm(ismember(feature_data_norm.group,options.groups),:);
 end
-if ismember('group',feature_data_norm.Properties.VariableNames)
-    group_values = feature_data_norm.group;
-else
-    group_values = [];
-end
-%% Normalize T
-if options.normalize
-    % T_norm{:,vartype('numeric')} = normalize(abs(T_norm{:,vartype('numeric')}),1);
-    feature_data_norm{:,vartype('numeric')} = normalize(feature_data_norm{:,vartype('numeric')},1);
-    % remove NaNs
-    if options.remove_NaN
-        is_nan_col = any(ismissing(feature_data_norm),1);
-        feature_data_norm = feature_data_norm(:,~is_nan_col);
-        is_nan_row = any(ismissing(feature_data_norm),2);
-        feature_data_norm = feature_data_norm(~is_nan_row,:);
-    end
-end
+group_values = feature_data_norm.group;
 %% Remove unnecessary columns (group, bio replicate)
 if options.numeric_only
     feature_data_norm = feature_data_norm(:,vartype('numeric'));
@@ -95,6 +72,34 @@ elseif ~options.keep_rep_sample_info
     if ismember('name',feature_data_norm.Properties.VariableNames)
         feature_data_norm(:,'name') = [];
     end
+end
+
+%% Normalize T
+if options.normalize
+    % T_norm{:,vartype('numeric')} = normalize(abs(T_norm{:,vartype('numeric')}),1);
+    feature_data_norm{:,vartype('numeric')} = normalize(feature_data_norm{:,vartype('numeric')},1);
+    % remove NaNs
+    if options.remove_NaN
+        is_nan_all_row = all(ismissing(feature_data_norm{:,vartype('numeric')}),2);
+        feature_data_norm = feature_data_norm(~is_nan_all_row,:);
+        group_values = group_values(~is_nan_all_row);
+        is_nan_any_col = any(ismissing(feature_data_norm),1);
+        feature_data_norm = feature_data_norm(:,~is_nan_any_col);
+        is_nan_any_row = any(ismissing(feature_data_norm{:,vartype('numeric')}),2);
+        feature_data_norm = feature_data_norm(~is_nan_any_row,:);
+        group_values = group_values(~is_nan_any_row);
+    end
+end
+%% Remove NaNs
+if options.remove_NaN
+    is_nan_all_row = all(ismissing(feature_data_norm{:,vartype('numeric')}),2);
+    feature_data_norm = feature_data_norm(~is_nan_all_row,:);
+    group_values = group_values(~is_nan_all_row);
+    is_nan_any_col = any(ismissing(feature_data_norm),1);
+    feature_data_norm = feature_data_norm(:,~is_nan_any_col);
+    is_nan_any_row = any(ismissing(feature_data_norm{:,vartype('numeric')}),2);
+    feature_data_norm = feature_data_norm(~is_nan_any_row,:);
+    group_values = group_values(~is_nan_any_row);
 end
 end
 

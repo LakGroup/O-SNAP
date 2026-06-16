@@ -114,8 +114,8 @@ data_vars = {'nucleus_radius',...
             'interior_cluster_density',...
             'periphery_cluster_density'};
 % Identify files to process
-idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
-[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list(idx,:),n_processes);
+% idx = ~logical(arrayfun(@(x) has_variables_OSNAP(x,data_vars,"verbose",0), OSNAP_sample_file_list{:,'filepath'},'uni',1));
+[split_file_list, n_processes] = split_data_to_n_OSNAP(OSNAP_sample_file_list,n_processes);
 starttime_step = tic;
 %% Calculate density threshold
 if any(cellfun('length',split_file_list))
